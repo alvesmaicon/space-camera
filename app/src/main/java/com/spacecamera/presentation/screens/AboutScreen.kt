@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.spacecamera.BuildConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +62,11 @@ fun AboutScreen(navController: NavController) {
                 item { AboutSectionHeader("App") }
                 item {
                     AboutRow("Aplicativo", "Space Camera")
-                    AboutRow("Versão", "1.0.0")
+                    // Vem do BuildConfig (gradle/libs.versions.toml é a fonte única).
+                    AboutRow("Versão", "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+                    // Identifica exatamente qual commit gerou o APK instalado —
+                    // essencial para reproduzir um problema relatado de um aparelho.
+                    AboutRow("Build", BuildConfig.GIT_SHA)
                     AboutRow("Desenvolvedor", "Maicon Alves")
                 }
 

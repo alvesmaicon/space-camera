@@ -1,0 +1,107 @@
+# Fonte única de verdade para versões de dependências e do app.
+#
+# Antes desta rodada havia duas fontes: buildSrc/Config.kt (que o Gradle nunca
+# compilou — não existia buildSrc/build.gradle.kts com o plugin kotlin-dsl, então
+# o arquivo era inerte) e as versões hardcoded em app/build.gradle.kts. As duas
+# já haviam divergido (CameraX 1.3.0 no Config.kt vs 1.4.0 no build real).
+# buildSrc foi removido; tudo mora aqui.
+
+[versions]
+# App
+appVersionName = "0.4.1"
+appVersionCode = "41"        # derivado do semver (0.4.1 -> 41) para sempre crescer
+compileSdk = "34"
+targetSdk = "34"
+minSdk = "24"
+
+# Toolchain
+# AGP 8.1.4 quebrava no JDK 21 (JdkImageTransform/jlink). O defeito ficava
+# escondido porque o projeto não tem nenhum .java e a etapa javac era NO-SOURCE;
+# ligar buildConfig=true passou a gerar BuildConfig.java e expôs a falha.
+# AGP >= 8.2.1 corrige. Kotlin fica na 1.9.25 (última 1.9.x) para casar com o AGP
+# novo sem trocar de linguagem; o Compose Compiler é amarrado ao Kotlin.
+agp = "8.7.3"
+kotlin = "1.9.25"
+composeCompiler = "1.5.15"
+
+# AndroidX
+coreKtx = "1.12.0"
+appcompat = "1.6.1"
+activityCompose = "1.8.0"
+lifecycle = "2.6.2"
+navigationCompose = "2.7.5"
+
+# Compose
+compose = "1.5.4"
+material3 = "1.1.2"
+
+# CameraX
+camerax = "1.4.0"
+
+# Outros
+coroutines = "1.7.3"
+accompanist = "0.32.0"
+timber = "5.0.1"
+
+# Testes
+junit = "4.13.2"
+androidxTestJunit = "1.1.5"
+espresso = "3.5.1"
+robolectric = "4.11.1"
+mockk = "1.13.8"
+turbine = "1.0.0"
+
+[libraries]
+# AndroidX core
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+
+# Lifecycle
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-lifecycle-livedata-ktx = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycle" }
+
+# Compose
+compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
+compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics", version.ref = "compose" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
+compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "compose" }
+compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "compose" }
+compose-runtime = { module = "androidx.compose.runtime:runtime", version.ref = "compose" }
+compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
+compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "compose" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+
+# CameraX
+camerax-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+camerax-video = { module = "androidx.camera:camera-video", version.ref = "camerax" }
+camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+
+# Coroutines
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+
+# Outros
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
+timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+
+# Testes
+junit = { module = "junit:junit", version.ref = "junit" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+androidx-test-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestJunit" }
+espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
