@@ -1,190 +1,120 @@
-# Guia de Contribuição
+# Guia de contribuição
 
-## Como Começar
+## Antes do primeiro commit
 
-1. Faça um fork do repositório
-2. Clone seu fork: `git clone https://github.com/seu-usuario/space-camera.git`
-3. Configure upstream: `git remote add upstream https://github.com/maicon-projetos/space-camera.git`
-4. Execute setup: `./setup.sh`
+Siga o [QUICKSTART.md](QUICKSTART.md) e confirme que o app sobe:
 
-## Branches
-
-- `main`: Código estável e em produção
-- `develop`: Branch de desenvolvimento
-- `feature/*`: Novas features
-- `bugfix/*`: Correções de bugs
-- `hotfix/*`: Correções urgentes para produção
-
-## Workflow de Contribuição
-
-### 1. Criar uma branch
 ```bash
-git checkout -b feature/minha-feature
+scripts/smoke.sh
 ```
 
-### 2. Fazer commits com boas mensagens
-```bash
-git commit -m "feat: descrição clara da mudança"
+Leia o [CLAUDE.md](CLAUDE.md) — ele reúne as convenções e as armadilhas do
+projeto num lugar só.
+
+## Branches e commits
+
+`main` é a branch estável. Trabalhe em `feature/*`, `fix/*` ou `chore/*` e abra
+pull request no Bitbucket.
+
+Commits seguem [Conventional Commits](https://www.conventionalcommits.org/):
+`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `build:`, `chore:`.
+
+Mensagem em **português**, no imperativo, explicando **por quê** e não só o quê.
+O assunto cabe em 72 caracteres; o corpo, quando existe, é onde mora o motivo.
+
+```
+fix: não perder o EIS ao voltar de configurações
+
+O PreviewView é recriado na volta da navegação e o rebind reaplicava os
+valores padrão do CameraManager em vez dos que estavam em tela.
 ```
 
-**Convenções de commit**:
-- `feat:` Nova feature
-- `fix:` Correção de bug
-- `docs:` Documentação
-- `style:` Formatação (sem mudança de lógica)
-- `refactor:` Refatoração de código
-- `test:` Adicionar testes
-- `chore:` Atualizar dependências
+## Antes de abrir o PR
 
-### 3. Push para seu fork
 ```bash
-git push origin feature/minha-feature
+./gradlew testDebugUnitTest lint detekt
 ```
 
-### 4. Criar Pull Request
-- Descreva claramente o que foi mudado
-- Referencie issues relacionadas: `Closes #123`
-- Aguarde code review
+Os três precisam passar. Se o `detekt` acusar algo novo, corrija — não regenere
+o baseline para silenciar. O baseline existe apenas para congelar a dívida que
+já estava lá.
 
-## Padrões de Código
+Checklist:
 
-### Kotlin Style Guide
-- Seguir [Kotlin official style guide](https://kotlinlang.org/docs/coding-conventions.html)
-- Usar `camelCase` para variáveis e funções
-- Usar `PascalCase` para classes
-- Máximo 120 caracteres por linha
+- [ ] `testDebugUnitTest`, `lint` e `detekt` passando
+- [ ] Comportamento novo coberto por teste
+- [ ] Testado em aparelho real quando envolve câmera (o emulador tem câmera
+      virtual: só HD 30, sem EIS e sem HDR)
+- [ ] Documentação ajustada se mudou comando, arquitetura ou comportamento
+- [ ] Sem `Log.` nem `printStackTrace` — use `Timber` ou `CameraTelemetry`
+- [ ] Sem versão literal em `build.gradle.kts` — só em `libs.versions.toml`
+- [ ] Sem código comentado ou sobra de debug
 
-### Composables
+## Padrões de código
+
+Siga as [convenções oficiais do Kotlin](https://kotlinlang.org/docs/coding-conventions.html).
+Limite de 140 colunas (o `detekt` verifica).
+
+**Idioma:** identificadores em inglês; comentários, rótulos de UI e mensagens de
+commit em português. Nomes de teste em português, entre crases.
+
+**Comentários** explicam o porquê, não o quê. O código já diz o que faz; o
+comentário existe para o que não é óbvio — uma restrição da plataforma, uma
+ordem que importa, um caso de aparelho específico. Exemplo do próprio projeto:
+
 ```kotlin
-@Composable
-fun MyComposable(
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
-) {
-    // Implementation
-}
-```
-
-### ViewModels
-```kotlin
-class MyViewModel : ViewModel() {
-    private val _state = MutableStateFlow<MyState>(MyState.Initial)
-    val state: StateFlow<MyState> = _state.asStateFlow()
-    
-    fun performAction() {
-        viewModelScope.launch {
-            // Implementation
-        }
-    }
-}
+// IMPORTANTE: EIS e NR NÃO devem ser setados aqui. Camera2Interop tem
+// prioridade maior que Camera2CameraControl no merge do CaptureRequest — se
+// setarmos EIS aqui, o valor fica gravado na sessão e nunca é sobrescrito.
 ```
 
 ## Testes
 
-### Cobertura Mínima
-- Todas as funções públicas devem ter testes
-- Mínimo 70% de cobertura de código
+O que vale a pena testar aqui é lógica que não depende de sensor: cálculo de
+bitrate, ciclos de preset, persistência de configuração, contagem regressiva,
+regras de "EIS não se aplica a foto".
 
-### Tipos de Testes
-- **Unit Tests**: Testar lógica isolada (JUnit)
-- **Integration Tests**: Testar interação entre componentes
-- **UI Tests**: Testar telas Compose (Espresso/Compose Test)
+- Lógica pura → JUnit direto, rápido
+- Persistência e ViewModel → Robolectric, com SharedPreferences de verdade
+- Hardware → `FakeCameraController`, mexendo nos `*Flow` públicos para simular
+  aparelhos diferentes
 
-### Executar Testes
+Duas armadilhas estão documentadas em [CLAUDE.md](CLAUDE.md#testes): o
+cronômetro em `while (true)` e o `android.util.Size` fora do Robolectric.
+
+Não há meta numérica de cobertura. Teste comportamento que quebraria de verdade,
+não getters.
+
+## Reportar bug
+
+Inclua sempre o **hash do build** (tela Sobre → Build) e a saída de:
+
 ```bash
-yarn test
-# ou
-./gradlew test
+scripts/logcat.sh 'evt=' > /tmp/spacecam.log
 ```
 
-## Pull Request Checklist
+Sem isso, problema de aparelho é praticamente irreproduzível.
 
-- [ ] Testes adicionados/atualizados
-- [ ] Documentação atualizada
-- [ ] Sem conflitos com `develop`
-- [ ] Mensagens de commit claras
-- [ ] Sem código comentado ou debug
-- [ ] Segue padrões do projeto
-
-## Documentação
-
-### README
-Atualize se:
-- Novas features principais
-- Mudança em instruções de instalação
-- Novos comandos de build
-
-### Code Comments
-```kotlin
-/**
- * Descrição clara da função.
- * 
- * @param param1 Descrição do primeiro parâmetro
- * @return Descrição do retorno
- * @throws ExceptionType Quando esta exception é lançada
- */
-fun myFunction(param1: String): String {
-    // Implementation
-}
-```
-
-## Reportar Bugs
-
-Use a seção "Issues" do GitHub:
-
-1. **Título claro**: "Camera crashes on 4K recording"
-2. **Descrição**: Passos para reproduzir
-3. **Esperado vs Atual**: O que deveria acontecer vs o que acontece
-4. **Ambiente**: Android version, device model, app version
-5. **Logs**: Cole logcat output se relevante
-
-### Template
 ```markdown
-## Descrição do Bug
-[Descrição clara do problema]
+## Descrição
+[o que acontece]
 
-## Como Reproduzir
-1. Passo 1
-2. Passo 2
-3. Passo 3
+## Como reproduzir
+1.
+2.
 
-## Comportamento Esperado
-[O que deveria acontecer]
-
-## Comportamento Atual
-[O que acontece]
+## Esperado vs atual
 
 ## Ambiente
-- Android Version: [ex: 13]
-- Device: [ex: Pixel 6]
-- App Version: [ex: 1.0.0]
+- Aparelho e versão do Android:
+- Build (tela Sobre):
 
-## Logs
-[Colocar logcat ou stack trace]
+## Telemetria
+[cole as linhas evt=caps e evt=bind]
 ```
 
-## Sugerir Features
+## Antes de aumentar um arquivo grande
 
-1. Abra uma Issue com tag `enhancement`
-2. Descreva:
-   - O que deseja
-   - Por quê é útil
-   - Possível implementação (opcional)
-
-## Comunidade
-
-- Respeito mútuo
-- Sem spam ou conteúdo ofensivo
-- Inglês ou Português
-- Estamos aqui para aprender juntos!
-
-## Contato
-
-Para dúvidas sobre contribuição:
-- Comente em issues
-- Abra discussions
-- Envie email: maicon@example.com
-
----
-
-**Obrigado por contribuir! 🎉**
+`CameraScreen.kt`, `CameraManager.kt` e `CameraViewModel.kt` já estão grandes
+demais ([REFACTORING.md](REFACTORING.md)). Ao mexer neles, prefira extrair a
+parte que você tocou a acrescentar mais linhas — mesmo que seja pouco.

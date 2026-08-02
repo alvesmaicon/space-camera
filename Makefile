@@ -1,4 +1,4 @@
-.PHONY: help install build generate-icons clean
+.PHONY: help install build generate-icons clean test lint detekt check smoke logcat logcat-eventos
 
 help:
 	@echo ""
@@ -24,9 +24,16 @@ help:
 	@echo "  make clean                - Limpar builds"
 	@echo "  make clean-all            - Limpeza total (build + gradle)"
 	@echo ""
-	@echo "🧪 TESTES:"
-	@echo "  make test                 - Executar testes"
-	@echo "  make lint                 - Rodar lint"
+	@echo "🧪 QUALIDADE:"
+	@echo "  make test                 - Testes unitários (JVM, sem device)"
+	@echo "  make lint                 - Android Lint"
+	@echo "  make detekt               - Análise estática Kotlin"
+	@echo "  make check                - test + lint + detekt"
+	@echo ""
+	@echo "🔍 DIAGNÓSTICO:"
+	@echo "  make smoke                - Build, instala e confere que a câmera ligou"
+	@echo "  make logcat               - Logcat filtrado só no app"
+	@echo "  make logcat-eventos       - Só os eventos de telemetria"
 	@echo ""
 
 install:
@@ -63,9 +70,24 @@ clean-all: clean
 	rm -rf app/build
 
 test:
-	npm run test
+	./gradlew testDebugUnitTest
 
 lint:
-	npm run lint
+	./gradlew lint
+
+detekt:
+	./gradlew detekt
+
+check:
+	./gradlew testDebugUnitTest lint detekt
+
+smoke:
+	./scripts/smoke.sh
+
+logcat:
+	./scripts/logcat.sh
+
+logcat-eventos:
+	./scripts/logcat.sh 'evt='
 
 .DEFAULT_GOAL := help

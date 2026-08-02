@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.detekt)
 }
 
 /**
@@ -98,6 +99,34 @@ android {
     }
 }
 
+/**
+ * O baseline congela a dívida que já existia: a análise só falha em problema
+ * novo. Ao corrigir itens antigos, rode `./gradlew detektBaseline` para
+ * reencolher o arquivo — não o regenere para silenciar um achado novo.
+ */
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+    baseline = rootProject.file("config/detekt/detekt-baseline.xml")
+    source.setFrom(files("src/main/java", "src/test/java"))
+    parallel = true
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    jvmTarget = "17"
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+        sarif.required.set(false)
+        txt.required.set(false)
+        md.required.set(false)
+    }
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.DetektCreateBaselineTask>().configureEach {
+    jvmTarget = "17"
+}
+
 dependencies {
     // Core Android
     implementation(libs.androidx.core.ktx)
@@ -143,6 +172,7 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
 

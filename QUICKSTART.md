@@ -1,133 +1,75 @@
-# Quick Start - Space Camera
+# Quick Start
 
-Guia rápido para começar a usar o Space Camera.
+Do clone ao app rodando.
 
-## ⚡ Setup em 3 Passos
+## Pré-requisitos
 
-### 1. Instalar Dependências
-```bash
-npm install
-```
+- **JDK 17 ou superior** (o projeto roda no 21)
+- **Android SDK** com a plataforma 34
+- Aparelho com API 24+ ou emulador rodando
 
-### 2. Gerar Ícones
-```bash
-npm run generate:all-icons
-```
+Node **não** é necessário para compilar — os ícones já vêm versionados. Só
+instale se for regerá-los a partir de `space-cam.png`.
 
-### 3. Build e Execução
-```bash
-npm run build:debug
-npm run run:debug
-```
-
----
-
-## 📋 Checklist Inicial
-
-- [ ] Node.js 16+ instalado
-- [ ] Android SDK 34 configurado
-- [ ] Dispositivo Android conectado ou emulador rodando
-- [ ] `npm install` executado
-- [ ] Ícones gerados com `npm run generate:all-icons`
-
----
-
-## 🚀 Comandos Essenciais
+## Três passos
 
 ```bash
-# Gerar ícones (IMPORTANTE - fazer uma vez)
-npm run generate:all-icons
+# 1. Aponte o SDK
+cp local.properties.example local.properties
+#    edite sdk.dir se o seu SDK não estiver no caminho padrão
 
-# Build
-npm run build:debug        # Build debug
-npm run build:release      # Build release
+# 2. Confirme que há um device
+adb devices
 
-# Instalar e rodar
-npm run install:debug      # Instalar em dispositivo
-npm run run:debug          # Build + Install + Run
-
-# Limpeza
-npm run clean              # Limpar build
+# 3. Compile, instale e abra
+./gradlew installDebug && adb shell am start -n com.spacecamera/.MainActivity
 ```
 
----
-
-## 🛠️ Alternativa: Usando Makefile
-
-Se preferir:
+Ou, em um comando só, já verificando que a câmera realmente inicializou:
 
 ```bash
-make help                 # Ver todos os comandos
-make install              # npm install
-make generate-icons       # Gerar ícones
-make run                  # Build + Install + Run
-make clean                # Limpar
+scripts/smoke.sh
 ```
 
----
+A primeira execução baixa o Gradle 8.9 e as dependências — conte alguns minutos.
 
-## 📱 Após o Build
-
-O app estará disponível em:
-- **Debug APK**: `app/build/outputs/apk/debug/app-debug.apk`
-- **Instalado em**: Dispositivo conectado
-- **Ícone**: Visível na tela inicial
-
----
-
-## 🐛 Problemas Comuns
-
-### "sharp not found"
-```bash
-npm install sharp --save-dev
-```
-
-### "ANDROID_HOME not found"
-```bash
-export ANDROID_HOME=/Users/SEU_USUARIO/Library/Android/sdk
-```
-
-### Ícones não aparecem
-```bash
-npm run clean
-npm run generate:all-icons
-npm run build:debug
-```
-
----
-
-## 📖 Documentação Completa
-
-- **README.md** - Documentação principal
-- **BUILD.md** - Instruções de build
-- **ICON_GENERATION.md** - Geração de ícones
-- **ARCHITECTURE.md** - Arquitetura do projeto
-- **scripts/README.md** - Scripts de geração
-
----
-
-## 🎯 Próximos Passos
-
-1. ✅ Setup inicial
-2. ✅ Gerar ícones
-3. ✅ Build primeira versão
-4. 📝 Customizar ícone (editar `space-cam.png`)
-5. 🎨 Implementar features
-6. 🧪 Adicionar testes
-7. 📱 Publicar na Play Store
-
----
-
-## 💬 Precisa de Ajuda?
+## Confirmando que funcionou
 
 ```bash
-# Ver informações sobre geração de ícones
-node scripts/iconHelp.js
-
-# Ver todos os comandos make
-make help
+scripts/logcat.sh 'evt='
 ```
 
----
+Deve aparecer um `evt=bind` logo após o app abrir, seguido de `evt=caps` com as
+capacidades do aparelho. Se aparecer `evt=bind_failed`, o stacktrace vem junto.
 
-**Boa sorte! 🚀**
+## Comandos do dia a dia
+
+```bash
+./gradlew installDebug         # compila e instala
+./gradlew testDebugUnitTest    # testes (JVM, não precisa de device)
+./gradlew lint                 # Android Lint
+./gradlew detekt               # análise estática Kotlin
+scripts/logcat.sh              # logs só do app
+```
+
+`make help` lista os atalhos equivalentes.
+
+## Se algo der errado
+
+**`sdk.dir not found`** — o passo 1 não foi feito ou o caminho está errado.
+
+**Falha em `JdkImageTransform` ou `jlink`** — JDK incompatível com a versão do
+AGP. O projeto está em AGP 8.7.3, que funciona no JDK 21; se você baixou a versão
+do AGP, volte atrás.
+
+**`sharp not found`** — só afeta a geração de ícones. `npm install`.
+
+**O app abre mas a tela fica preta** — permissão de câmera negada. Reinstale ou
+conceda: `adb shell pm grant com.spacecamera android.permission.CAMERA`.
+
+## Próxima leitura
+
+- [README.md](README.md) — o que o app faz e como diagnosticar
+- [CLAUDE.md](CLAUDE.md) — convenções e armadilhas do código
+- [ARCHITECTURE.md](ARCHITECTURE.md) — como as peças se encaixam
+- [BUILD.md](BUILD.md) — matriz de versões, release e assinatura

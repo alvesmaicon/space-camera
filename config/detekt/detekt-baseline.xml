@@ -1,0 +1,124 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>ComplexCondition:CameraScreen.kt$!isVertical &amp;&amp; !swipeModeSwitched &amp;&amp; !isRecording &amp;&amp; countdownSeconds == 0</ID>
+    <ID>CyclomaticComplexMethod:CameraManager.kt$CameraManager$override fun startRecording(micEnabled: Boolean, targetRotation: Int)</ID>
+    <ID>CyclomaticComplexMethod:CameraManager.kt$CameraManager$private fun bindCameraUseCases()</ID>
+    <ID>CyclomaticComplexMethod:CameraManager.kt$CameraManager$private fun refreshAvailableResolutions()</ID>
+    <ID>CyclomaticComplexMethod:CameraManager.kt$CameraManager$private fun saveBitmapWithExif(bitmap: Bitmap, displayName: String, location: Location?, originalJpegBytes: ByteArray? = null): Uri</ID>
+    <ID>CyclomaticComplexMethod:CameraManager.kt$CameraManager$private fun updateAvailableZoomLevels()</ID>
+    <ID>CyclomaticComplexMethod:CameraScreen.kt$@Composable fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () -&gt; Unit = {})</ID>
+    <ID>CyclomaticComplexMethod:CameraScreen.kt$@Composable private fun LensZoomDial( minZoom: Float, maxZoom: Float, currentZoom: Float, screenHeightDp: Dp, enabled: Boolean, rotationDeg: Float = 0f, onZoomChange: (Float) -&gt; Unit, onInteraction: () -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:CameraScreen.kt$@Composable private fun ZoomPresetBar( selectedZoom: Float, minZoom: Float, maxZoom: Float, enabled: Boolean, rotationDeg: Float = 0f, onSelect: (Float) -&gt; Unit, onOpenDial: () -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:CameraViewModel.kt$CameraViewModel$suspend fun initializeCamera(context: Context, lifecycleOwner: LifecycleOwner, surfaceProvider: Preview.SurfaceProvider?)</ID>
+    <ID>EmptyFunctionBlock:CameraScreen.kt$&lt;no name provided&gt;${}</ID>
+    <ID>ImplicitDefaultLocale:VideoStorage.kt$VideoStorage$String.format("%.2f GB", sizeInBytes / (1024.0 * 1024.0 * 1024.0))</ID>
+    <ID>ImplicitDefaultLocale:VideoStorage.kt$VideoStorage$String.format("%.2f KB", sizeInBytes / 1024.0)</ID>
+    <ID>ImplicitDefaultLocale:VideoStorage.kt$VideoStorage$String.format("%.2f MB", sizeInBytes / (1024.0 * 1024.0))</ID>
+    <ID>LargeClass:CameraManager.kt$CameraManager : CameraController</ID>
+    <ID>LongMethod:CameraManager.kt$CameraManager$private fun bindCameraUseCases()</ID>
+    <ID>LongMethod:CameraScreen.kt$@Composable fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () -&gt; Unit = {})</ID>
+    <ID>LongMethod:CameraScreen.kt$@Composable private fun LensZoomDial( minZoom: Float, maxZoom: Float, currentZoom: Float, screenHeightDp: Dp, enabled: Boolean, rotationDeg: Float = 0f, onZoomChange: (Float) -&gt; Unit, onInteraction: () -&gt; Unit )</ID>
+    <ID>LongMethod:CameraViewModel.kt$CameraViewModel$suspend fun initializeCamera(context: Context, lifecycleOwner: LifecycleOwner, surfaceProvider: Preview.SurfaceProvider?)</ID>
+    <ID>LongMethod:SettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SettingsScreen( navController: NavController, viewModel: CameraViewModel )</ID>
+    <ID>LongParameterList:CameraTelemetry.kt$CameraTelemetry$( mode: CameraMode, option: VideoOption, aspectRatio: String, bitrate: Int, eis: Boolean, noiseReduction: Boolean, hdr: Boolean, frontCamera: Boolean, elapsedMs: Long )</ID>
+    <ID>LoopWithTooManyJumpStatements:CameraManager.kt$CameraManager$for</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$0.04f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$0.07f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$0.15f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$0.20f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$0.25f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$0.2f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$0.45f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$0.6f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$0.80f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$0.8f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$0.97f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$0.9f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$1.03f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$1.35f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$1.8f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$10000</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$1080</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$10f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$1280</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$128f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$150</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$16_666_667L</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$1920</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$19f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$200</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$20f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$2160</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$24</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$3</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$30</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$350</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$3840</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$4.5f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$40f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$500</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$5f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$60</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$720</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$8</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$9.5f</ID>
+    <ID>MagicNumber:CameraManager.kt$CameraManager$95</ID>
+    <ID>MagicNumber:CameraManager.kt$PhotoQualityPreset.ALTA$3024</ID>
+    <ID>MagicNumber:CameraManager.kt$PhotoQualityPreset.ALTA$4032</ID>
+    <ID>MagicNumber:CameraManager.kt$PhotoQualityPreset.BAIXA$1200</ID>
+    <ID>MagicNumber:CameraManager.kt$PhotoQualityPreset.BAIXA$1600</ID>
+    <ID>MagicNumber:CameraManager.kt$PhotoQualityPreset.MEDIA$1920</ID>
+    <ID>MagicNumber:CameraManager.kt$PhotoQualityPreset.MEDIA$2560</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoBitratePreset$150_000_000L</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoBitratePreset.HIGH$0.20f</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoBitratePreset.LOW$0.07f</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoBitratePreset.MEDIUM$0.12f</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoBitratePreset.VERY_HIGH$0.40f</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoOption$1080</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoOption$1280</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoOption$1920</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoOption$2160</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoOption$3840</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoOption$480</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoOption$720</ID>
+    <ID>MagicNumber:CameraManager.kt$VideoOption$854</ID>
+    <ID>MagicNumber:CameraScreen.kt$60</ID>
+    <ID>MagicNumber:CameraViewModel.kt$CameraViewModel$30</ID>
+    <ID>MagicNumber:CameraViewModel.kt$CameraViewModel$8</ID>
+    <ID>MagicNumber:CameraViewModel.kt$RecordingDelay.FIVE$5</ID>
+    <ID>MagicNumber:CameraViewModel.kt$RecordingDelay.TEN$10</ID>
+    <ID>MagicNumber:CameraViewModel.kt$RecordingDelay.THREE$3</ID>
+    <ID>MagicNumber:TimerIcons.kt$0xFF000000</ID>
+    <ID>MagicNumber:VideoStorage.kt$VideoStorage$1024</ID>
+    <ID>MagicNumber:VideoStorage.kt$VideoStorage$1024.0</ID>
+    <ID>MaxLineLength:CameraManager.kt$CameraManager$Timber.d("HDR support: scene=$hasHdrSceneMode tonemapHQ=$hasHighQualityToneMap tenBit=$hasTenBitCapability =&gt; supported=${_isHdrSupported.value}")</ID>
+    <ID>MaxLineLength:CameraManager.kt$CameraManager$Timber.d("enhanceBitmap: avgSat=${"%.2f".format(avgSat)} avgVal=${"%.2f".format(avgVal)} skinRatio=${"%.2f".format(skinRatio)} satBoost=${"%.2f".format(satBoost)} contrast=${"%.2f".format(contrastBoost)}")</ID>
+    <ID>MaxLineLength:CameraManager.kt$CameraManager$Timber.d("takePhoto: location=$photoLocation saveEnabled=$isSaveLocationEnabled enhancement=$isImageEnhancementEnabled aspectRatio=$selectedAspectRatio targetRotation=$targetRotation")</ID>
+    <ID>MaxLineLength:CameraManager.kt$CameraManager${ Timber.d("applyEisNrImmediate aplicado: EIS=$isStabilizationEnabled NR=$isNoiseReductionEnabled HDR=$isHdrEnabled supported=${_isHdrSupported.value}") }</ID>
+    <ID>MaxLineLength:TimerIcons.kt$pathData = "M330-270h80v-340H290v80h40v260Zm200 0h60q33 0 56.5-23.5T670-350v-180q0-33-23.5-56.5T590-610h-60q-33 0-56.5 23.5T450-530v180q0 33 23.5 56.5T530-270Zm0-80v-180h60v180h-60ZM360-840v-80h240v80H360Zm-19.5 731.5Q275-137 226-186t-77.5-114.5Q120-366 120-440t28.5-139.5Q177-645 226-694t114.5-77.5Q406-800 480-800q62 0 119 20t107 58l56-56 56 56-56 56q38 50 58 107t20 119q0 74-28.5 139.5T734-186q-49 49-114.5 77.5T480-80q-74 0-139.5-28.5ZM678-242q82-82 82-198t-82-198q-82-82-198-82t-198 82q-82 82-82 198t82 198q82 82 198 82t198-82ZM480-440Z"</ID>
+    <ID>MaxLineLength:TimerIcons.kt$pathData = "M360-270h160q33 0 56.5-23.5T600-350v-50q0-33-23.5-56.5T520-480h-80v-50h160v-80H360v210h160v50H360v80Zm0-570v-80h240v80H360Zm-19.5 731.5Q275-137 226-186t-77.5-114.5Q120-366 120-440t28.5-139.5Q177-645 226-694t114.5-77.5Q406-800 480-800q62 0 119 20t107 58l56-56 56 56-56 56q38 50 58 107t20 119q0 74-28.5 139.5T734-186q-49 49-114.5 77.5T480-80q-74 0-139.5-28.5ZM678-242q82-82 82-198t-82-198q-82-82-198-82t-198 82q-82 82-82 198t82 198q82 82 198 82t198-82ZM480-440Z"</ID>
+    <ID>MaxLineLength:TimerIcons.kt$pathData = "M360-270h160q35 0 57.5-25t22.5-55v-30q0-23-17-41.5T540-440q26 0 43-18.5t17-41.5v-30q0-30-22.5-55T520-610H360v80h160v50H400v80h120v50H360v80Zm0-570v-80h240v80H360Zm-19.5 731.5Q275-137 226-186t-77.5-114.5Q120-366 120-440t28.5-139.5Q177-645 226-694t114.5-77.5Q406-800 480-800q62 0 119 20t107 58l56-56 56 56-56 56q38 50 58 107t20 119q0 74-28.5 139.5T734-186q-49 49-114.5 77.5T480-80q-74 0-139.5-28.5ZM678-242q82-82 82-198t-82-198q-82-82-198-82t-198 82q-82 82-82 198t82 198q82 82 198 82t198-82ZM480-440Z"</ID>
+    <ID>NestedBlockDepth:CameraManager.kt$CameraManager$private fun refreshAvailableResolutions()</ID>
+    <ID>NestedBlockDepth:CameraManager.kt$CameraManager$private fun saveBitmapWithExif(bitmap: Bitmap, displayName: String, location: Location?, originalJpegBytes: ByteArray? = null): Uri</ID>
+    <ID>SwallowedException:CameraManager.kt$CameraManager$e: Exception</ID>
+    <ID>SwallowedException:CameraScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionThrown:CameraManager.kt$CameraManager$throw Exception("Não foi possível abrir OutputStream para salvar imagem")</ID>
+    <ID>TooGenericExceptionThrown:CameraManager.kt$CameraManager$throw Exception("Não foi possível criar entrada no MediaStore")</ID>
+    <ID>TooGenericExceptionThrown:VideoStorage.kt$VideoStorage$throw Exception("Failed to create MediaStore entry")</ID>
+    <ID>TooGenericExceptionThrown:VideoStorage.kt$VideoStorage$throw Exception("Unable to get Videos directory")</ID>
+    <ID>TooManyFunctions:CameraController.kt$CameraController</ID>
+    <ID>VariableNaming:CameraManager.kt$CameraManager$private val EXIF_CAMERA_TAGS = listOf( ExifInterface.TAG_MAKE, ExifInterface.TAG_MODEL, ExifInterface.TAG_F_NUMBER, ExifInterface.TAG_APERTURE_VALUE, ExifInterface.TAG_EXPOSURE_TIME, ExifInterface.TAG_ISO_SPEED_RATINGS, ExifInterface.TAG_FOCAL_LENGTH, ExifInterface.TAG_FOCAL_LENGTH_IN_35MM_FILM, ExifInterface.TAG_WHITE_BALANCE, ExifInterface.TAG_FLASH, ExifInterface.TAG_EXPOSURE_BIAS_VALUE, ExifInterface.TAG_EXPOSURE_PROGRAM, ExifInterface.TAG_METERING_MODE, ExifInterface.TAG_SCENE_CAPTURE_TYPE, ExifInterface.TAG_DATETIME_ORIGINAL, ExifInterface.TAG_DATETIME_DIGITIZED, ExifInterface.TAG_SUBSEC_TIME_ORIGINAL, ExifInterface.TAG_BRIGHTNESS_VALUE, ExifInterface.TAG_SUBJECT_DISTANCE, ExifInterface.TAG_LIGHT_SOURCE, )</ID>
+    <ID>WildcardImport:AboutScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:AboutScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:CameraManager.kt$import androidx.camera.video.*</ID>
+    <ID>WildcardImport:CameraScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:CameraScreen.kt$import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:CameraScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:CameraScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.runtime.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

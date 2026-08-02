@@ -1,0 +1,51 @@
+# Ajustes sobre o config padrão do Detekt (buildUponDefaultConfig = true).
+# Só o que difere do default está aqui; o resto vem da configuração embutida.
+
+build:
+  # A dívida atual está congelada em detekt-baseline.xml, então o teto vale só
+  # para problema novo. Zero é proposital: cada achado novo precisa de decisão.
+  maxIssues: 0
+
+complexity:
+  LongMethod:
+    # Composables descritivos são naturalmente longos. O que interessa pegar é
+    # lógica, e para isso o teto padrão (60) gera ruído demais nesta base.
+    threshold: 120
+  LongParameterList:
+    # Composables recebem muitos parâmetros de estado por design.
+    ignoreAnnotated: ['Composable']
+    functionThreshold: 8
+    constructorThreshold: 10
+  TooManyFunctions:
+    # O ViewModel é uma fachada da câmera: uma função por ação da UI.
+    thresholdInClasses: 60
+    thresholdInFiles: 60
+    ignoreAnnotatedFunctions: ['Composable']
+
+style:
+  MagicNumber:
+    # Em UI, número literal é dimensão/duração e extrair para constante piora a
+    # leitura. Fora de Compose, continua valendo a regra.
+    ignoreAnnotated: ['Composable']
+    ignoreNumbers: ['-1', '0', '1', '2', '100', '1000']
+  MaxLineLength:
+    maxLineLength: 140
+  ReturnCount:
+    max: 4
+  UnusedPrivateMember:
+    active: true
+
+naming:
+  FunctionNaming:
+    # @Composable usa PascalCase por convenção do Compose.
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Z][_A-Z0-9]*'
+
+exceptions:
+  TooGenericExceptionCaught:
+    # A API do CameraX lança de tudo e falhar o bind não pode derrubar o app.
+    # Os catch amplos existentes registram via CameraTelemetry.
+    active: false
+  SwallowedException:
+    active: true

@@ -1,311 +1,111 @@
-# Arquitetura do Projeto Space Camera
+# Arquitetura
 
-## Visão Geral
+Documento do que o código **é** hoje. A versão anterior descrevia `usecase/`,
+`VideoProcessor.kt`, Hilt e Room, que nunca existiram no projeto; use este como
+referência e desconfie de qualquer doc que ainda cite aquilo.
 
-O projeto segue a arquitetura **Clean Architecture** combinada com o padrão **MVVM** (Model-View-ViewModel). Esta abordagem garante:
+## Visão geral
 
-- ✅ Separação de responsabilidades clara
-- ✅ Testabilidade aprimorada
-- ✅ Manutenibilidade a longo prazo
-- ✅ Escalabilidade do projeto
+Módulo único (`:app`), MVVM com Jetpack Compose. Sem framework de injeção de
+dependência: o que precisa ser trocável é passado por construtor ou factory.
+
+```
+CameraScreen ──observa──> CameraViewModel ──chama──> CameraController
+  (Compose)                (StateFlow)                 (interface)
+                                                            │
+                                                     CameraManager
+                                                    (CameraX + Camera2)
+```
+
+O sentido da dependência é sempre para dentro: a UI conhece o ViewModel, que
+conhece a interface do controller, que não conhece ninguém acima.
 
 ## Camadas
 
-### 1. Presentation Layer (Apresentação)
+### `camera/` — acesso ao hardware
 
-**Responsabilidade**: Gerenciar a UI e interação do usuário
+| Arquivo | Papel |
+|---|---|
+| `CameraController.kt` | interface que o ViewModel enxerga, mais `CameraControllerFactory` |
+| `CameraManager.kt` | implementação real sobre CameraX e Camera2 interop |
+| `CameraTelemetry.kt` | eventos estruturados dos momentos decisivos |
+| `CameraMode.kt` | `VIDEO` \| `PHOTO` |
 
-**Componentes**:
-- `screens/`: Telas Jetpack Compose
-- `viewmodels/`: ViewModels que gerenciam estado
+`CameraController` existe por testabilidade. Enquanto o ViewModel instanciava o
+`CameraManager` diretamente, nenhuma lógica dele podia ser exercitada sem sensor
+real — o arquivo de teste que existia continha só `TODO`. Com a interface, o
+teste injeta `FakeCameraController` e roda na JVM.
 
-**Fluxo de Dados**:
-```
-User Interaction → Screen → ViewModel → Repository
-        ↓                                    ↓
-    Update UI ← ViewModel State ← Data Layer
-```
+`CameraManager` também é o ponto onde as **capacidades do aparelho** são
+descobertas: quais resoluções e fps existem, se há EIS, se há HDR, qual o alcance
+do zoom e se existe lente ultra-wide. Nada disso é assumido — tudo é sondado via
+`Camera2CameraInfo` e publicado em `StateFlow`, e é isso que popula os seletores
+da UI.
 
-**Exemplo**:
-```kotlin
-@Composable
-fun CameraScreen(viewModel: CameraViewModel) {
-    val recordingState by viewModel.recordingState.collectAsState()
-    // UI updates based on state
-    Button(onClick = { viewModel.startRecording() })
-}
-```
+### `presentation/` — UI e estado
 
-### 2. Domain Layer (Domínio)
+`CameraViewModel` é a fachada entre a tela e a câmera. Ele:
 
-**Responsabilidade**: Definir regras de negócio e interfaces
+1. carrega as preferências do `SettingsStorage` **antes** de criar o controller,
+   e semeia o controller com elas — importante porque parte da configuração só
+   pode ser aplicada no bind;
+2. espelha em `StateFlow` próprios tudo o que o controller publica;
+3. reage a capacidade ausente — se o aparelho não suporta EIS ou HDR, desliga a
+   opção e persiste o desligamento;
+4. cuida do que é puramente de apresentação: contagem regressiva, cronômetro de
+   gravação, ciclo do flash de foto.
 
-**Componentes**:
-- `repository/`: Interfaces de repositório (contracts)
-- `usecase/`: Use cases para operações específicas
+As telas (`CameraScreen`, `SettingsScreen`, `AboutScreen`) são Compose puro e
+navegam por `NavHost` em `MainActivity`. `SettingsScreen` e `AboutScreen` usam
+Material 3 com cor dinâmica (`dynamicDarkColorScheme` / `dynamicLightColorScheme`
+a partir do Android 12), acompanhando o tema do sistema. `CameraScreen` é
+deliberadamente escura e fora do esquema de cores — é visor de câmera.
 
-**Características**:
-- Não depende de outras camadas
-- Contém apenas lógica pura
-- Independente de framework
+### `data/` e `domain/`
 
-**Exemplo**:
-```kotlin
-interface VideoRepository {
-    suspend fun startRecording()
-    suspend fun stopRecording()
-    fun setVideoResolution(height: Int)
-}
-```
+- `SettingsStorage` — SharedPreferences. Enums gravados por `ordinal`, com
+  fallback para o default se o valor lido não existir mais.
+- `VideoRepository` / `VideoRepositoryImpl` — repasse fino para o controller.
+  Ver a ressalva em [REFACTORING.md](REFACTORING.md#4-videorepository-não-paga-o-próprio-custo).
+- `VideoStorage` — atualmente sem uso; a gravação escreve direto no MediaStore
+  pelo `CameraManager`.
 
-### 3. Data Layer (Dados)
+## Decisões que valem conhecer
 
-**Responsabilidade**: Implementar acesso aos dados
+**Bind com debounce.** Trocar resolução, proporção ou EIS exige religar os use
+cases do CameraX. Toggles rápidos em sequência causariam corrida, então
+`scheduleBind()` agrupa os pedidos num `Handler` da main thread.
 
-**Componentes**:
-- `repository/`: Implementações de repositório
-- `storage/`: Gerenciamento de armazenamento local
+**EIS e NR fora do `Camera2Interop`.** No merge do `CaptureRequest`, o
+`Camera2Interop` tem prioridade sobre o `Camera2CameraControl`: um valor fixado
+na criação da sessão não pode mais ser sobrescrito depois. Por isso só o
+`AE_TARGET_FPS_RANGE` é definido no builder; EIS e redução de ruído são aplicados
+via `applyEisNrImmediate()` depois que a sessão abre.
 
-**Funcionalidades**:
-- Salvar vídeos em disco
-- Gerenciar acesso ao armazenamento
-- Integração com MediaStore
+**EIS desligado no modo foto.** Não se aplica a captura de imagem. O
+desligamento é temporário e não é persistido: ao voltar para vídeo, o valor salvo
+é restaurado.
 
-**Exemplo**:
-```kotlin
-class VideoRepositoryImpl(
-    private val cameraManager: CameraManager,
-    private val videoStorage: VideoStorage
-) : VideoRepository {
-    override suspend fun startRecording() {
-        val videoFile = videoStorage.createVideoFile()
-        cameraManager.startRecording(videoFile)
-    }
-}
-```
+**Dois caminhos de captura de foto.** Com melhoria de imagem ou proporção Full,
+a foto passa por bitmap para permitir processamento e recorte, e o EXIF é
+recopiado à mão. Sem isso, o CameraX salva direto — mais rápido e sem perda de
+metadados.
 
-### 4. Camera Layer (Câmera)
+## Estado atual
 
-**Responsabilidade**: Gerenciar hardware de câmera
+O que este documento descreve está correto, mas três arquivos concentram
+responsabilidade demais: `CameraScreen.kt` (~1.950 linhas),
+`CameraManager.kt` (~1.130) e `CameraViewModel.kt` (~615, com ~30 `StateFlow`).
+O caminho de saída está em [REFACTORING.md](REFACTORING.md).
 
-**Componentes**:
-- `CameraManager.kt`: Interface com CameraX
-- Configuração de resolução e qualidade
-- Controle de recording
+## Testes
 
-**Tecnologias**:
-- CameraX (recomendado pelo Google)
-- MediaRecorder para gravação
-- Coroutines para async
-
-## Fluxo de Dados Completo
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   PRESENTATION LAYER                        │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │ CameraScreen (Jetpack Compose)                        │ │
-│  │ - Layout e componentes UI                             │ │
-│  │ - Gerencia permissões                                 │ │
-│  └────────────────────────────────────────────────────────┘ │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │ CameraViewModel                                       │ │
-│  │ - Gerencia estado (RecordingState, fileSize, etc)    │ │
-│  │ - Coordena ações do usuário                           │ │
-│  │ - Expõe StateFlow para UI reagir                      │ │
-│  └────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-           ↓ Calls methods (startRecording, etc)
-┌─────────────────────────────────────────────────────────────┐
-│                    DOMAIN LAYER                             │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │ VideoRepository (Interface)                           │ │
-│  │ - Define contrato de operações                        │ │
-│  │ - Independente de implementação                       │ │
-│  └────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-           ↓ Implements
-┌─────────────────────────────────────────────────────────────┐
-│                    DATA LAYER                               │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │ VideoRepositoryImpl                                    │ │
-│  │ - Implementa interface VideoRepository               │ │
-│  │ - Orquestra CameraManager e VideoStorage             │ │
-│  └────────────────────────────────────────────────────────┘ │
-│  ┌──────────────────┐  ┌──────────────────────────────────┐ │
-│  │ CameraManager    │  │ VideoStorage                     │ │
-│  │ - Gerencia       │  │ - Cria arquivos                  │ │
-│  │   CameraX        │  │ - Salva em MediaStore           │ │
-│  │ - Gravação       │  │ - Formata tamanhos              │ │
-│  └──────────────────┘  └──────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-           ↓ Uses
-┌─────────────────────────────────────────────────────────────┐
-│                   CAMERA LAYER                              │
-│  - CameraX API                                              │
-│  - MediaRecorder                                            │
-│  - Hardware de câmera                                       │
-└─────────────────────────────────────────────────────────────┘
-           ↓ Interacts with
-┌─────────────────────────────────────────────────────────────┐
-│                 ANDROID FRAMEWORK                           │
-│  - Camera HAL                                               │
-│  - MediaStore                                               │
-│  - Storage (Scoped Storage)                                 │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Dependências Entre Camadas
-
-```
-Presentation → Domain → Data → Camera
-     ↓            ↑      ↓         ↓
- (Compose)    (Interfaces) (Impl) (CameraX)
-```
-
-**Regras**:
-- ✅ Presentation depende de Domain
-- ✅ Data depende de Domain
-- ✅ Nenhuma camada depende de Presentation
-- ✅ Domain não depende de ninguém
-
-## Padrões Utilizados
-
-### 1. Repository Pattern
-```kotlin
-// Interface em Domain
-interface VideoRepository {
-    suspend fun startRecording()
-}
-
-// Implementação em Data
-class VideoRepositoryImpl : VideoRepository {
-    override suspend fun startRecording() {
-        // Implementation
-    }
-}
-```
-
-### 2. ViewModel Pattern
-```kotlin
-class CameraViewModel : ViewModel() {
-    private val _recordingState = MutableStateFlow<RecordingState>(Idle)
-    val recordingState = _recordingState.asStateFlow()
-    
-    fun startRecording() {
-        viewModelScope.launch {
-            repository.startRecording()
-        }
-    }
-}
-```
-
-### 3. StateFlow para Reatividade
-```kotlin
-// ViewModel expõe state
-val recordingState: StateFlow<RecordingState>
-
-// UI coleta state
-val recordingState by viewModel.recordingState.collectAsState()
-```
-
-### 4. Coroutines para Async
-```kotlin
-viewModelScope.launch {
-    videoRepository.startRecording() // Suspending function
-}
-```
-
-## Estrutura de Pastas
-
-```
-app/src/main/java/com/spacecamera/
-├── camera/
-│   ├── CameraManager.kt          # Gerenciador de câmera
-│   └── VideoProcessor.kt         # Processamento (futuro)
-├── data/
-│   ├── repository/
-│   │   └── VideoRepositoryImpl.kt # Implementação
-│   └── storage/
-│       └── VideoStorage.kt       # Acesso a storage
-├── domain/
-│   ├── repository/
-│   │   └── VideoRepository.kt    # Interface
-│   └── usecase/
-│       ├── StartRecordingUseCase.kt
-│       ├── StopRecordingUseCase.kt
-│       └── PauseRecordingUseCase.kt
-└── presentation/
-    ├── screens/
-    │   └── CameraScreen.kt       # UI Compose
-    └── viewmodels/
-        └── CameraViewModel.kt    # ViewModel
-```
-
-## Testabilidade
-
-### Unit Tests
-```kotlin
-@Test
-fun testStartRecording() {
-    // Mock repository
-    val mockRepository = mockk<VideoRepository>()
-    val viewModel = CameraViewModel(mockRepository)
-    
-    viewModel.startRecording()
-    
-    coVerify { mockRepository.startRecording() }
-}
-```
-
-### Integration Tests
-```kotlin
-@RunWith(AndroidTestRunner::class)
-class CameraScreenTest {
-    @Test
-    fun testCameraScreenRenders() {
-        composeTestRule.setContent {
-            CameraScreen()
-        }
-        
-        composeTestRule.onNodeWithTag("recordButton").assertExists()
-    }
-}
-```
-
-## Melhorias Futuras
-
-### 1. Implementar Use Cases
-```kotlin
-class StartRecordingUseCase(
-    private val videoRepository: VideoRepository
-) {
-    suspend operator fun invoke() = videoRepository.startRecording()
-}
-```
-
-### 2. Adicionar Dependency Injection (Hilt)
-```kotlin
-@Module
-@InstallIn(SingletonComponent::class)
-object RepositoryModule {
-    @Provides
-    fun provideVideoRepository(
-        cameraManager: CameraManager,
-        videoStorage: VideoStorage
-    ): VideoRepository = VideoRepositoryImpl(cameraManager, videoStorage)
-}
-```
-
-### 3. Implementar Database (Room)
-Para manter histórico de gravações
-
-### 4. Adicionar Analytics
-Para rastrear uso do app
+Ver [CLAUDE.md](CLAUDE.md#testes). Em resumo: lógica pura em JUnit direto,
+persistência e ViewModel sob Robolectric com SharedPreferences reais, e
+`FakeCameraController` para simular hardware que não se tem à mão.
 
 ## Referências
 
-- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [MVVM Pattern](https://developer.android.com/jetpack/guide)
-- [CameraX Documentation](https://developer.android.com/training/camerax)
-- [Kotlin Coroutines](https://kotlinlang.org/docs/coroutines-overview.html)
+- [CameraX](https://developer.android.com/training/camerax)
+- [Camera2 interop](https://developer.android.com/reference/androidx/camera/camera2/interop/package-summary)
+- [Guia de arquitetura Android](https://developer.android.com/topic/architecture)

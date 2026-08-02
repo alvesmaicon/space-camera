@@ -12,9 +12,12 @@
     "install:debug": "./gradlew installDebug",
     "run:debug": "npm run install:debug && adb shell am start -n com.spacecamera/.MainActivity",
     "clean": "./gradlew clean",
-    "test": "./gradlew test",
+    "test": "./gradlew testDebugUnitTest",
     "lint": "./gradlew lint",
-    "check": "npm run lint && npm run test"
+    "detekt": "./gradlew detekt",
+    "check": "./gradlew testDebugUnitTest lint detekt",
+    "smoke": "scripts/smoke.sh",
+    "logcat": "scripts/logcat.sh"
   },
   "keywords": [
     "android",
