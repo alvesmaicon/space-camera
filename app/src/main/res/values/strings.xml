@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Space Camera</string>
+    <string name="start_recording">Iniciar Gravação</string>
+    <string name="stop_recording">Parar Gravação</string>
+    <string name="pause_recording">Pausar Gravação</string>
+    <string name="resume_recording">Retomar Gravação</string>
+    <string name="resolution_1080p">Full HD (1080p)</string>
+    <string name="resolution_4k">4K (2160p)</string>
+    <string name="resolution_720p">HD (720p)</string>
+    <string name="camera_permission_denied">Permissão de câmera negada</string>
+    <string name="recording_time">Tempo: %s</string>
+    <string name="file_size">Tamanho: %s</string>
+</resources>

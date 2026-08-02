@@ -1,0 +1,5 @@
+# Os ícones em mipmap-*/ e drawable-*/ SÃO versionados de propósito.
+#
+# Eles são gerados a partir de space-cam.png por `npm run generate:all-icons`,
+# mas ficam no repositório (~100 KB no total) para que um clone limpo compile
+# sem depender de Node/sharp instalados. Regenere e comite quando a arte mudar.

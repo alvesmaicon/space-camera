@@ -1,0 +1,58 @@
+# Gradle
+.gradle/
+build/
+app/build/
+buildSrc/build/
+.kotlin/
+
+# Artefatos de build (usar releases/CI, não versionar binário)
+*.apk
+*.aab
+*.aar
+backups/
+
+# Assinatura — NUNCA versionar
+*.jks
+*.keystore
+keystore.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+captures/
+.externalNativeBuild/
+.cxx/
+*.hprof
+
+# Config local da máquina (contém sdk.dir)
+local.properties
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Relatórios gerados
+app/lint-baseline.xml.tmp
+**/build/reports/
+
+# SO / editor
+.DS_Store
+.vscode/
+.classpath
+.project
+.c9/
+*.swp
+*.swo
+*~
+
+# Segredos
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log

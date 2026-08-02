@@ -1,0 +1,15 @@
+# Este arquivo contém configurações específicas do sistema local
+# e não deve ser comitado no repositório.
+
+# Caminho para o Android SDK
+# Substitua com o caminho correto no seu sistema
+sdk.dir=/Users/SEU_USUARIO/Library/Android/sdk
+
+# Caminho para o Android NDK (opcional)
+# ndk.dir=/Users/SEU_USUARIO/Library/Android/ndk
+
+# Variáveis de assinatura de release (opcional, para CI/CD)
+# KEYSTORE_PATH=./keystore/release.jks
+# KEYSTORE_PASSWORD=sua_senha
+# KEY_ALIAS=seu_alias
+# KEY_PASSWORD=sua_senha

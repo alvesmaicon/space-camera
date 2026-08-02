@@ -1,0 +1,1941 @@
+package com.spacecamera.presentation.screens
+
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.ExifInterface
+import android.media.ThumbnailUtils
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
+import android.util.Size
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.Preview
+import androidx.camera.view.PreviewView
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.TimerOff
+import com.spacecamera.presentation.icons.TimerIcon3
+import com.spacecamera.presentation.icons.TimerIcon5
+import com.spacecamera.presentation.icons.TimerIcon10
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.platform.LocalDensity
+import android.view.Surface as AndroidSurface
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.spacecamera.camera.CameraMode
+import com.spacecamera.camera.RecordingState
+import com.spacecamera.camera.VideoOption
+import com.spacecamera.presentation.viewmodels.CameraViewModel
+import com.spacecamera.presentation.viewmodels.PhotoFlashMode
+import com.spacecamera.presentation.viewmodels.RecordingDelay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.graphics.Paint
+import android.graphics.Typeface
+import androidx.camera.core.FocusMeteringAction
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.geometry.Size as ComposeSize
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.roundToInt
+
+
+@Composable
+fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () -> Unit = {}) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    val recordingState by viewModel.recordingState.collectAsState()
+    val selectedVideoOption by viewModel.selectedVideoOption.collectAsState()
+    val cameraInitialized by viewModel.cameraInitialized.collectAsState()
+    val isFlashOn by viewModel.isFlashOn.collectAsState()
+    val isMicMuted by viewModel.isMicMuted.collectAsState()
+    val isGridEnabled by viewModel.isGridEnabled.collectAsState()
+    val isLevelEnabled by viewModel.isLevelEnabled.collectAsState()
+    val isFrontCamera by viewModel.isFrontCamera.collectAsState()
+    val selectedAspectRatio by viewModel.selectedAspectRatio.collectAsState()
+    val recordingSeconds by viewModel.recordingSeconds.collectAsState()
+    val availableVideoOptions by viewModel.availableVideoOptions.collectAsState()
+    val isStabilizationEnabled by viewModel.isStabilizationEnabled.collectAsState()
+    val isEisSupported by viewModel.isEisSupported.collectAsState()
+    val isNoiseReductionEnabled by viewModel.isNoiseReductionEnabled.collectAsState()
+    val isHdrEnabled by viewModel.isHdrEnabled.collectAsState()
+    val isHdrSupported by viewModel.isHdrSupported.collectAsState()
+    val lastVideoUri by viewModel.lastVideoUri.collectAsState()
+    val selectedZoomLevel by viewModel.selectedZoomLevel.collectAsState()
+    val minZoomRatio by viewModel.minZoomRatio.collectAsState()
+    val maxZoomRatio by viewModel.maxZoomRatio.collectAsState()
+    val exposureIndex by viewModel.exposureIndex.collectAsState()
+    val exposureMin by viewModel.exposureMin.collectAsState()
+    val exposureMax by viewModel.exposureMax.collectAsState()
+    val isTapToFocusEnabled by viewModel.isTapToFocusEnabled.collectAsState()
+    val isFrontCameraMirrorEnabled by viewModel.isFrontCameraMirrorEnabled.collectAsState()
+    val recordingDelay by viewModel.recordingDelay.collectAsState()
+    val countdownSeconds by viewModel.countdownSeconds.collectAsState()
+    val isSaveLocationEnabled by viewModel.isSaveLocationEnabled.collectAsState()
+    val cameraMode by viewModel.cameraMode.collectAsState()
+    val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
+    val photoFlashMode by viewModel.photoFlashMode.collectAsState()
+    val photoQualityPreset by viewModel.photoQualityPreset.collectAsState()
+    val isImageEnhancementEnabled by viewModel.isImageEnhancementEnabled.collectAsState()
+    val isCameraReady by viewModel.isCameraReady.collectAsState()
+
+    var transitionBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    val transitionAlpha = remember { Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
+
+    var permissionGranted by remember { mutableStateOf(false) }
+    var previewView by remember { mutableStateOf<PreviewView?>(null) }
+
+    // Armazena a rotação do ícone no momento em que a foto é disparada,
+    // para que o preview de revisão exiba na orientação correta.
+    var reviewIconRotation by remember { mutableStateOf(0f) }
+
+    val switchMode: (CameraMode) -> Unit = { mode ->
+        val snapshot = previewView?.bitmap
+        if (snapshot != null) {
+            transitionBitmap = snapshot
+            coroutineScope.launch {
+                transitionAlpha.snapTo(1f)
+                viewModel.setCameraMode(mode)
+                // Aguarda isCameraReady=false (bind iniciou) depois isCameraReady=true
+                // (SurfaceProvider chamado + 350ms = câmera ativa com frames chegando)
+                viewModel.isCameraReady.filter { !it }.first()
+                viewModel.isCameraReady.filter { it }.first()
+                delay(100)
+                transitionAlpha.animateTo(0f, animationSpec = tween(400))
+                transitionBitmap = null
+            }
+        } else {
+            viewModel.setCameraMode(mode)
+        }
+    }
+
+
+    val density = LocalDensity.current
+    val reviewScreenWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
+    val reviewScreenHeightPx = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
+
+    var reviewBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    val reviewScale = remember { Animatable(1f) }
+    val reviewAlpha = remember { Animatable(0f) }
+    val reviewTransX = remember { Animatable(0f) }
+    val reviewTransY = remember { Animatable(0f) }
+    LaunchedEffect(lastPhotoUri) {
+        val uri = lastPhotoUri ?: return@LaunchedEffect
+        reviewScale.snapTo(1f)
+        reviewAlpha.snapTo(0f)
+        reviewTransX.snapTo(0f)
+        reviewTransY.snapTo(0f)
+        val bmp = withContext(Dispatchers.IO) {
+            try {
+                // Primeira passagem: mede dimensões sem decodificar pixels
+                val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                context.contentResolver.openInputStream(uri)?.use {
+                    BitmapFactory.decodeStream(it, null, opts)
+                }
+                // Calcula inSampleSize para alvo ~1080px de largura
+                var sampleSize = 1
+                var w = opts.outWidth
+                while (w > 1080 * 2) { sampleSize *= 2; w /= 2 }
+                // Segunda passagem: decodifica com sample size
+                val decoded = context.contentResolver.openInputStream(uri)?.use {
+                    BitmapFactory.decodeStream(it, null,
+                        BitmapFactory.Options().apply { inSampleSize = sampleSize })
+                } ?: return@withContext null
+                // Terceira passagem: lê EXIF para corrigir orientação
+                val orientation = context.contentResolver.openInputStream(uri)?.use {
+                    ExifInterface(it).getAttributeInt(
+                        ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+                } ?: ExifInterface.ORIENTATION_NORMAL
+                val degrees = when (orientation) {
+                    ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                    ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                    ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                    else -> 0f
+                }
+                if (degrees != 0f) {
+                    val matrix = android.graphics.Matrix().apply { postRotate(degrees) }
+                    val rotated = Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
+                    decoded.recycle()
+                    rotated
+                } else {
+                    decoded
+                }
+            } catch (e: Exception) { null }
+        } ?: return@LaunchedEffect
+        // Rotaciona o bitmap para corresponder à orientação física do telefone.
+        // Para fotos landscape, isso transforma o bitmap em retrato para preencher
+        // a tela portrait-locked na mesma orientação que o usuário está segurando.
+        val displayBmp = if (reviewIconRotation != 0f) {
+            val mat = android.graphics.Matrix().apply { postRotate(reviewIconRotation) }
+            val rot = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, mat, true)
+            bmp.recycle()
+            rot
+        } else bmp
+        reviewBitmap = displayBmp
+        reviewAlpha.animateTo(1f, tween(120))
+        delay(800)
+        // Anima em direção ao botão de thumbnail (canto inferior direito)
+        val targetX = reviewScreenWidthPx / 2f - with(density) { 36.dp.toPx() }
+        val targetY = reviewScreenHeightPx / 2f - with(density) { 80.dp.toPx() }
+        launch { reviewScale.animateTo(0f, tween(380, easing = FastOutSlowInEasing)) }
+        launch { reviewAlpha.animateTo(0f, tween(280)) }
+        launch { reviewTransX.animateTo(targetX, tween(380, easing = FastOutSlowInEasing)) }
+        launch { reviewTransY.animateTo(targetY, tween(380, easing = FastOutSlowInEasing)) }
+        delay(400)
+        reviewBitmap = null
+    }
+
+    var showResolutionMenu by remember { mutableStateOf(false) }
+    var isTopBarExpanded by remember { mutableStateOf(false) }
+    var showZoomDial by remember { mutableStateOf(false) }
+    var zoomDialInteractionTick by remember { mutableStateOf(0) }
+    var focusPoint by remember { mutableStateOf<Offset?>(null) }
+    var focusDimmed by remember { mutableStateOf(false) }
+    var showExposureSlider by remember { mutableStateOf(false) }
+    var exposureAnchor by remember { mutableStateOf<Offset?>(null) }
+    var exposureInteractionTick by remember { mutableStateOf(0) }
+    var rollDegrees by remember { mutableStateOf(0f) }
+    // CW rotation (top-right): atan2(x,y) = -90° → icon needs -90° (CCW) to appear upright
+    // CCW rotation (top-left): atan2(x,y) = +90° → icon needs +90° (CW) to appear upright
+    val snappedIconRotation = when {
+        rollDegrees > 45f && rollDegrees < 135f -> 90f    // CCW landscape (top-left)
+        rollDegrees < -45f && rollDegrees > -135f -> -90f  // CW landscape (top-right)
+        abs(rollDegrees) >= 135f -> 180f
+        else -> 0f
+    }
+    // Surface rotation for video encoding at recording start
+    val snappedSurfaceRotation: Int = when {
+        rollDegrees > 45f && rollDegrees < 135f -> AndroidSurface.ROTATION_90   // CCW landscape
+        rollDegrees < -45f && rollDegrees > -135f -> AndroidSurface.ROTATION_270 // CW landscape
+        abs(rollDegrees) >= 135f -> AndroidSurface.ROTATION_180
+        else -> AndroidSurface.ROTATION_0
+    }
+    val iconRotation by animateFloatAsState(
+        targetValue = snappedIconRotation,
+        animationSpec = tween(durationMillis = 300),
+        label = "iconRotation"
+    )
+
+    val requiredPermissions = remember {
+        buildList {
+            add(Manifest.permission.CAMERA)
+            add(Manifest.permission.RECORD_AUDIO)
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }.toTypedArray()
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        permissionGranted =
+            permissions[Manifest.permission.CAMERA] == true &&
+            permissions[Manifest.permission.RECORD_AUDIO] == true
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { /* resultado ignorado — usuário pode ter negado, o toggle continua ligado */ }
+
+    // Solicita permissão de localização quando o toggle for ativado
+    LaunchedEffect(isSaveLocationEnabled) {
+        if (!isSaveLocationEnabled) return@LaunchedEffect
+        val hasFine = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val hasCoarse = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!hasFine && !hasCoarse) {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val allGranted = requiredPermissions.all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+        if (allGranted) {
+            permissionGranted = true
+        } else {
+            permissionLauncher.launch(requiredPermissions)
+        }
+    }
+
+    LaunchedEffect(permissionGranted, previewView) {
+        if (!permissionGranted || previewView == null) return@LaunchedEffect
+        if (!cameraInitialized) {
+            viewModel.initializeCamera(context, lifecycleOwner, previewView!!.surfaceProvider)
+        } else {
+            // PreviewView foi recriado após navegação (ex: voltar de Settings).
+            // Atualiza o surfaceProvider no use case de Preview existente sem rebind completo.
+            viewModel.updateSurfaceProvider(previewView!!.surfaceProvider)
+            // Garante que mudanças feitas na tela de configurações sejam aplicadas
+            // no pipeline de vídeo ao voltar para a câmera.
+            viewModel.rebindCamera()
+        }
+    }
+
+    val isRecording = recordingState != RecordingState.Idle
+
+    // Reseta o flash ao retornar para o app (ON_RESUME)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.resetFlash()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Fecha menus abertos ao iniciar gravação (não fecha o dial de zoom)
+    LaunchedEffect(isRecording) {
+        if (isRecording) {
+            showResolutionMenu = false
+        }
+    }
+
+    // Fecha menus ao trocar de modo
+    LaunchedEffect(cameraMode) {
+        showResolutionMenu = false
+    }
+
+    LaunchedEffect(showZoomDial, zoomDialInteractionTick) {
+        if (!showZoomDial) return@LaunchedEffect
+        delay(2000)
+        if (showZoomDial) showZoomDial = false
+    }
+
+    // Slider visibility is tied to focusPoint — no independent auto-hide
+
+    // After 3s without interaction, dim the focus ring (it stays visible but semi-transparent)
+    LaunchedEffect(focusPoint, exposureInteractionTick) {
+        focusDimmed = false
+        if (focusPoint != null) {
+            delay(3000)
+            focusDimmed = true
+        }
+    }
+
+    DisposableEffect(Unit) {
+        val sensorManager = context.getSystemService(SensorManager::class.java)
+        val accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        var prevX = 0f; var prevY = 0f; var prevZ = 0f; var firstReading = true
+        val sensorListener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+                    val x = event.values[0]
+                    val y = event.values[1]
+                    val z = event.values[2]
+                    val newRoll = (atan2(x.toDouble(), y.toDouble()) * 180.0 / PI).toFloat()
+                    rollDegrees = rollDegrees * 0.7f + newRoll * 0.3f
+                    if (!firstReading) {
+                        val dx = x - prevX; val dy = y - prevY; val dz = z - prevZ
+                        val shake = dx * dx + dy * dy + dz * dz
+                        // ~1.7 m/s² threshold — requires intentional camera movement, not casual handling
+                        if (shake > 3.0f && focusPoint != null) {
+                            viewModel.cancelFocusLock()
+                            focusPoint = null
+                            focusDimmed = false
+                            showExposureSlider = false
+                            exposureAnchor = null
+                        }
+                    }
+                    prevX = x; prevY = y; prevZ = z; firstReading = false
+                }
+            }
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+        sensorManager?.registerListener(sensorListener, accelerometer, SensorManager.SENSOR_DELAY_UI)
+        onDispose {
+            sensorManager?.unregisterListener(sensorListener)
+        }
+    }
+
+    // Preview: 9:16 no modo vídeo; Full ocupa a tela toda; 3:4 usa sensor nativo
+    val configuration = LocalConfiguration.current
+    val screenWidthDp = configuration.screenWidthDp.dp
+    val screenHeightDp = configuration.screenHeightDp.dp
+    val previewSizeModifier: Modifier = when {
+        cameraMode == CameraMode.PHOTO && selectedAspectRatio == "Full" -> Modifier.fillMaxSize()
+        else -> {
+            val (rW, rH) = when {
+                cameraMode == CameraMode.VIDEO -> 9f to 16f
+                selectedAspectRatio == "9:16" -> 9f to 16f
+                else -> 3f to 4f  // "3:4" usa proporção 3:4 (sensor nativo)
+            }
+            val desiredH = screenWidthDp * (rH / rW)
+            if (desiredH <= screenHeightDp)
+                Modifier.width(screenWidthDp).height(desiredH)
+            else Modifier.width(screenHeightDp * (rW / rH)).height(screenHeightDp)
+        }
+    }
+
+    val dynamicColorScheme = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+        dynamicDarkColorScheme(context)
+    else
+        darkColorScheme()
+
+    MaterialTheme(colorScheme = dynamicColorScheme) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                enabled = showResolutionMenu || showZoomDial
+            ) {
+                showResolutionMenu = false
+                showZoomDial = false
+            }
+    ) {
+        // ── Barra superior (fora do preview) ─────────────────────────────
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .zIndex(1f)
+                .statusBarsPadding()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            // ── Linha principal (sempre visível) ─────────────────────
+            val barDisabled = (cameraMode == CameraMode.VIDEO && isRecording) || countdownSeconds > 0
+            AnimatedContent(
+                targetState = cameraMode,
+                transitionSpec = {
+                    val toRight = CameraMode.entries.indexOf(targetState) > CameraMode.entries.indexOf(initialState)
+                    if (toRight) {
+                        (fadeIn(tween(220)) + slideInHorizontally(tween(220)) { it / 4 }) togetherWith
+                        (fadeOut(tween(180)) + slideOutHorizontally(tween(180)) { -it / 4 })
+                    } else {
+                        (fadeIn(tween(220)) + slideInHorizontally(tween(220)) { -it / 4 }) togetherWith
+                        (fadeOut(tween(180)) + slideOutHorizontally(tween(180)) { it / 4 })
+                    }
+                },
+                label = "topBarMainRow"
+            ) { mode ->
+                if (mode == CameraMode.VIDEO) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TopBarSlot {
+                            ResolutionTopBarButton(
+                                option = selectedVideoOption,
+                                isActive = showResolutionMenu,
+                                enabled = !barDisabled,
+                                rotationDeg = iconRotation,
+                                onClick = { showResolutionMenu = !showResolutionMenu }
+                            )
+                        }
+                        TopBarSlot {
+                            TopBarTextToggle(
+                                label = "EIS",
+                                isOn = isStabilizationEnabled,
+                                enabled = !barDisabled && isEisSupported,
+                                rotationDeg = iconRotation,
+                                onClick = { viewModel.toggleStabilization() }
+                            )
+                        }
+                        TopBarSlot {
+                            TopBarIconToggle(
+                                isOn = isFlashOn,
+                                iconOn = Icons.Default.FlashOn,
+                                iconOff = Icons.Default.FlashOff,
+                                desc = "Flash",
+                                enabled = !isFrontCamera && countdownSeconds == 0,
+                                rotationDeg = iconRotation,
+                                onClick = { viewModel.toggleFlash() },
+                                iconSize = 26.dp
+                            )
+                        }
+                        TopBarSlot {
+                            TopBarTimerButton(
+                                delay = recordingDelay,
+                                enabled = !barDisabled,
+                                rotationDeg = iconRotation,
+                                onClick = { viewModel.cycleRecordingDelay() }
+                            )
+                        }
+                        TopBarSlot {
+                            IconButton(
+                                onClick = { isTopBarExpanded = !isTopBarExpanded },
+                                modifier = Modifier.size(46.dp)
+                            ) {
+                                Icon(
+                                    if (isTopBarExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = if (isTopBarExpanded) "Recolher" else "Mais opções",
+                                    tint = if (isTopBarExpanded) Color.White else Color.White.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(24.dp).rotate(iconRotation)
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TopBarSlot {
+                            ResolutionTopBarButton(
+                                displayLabel = photoQualityPreset.displayLabel,
+                                isActive = false,
+                                enabled = countdownSeconds == 0,
+                                rotationDeg = iconRotation,
+                                onClick = { viewModel.setPhotoQualityPreset(photoQualityPreset.next()) }
+                            )
+                        }
+                        TopBarSlot {
+                            TopBarTextToggle(
+                                label = selectedAspectRatio,
+                                isOn = true,
+                                enabled = countdownSeconds == 0,
+                                rotationDeg = iconRotation,
+                                onClick = {
+                                    val photoRatios = listOf("Full", "9:16", "3:4")
+                                    val idx = photoRatios.indexOf(selectedAspectRatio).let { if (it < 0) 0 else it }
+                                    val next = photoRatios[(idx + 1) % photoRatios.size]
+                                    viewModel.setAspectRatio(next)
+                                }
+                            )
+                        }
+                        TopBarSlot {
+                            IconButton(
+                                onClick = { viewModel.toggleFlash() },
+                                enabled = !isFrontCamera && countdownSeconds == 0,
+                                modifier = Modifier.size(46.dp)
+                            ) {
+                                Icon(
+                                    imageVector = when (photoFlashMode) {
+                                        PhotoFlashMode.AUTO -> Icons.Default.FlashAuto
+                                        PhotoFlashMode.ON -> Icons.Default.FlashOn
+                                        else -> Icons.Default.FlashOff
+                                    },
+                                    contentDescription = "Flash",
+                                    tint = when {
+                                        isFrontCamera || countdownSeconds > 0 -> Color.White.copy(alpha = 0.2f)
+                                        photoFlashMode != PhotoFlashMode.OFF -> Color.White
+                                        else -> Color.White.copy(alpha = 0.38f)
+                                    },
+                                    modifier = Modifier.size(26.dp).rotate(iconRotation)
+                                )
+                            }
+                        }
+                        TopBarSlot {
+                            TopBarTimerButton(
+                                delay = recordingDelay,
+                                enabled = !barDisabled,
+                                rotationDeg = iconRotation,
+                                onClick = { viewModel.cycleRecordingDelay() }
+                            )
+                        }
+                        TopBarSlot {
+                            IconButton(
+                                onClick = { isTopBarExpanded = !isTopBarExpanded },
+                                modifier = Modifier.size(46.dp)
+                            ) {
+                                Icon(
+                                    if (isTopBarExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = if (isTopBarExpanded) "Recolher" else "Mais opções",
+                                    tint = if (isTopBarExpanded) Color.White else Color.White.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(24.dp).rotate(iconRotation)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── Linha expandível ────────────────────────────────────────
+            AnimatedVisibility(
+                visible = isTopBarExpanded,
+                enter = fadeIn() + slideInVertically(),
+                exit = fadeOut() + slideOutVertically()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                        .background(Color(0xFF1C1C1E).copy(alpha = 0.97f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (cameraMode == CameraMode.VIDEO) {
+                        TopBarTextToggle(
+                            label = "NR",
+                            isOn = isNoiseReductionEnabled,
+                            enabled = !barDisabled,
+                            rotationDeg = iconRotation,
+                            onClick = { viewModel.toggleNoiseReduction() }
+                        )
+                    }
+                    if (cameraMode == CameraMode.PHOTO) {
+                        TopBarIconToggle(
+                            isOn = isImageEnhancementEnabled,
+                            iconOn = Icons.Default.AutoAwesome,
+                            iconOff = Icons.Default.AutoAwesome,
+                            desc = "Melhoria",
+                            enabled = countdownSeconds == 0,
+                            rotationDeg = iconRotation,
+                            onClick = { viewModel.toggleImageEnhancement() },
+                            iconSize = 24.dp
+                        )
+                    }
+                    TopBarIconToggle(
+                        isOn = isHdrEnabled,
+                        iconOn = Icons.Default.HdrOn,
+                        iconOff = Icons.Default.HdrOff,
+                        desc = "HDR",
+                        enabled = !barDisabled && isHdrSupported,
+                        rotationDeg = iconRotation,
+                        onClick = { viewModel.toggleHdr() },
+                        iconSize = 26.dp
+                    )
+                    if (cameraMode == CameraMode.VIDEO) {
+                        TopBarIconToggle(
+                            isOn = !isMicMuted,
+                            iconOn = Icons.Default.Mic,
+                            iconOff = Icons.Default.MicOff,
+                            desc = "Microfone",
+                            enabled = !barDisabled,
+                            rotationDeg = iconRotation,
+                            onClick = { viewModel.toggleMic() },
+                            iconSize = 26.dp
+                        )
+                    }
+                    TopBarIconToggle(
+                        isOn = isGridEnabled,
+                        iconOn = Icons.Default.GridOn,
+                        iconOff = Icons.Default.GridOff,
+                        desc = "Grade",
+                        enabled = !barDisabled,
+                        rotationDeg = iconRotation,
+                        onClick = { viewModel.toggleGrid() },
+                        iconSize = 26.dp
+                    )
+                    IconButton(
+                        onClick = { onOpenSettings() },
+                        modifier = Modifier.size(46.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.VideoSettings,
+                            contentDescription = "Configurações",
+                            tint = Color.White,
+                            modifier = Modifier.size(26.dp).rotate(iconRotation)
+                        )
+                    }
+                }
+            }
+
+            // Barra horizontal: Resolução
+            AnimatedVisibility(
+                visible = showResolutionMenu && cameraMode == CameraMode.VIDEO,
+                enter = fadeIn() + slideInVertically(),
+                exit = fadeOut() + slideOutVertically()
+            ) {
+                HorizontalPickerBar(
+                    modifier = Modifier.padding(top = 6.dp),
+                    items = availableVideoOptions.map { opt -> opt to opt.label },
+                    selectedKey = selectedVideoOption,
+                    onSelect = {
+                        viewModel.setVideoOption(it)
+                        showResolutionMenu = false
+                    }
+                )
+            }
+        }
+
+        // ── Preview + Grid + Controles (dentro do preview) ─────────────────
+        Box(modifier = previewSizeModifier
+            .align(Alignment.Center)
+            .pointerInput(showZoomDial, isTapToFocusEnabled) {
+                if (showZoomDial) return@pointerInput
+                if (!isTapToFocusEnabled) return@pointerInput
+                detectTapGestures { offset ->
+                    // Restringe área de foco: exclui topo e base onde ficam os controles
+                    if (offset.y < 90.dp.toPx()) return@detectTapGestures
+                    if (offset.y > size.height - 200.dp.toPx()) return@detectTapGestures
+                    val pv = previewView ?: return@detectTapGestures
+                    val point = pv.meteringPointFactory.createPoint(offset.x, offset.y)
+                    val action = FocusMeteringAction.Builder(
+                        point,
+                        FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE
+                    )
+                        .build() // No auto-cancel: focus stays locked at tap point until next tap
+                    // Reset slider immediately so it disappears before the new focus ring appears
+                    showExposureSlider = false
+                    exposureAnchor = null
+                    focusDimmed = false
+                    viewModel.cancelFocusLock() // release previous AF lock before starting new metering
+                    viewModel.tapToFocus(action, onFocusAcquired = {
+                        // Reset compensation to 0 so the slider starts from the auto-exposed baseline
+                        viewModel.setExposureCompensationIndex(0)
+                        showExposureSlider = true
+                        exposureAnchor = offset
+                        exposureInteractionTick++
+                    })
+                    focusPoint = offset
+                }
+            }
+            .pointerInput("exposureDrag", showZoomDial, isTapToFocusEnabled, cameraMode, isRecording, countdownSeconds) {
+                if (showZoomDial) return@pointerInput
+                var dragStartPos = Offset.Zero
+                var isVertical = false
+                var directionDecided = false
+                var cumulativeX = 0f
+                var cumulativeY = 0f
+                var ignoreThisDrag = false
+                var swipeModeSwitched = false
+                detectDragGestures(
+                    onDragStart = { pos ->
+                        dragStartPos = pos
+                        isVertical = false
+                        directionDecided = false
+                        cumulativeX = 0f
+                        cumulativeY = 0f
+                        swipeModeSwitched = false
+                        ignoreThisDrag = pos.y < 90.dp.toPx() || pos.y > size.height - 200.dp.toPx()
+                    },
+                    onDrag = { _, dragAmount ->
+                        if (ignoreThisDrag) return@detectDragGestures
+                        cumulativeX += dragAmount.x
+                        cumulativeY += dragAmount.y
+                        if (!directionDecided && (abs(cumulativeX) + abs(cumulativeY) > 15f)) {
+                            isVertical = abs(cumulativeY) > abs(cumulativeX) * 1.2f
+                            directionDecided = true
+                        }
+                        if (isVertical && isTapToFocusEnabled) {
+                            // Ajuste de exposição (somente com slider visível)
+                            if (!showExposureSlider) return@detectDragGestures
+                            val range = (exposureMax - exposureMin).toFloat()
+                            if (range > 0f) {
+                                val deltaProgress = -dragAmount.y / (size.height * 0.5f)
+                                val deltaIndex = (deltaProgress * range).roundToInt()
+                                if (deltaIndex != 0) {
+                                    viewModel.setExposureCompensationIndex(exposureIndex + deltaIndex)
+                                    focusDimmed = false
+                                    exposureInteractionTick++
+                                }
+                            }
+                        } else if (!isVertical && !swipeModeSwitched && !isRecording && countdownSeconds == 0) {
+                            // Swipe horizontal no preview → troca de modo
+                            if (abs(cumulativeX) > 80.dp.toPx()) {
+                                swipeModeSwitched = true
+                                focusPoint = null
+                                showExposureSlider = false
+                                exposureAnchor = null
+                                if (cumulativeX < 0) switchMode(cameraMode.next())
+                                else switchMode(cameraMode.previous())
+                            }
+                        }
+                    }
+                )
+            }
+        ) {
+        if (permissionGranted) {
+            AndroidView(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        scaleX = if (isFrontCamera && isFrontCameraMirrorEnabled) -1f else 1f
+                    },
+                factory = { ctx ->
+                    PreviewView(ctx).apply {
+                        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                        scaleType = PreviewView.ScaleType.FIT_CENTER
+                    }
+                },
+                update = { view ->
+                    if (previewView != view) previewView = view
+                    view.scaleType = if (cameraMode == CameraMode.PHOTO && selectedAspectRatio == "Full")
+                        PreviewView.ScaleType.FILL_CENTER
+                    else
+                        PreviewView.ScaleType.FIT_CENTER
+                }
+            )
+        }
+
+        // ── Overlay de transição de modo (blur) ──────────────────────
+        transitionBitmap?.let { bmp ->
+            Image(
+                bitmap = bmp.asImageBitmap(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(4f)
+                    .blur(28.dp)
+                    .graphicsLayer { alpha = transitionAlpha.value }
+            )
+        }
+
+        // ── Overlay de revisão de foto ────────────────────────────────
+        reviewBitmap?.let { bmp ->
+            Image(
+                bitmap = bmp.asImageBitmap(),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(3f)
+                    .graphicsLayer {
+                        scaleX = reviewScale.value
+                        scaleY = reviewScale.value
+                        alpha = reviewAlpha.value
+                        translationX = reviewTransX.value
+                        translationY = reviewTransY.value
+                    }
+            )
+        }
+
+        // ── Grid overlay ──────────────────────────────────────────────
+        if (isGridEnabled) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val w = size.width
+                val h = size.height
+                val stroke = 1.dp.toPx()
+                val color = Color.White.copy(alpha = 0.35f)
+                drawLine(color, Offset(w / 3f, 0f), Offset(w / 3f, h), stroke)
+                drawLine(color, Offset(2 * w / 3f, 0f), Offset(2 * w / 3f, h), stroke)
+                drawLine(color, Offset(0f, h / 3f), Offset(w, h / 3f), stroke)
+                drawLine(color, Offset(0f, 2 * h / 3f), Offset(w, 2 * h / 3f), stroke)
+            }
+        }
+        // ── Nível de horizonte ─────────────────────────────────────────────
+        if (isLevelEnabled) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val cx = size.width / 2f
+                val cy = size.height / 2f
+                val lineLen = size.width * 0.22f
+                val gap = 20f
+                val isLevel = abs(rollDegrees) < 2f || abs(abs(rollDegrees) - 90f) < 2f
+                val levelColor = if (isLevel) Color(0xFF30D158) else Color.White.copy(alpha = 0.55f)
+                val strokeW = 1.dp.toPx()
+                val angleRad = (rollDegrees * PI / 180.0).toFloat()
+                val cosA = cos(angleRad)
+                val sinA = sin(angleRad)
+                drawLine(levelColor,
+                    Offset(cx - lineLen * cosA, cy - lineLen * sinA),
+                    Offset(cx - gap * cosA, cy - gap * sinA),
+                    strokeWidth = strokeW)
+                drawLine(levelColor,
+                    Offset(cx + gap * cosA, cy + gap * sinA),
+                    Offset(cx + lineLen * cosA, cy + lineLen * sinA),
+                    strokeWidth = strokeW)
+                drawCircle(levelColor, radius = 2.dp.toPx(), center = Offset(cx, cy))
+            }
+        }
+
+        // ── Focus ring (tap-to-focus) ──────────────────────────────────
+        focusPoint?.let { fp ->
+            val ringAlpha by animateFloatAsState(
+                targetValue = if (focusDimmed) 0.25f else 0.85f,
+                animationSpec = tween(durationMillis = 800),
+                label = "focusRingAlpha"
+            )
+            Box(
+                modifier = Modifier
+                    .offset {
+                        IntOffset(
+                            (fp.x.toInt() - 32.dp.roundToPx()),
+                            (fp.y.toInt() - 32.dp.roundToPx())
+                        )
+                    }
+                    .size(64.dp)
+                    .border(0.7.dp, Color.White.copy(alpha = ringAlpha), RoundedCornerShape(4.dp))
+            )
+        }
+        // ── Exposure slider ───────────────────────────────────────
+        if (showExposureSlider) {
+            exposureAnchor?.let { anchor ->
+                val sliderAlpha by animateFloatAsState(
+                    targetValue = if (focusDimmed) 0.3f else 1f,
+                    animationSpec = tween(durationMillis = 800),
+                    label = "sliderAlpha"
+                )
+                val sliderHeightDp = 160.dp
+                val sliderWidthDp = 28.dp
+                val density = androidx.compose.ui.platform.LocalDensity.current
+                val anchorXDp = with(density) { anchor.x.toDp() }
+                val halfScreen = screenWidthDp / 2
+                val sliderX = if (anchorXDp < halfScreen)
+                    anchorXDp + 44.dp
+                else
+                    anchorXDp - 44.dp - sliderWidthDp
+                val sliderY = with(density) { anchor.y.toDp() } - sliderHeightDp / 2
+                ExposureSlider(
+                    modifier = Modifier
+                        .offset(x = sliderX, y = sliderY)
+                        .width(sliderWidthDp)
+                        .height(sliderHeightDp),
+                    index = exposureIndex,
+                    min = exposureMin,
+                    max = exposureMax,
+                    alpha = sliderAlpha
+                )
+            }
+        }
+        // ── Timer de gravação (centro-topo) ──────────────────────────
+        AnimatedVisibility(
+            visible = isRecording,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 56.dp),
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Row(
+                modifier = Modifier
+                    .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 14.dp, vertical = 5.dp)
+                    .rotate(iconRotation),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(
+                            if (recordingState == RecordingState.Recording) Color.Red
+                            else Color(0xFFFFB700),
+                            CircleShape
+                        )
+                )
+                Text(
+                    text = formatSeconds(recordingSeconds),
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        // ── Controles inferiores ─────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(bottom = 36.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            AnimatedVisibility(
+                visible = maxZoomRatio > minZoomRatio && !showZoomDial,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                ZoomPresetBar(
+                    selectedZoom = selectedZoomLevel,
+                    minZoom = minZoomRatio,
+                    maxZoom = maxZoomRatio,
+                    enabled = true,
+                    rotationDeg = iconRotation,
+                    onSelect = { zoom ->
+                        val alreadySelected = abs(selectedZoomLevel - zoom) < 0.08f
+                        if (alreadySelected) {
+                            showZoomDial = true
+                            zoomDialInteractionTick++
+                        } else {
+                            viewModel.setZoomLevel(zoom)
+                            showZoomDial = false
+                        }
+                    },
+                    onOpenDial = {
+                        showZoomDial = true
+                        zoomDialInteractionTick++
+                    }
+                )
+            }
+
+            // Seletor de modo (Vídeo / Foto)
+            AnimatedVisibility(
+                visible = !isRecording && countdownSeconds == 0,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                ModeSelector(
+                    modes = CameraMode.entries.toList(),
+                    selectedMode = cameraMode,
+                    onModeSelect = { switchMode(it) }
+                )
+            }
+
+            // Linha de botões: Flip | Gravar | Pausar/Thumb
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+            ) {
+            // Flip câmera (esquerda)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .size(52.dp)
+                    .background(Color.Black.copy(alpha = 0.45f), CircleShape)
+                    .clickable(enabled = !isRecording) { viewModel.flipCamera() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.FlipCameraAndroid,
+                    contentDescription = "Trocar câmera",
+                    tint = if (isRecording) Color.White.copy(alpha = 0.28f) else Color.White,
+                    modifier = Modifier.size(26.dp).rotate(iconRotation)
+                )
+            }
+
+            // Gravar / Parar / Foto (centro)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(80.dp)
+                    .background(Color.White.copy(alpha = 0.12f), CircleShape)
+                    .clickable {
+                        when {
+                            cameraMode == CameraMode.PHOTO && countdownSeconds > 0 -> viewModel.cancelCountdown()
+                            cameraMode == CameraMode.PHOTO -> {
+                                reviewIconRotation = snappedIconRotation
+                                viewModel.takePhotoWithDelay(snappedSurfaceRotation)
+                            }
+                            isRecording -> viewModel.stopRecording()
+                            countdownSeconds > 0 -> viewModel.cancelCountdown()
+                            else -> viewModel.startRecordingWithDelay(snappedSurfaceRotation)
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    cameraMode == CameraMode.PHOTO -> {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .border(3.dp, Color.White.copy(alpha = 0.7f), CircleShape)
+                                .padding(5.dp)
+                                .background(Color.White, CircleShape)
+                        )
+                    }
+                    isRecording -> {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .background(Color.White, RoundedCornerShape(5.dp))
+                        )
+                    }
+                    else -> {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(Color(0xFFE53935), CircleShape)
+                        )
+                    }
+                }
+            }
+
+            // Direita: controle de pausa/thumb (vídeo) ou thumb da foto
+            Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                if (cameraMode == CameraMode.VIDEO) {
+                    PauseOrThumbnailControl(
+                        isRecording = isRecording,
+                        isPaused = recordingState == RecordingState.Paused,
+                        lastVideoUri = lastVideoUri,
+                        rotationDeg = iconRotation,
+                        onPause = { viewModel.pauseRecording() },
+                        onResume = { viewModel.resumeRecording() },
+                        onThumbnailClick = {
+                            if (lastVideoUri != null) {
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    setDataAndType(lastVideoUri, "video/mp4")
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(intent)
+                            }
+                        }
+                    )
+                } else {
+                    if (lastPhotoUri != null) {
+                        LastPhotoThumbnail(uri = lastPhotoUri!!) {
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(lastPhotoUri, "image/jpeg")
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(intent)
+                        }
+                    }
+                }
+            }
+        }
+        } // end Column controles
+
+        // ── Overlay de contagem regressiva ───────────────────────────────
+        AnimatedVisibility(
+            visible = countdownSeconds > 0,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .fillMaxSize()
+                .zIndex(5f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.45f)),
+                contentAlignment = Alignment.Center
+            ) {
+                AnimatedContent(
+                    targetState = countdownSeconds,
+                    transitionSpec = {
+                        (fadeIn(tween(200)) togetherWith fadeOut(tween(150)))
+                    },
+                    label = "countdown"
+                ) { seconds ->
+                    Text(
+                        text = "$seconds",
+                        color = Color.White,
+                        fontSize = 120.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+        AnimatedVisibility(
+            visible = showZoomDial && maxZoomRatio > minZoomRatio,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 0.dp)
+                .zIndex(2f)
+        ) {
+            LensZoomDial(
+                minZoom = minZoomRatio,
+                maxZoom = maxZoomRatio,
+                currentZoom = selectedZoomLevel,
+                screenHeightDp = screenHeightDp,
+                enabled = true,
+                rotationDeg = iconRotation,
+                onZoomChange = {
+                    viewModel.setZoomLevel(it)
+                    zoomDialInteractionTick++
+                },
+                onInteraction = { zoomDialInteractionTick++ }
+            )
+        }
+        } // end preview Box
+    }
+    } // end MaterialTheme
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+private fun formatSeconds(seconds: Int): String {
+    val m = seconds / 60
+    val s = seconds % 60
+    return "%02d:%02d".format(m, s)
+}
+
+@Composable
+private fun RowScope.TopBarSlot(
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = Modifier.weight(1f),
+        contentAlignment = Alignment.Center,
+        content = content
+    )
+}
+
+@Composable
+private fun PauseOrThumbnailControl(
+    isRecording: Boolean,
+    isPaused: Boolean,
+    lastVideoUri: Uri?,
+    rotationDeg: Float = 0f,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onThumbnailClick: () -> Unit
+) {
+    AnimatedVisibility(
+        visible = isRecording,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .background(Color.Black.copy(alpha = 0.45f), CircleShape)
+                .clickable { if (isPaused) onResume() else onPause() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
+                contentDescription = "Pausar/Retomar",
+                tint = Color.White,
+                modifier = Modifier.size(26.dp).rotate(rotationDeg)
+            )
+        }
+    }
+    AnimatedVisibility(
+        visible = !isRecording && lastVideoUri != null,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        if (lastVideoUri != null) {
+            LastVideoThumbnail(uri = lastVideoUri, onClick = onThumbnailClick)
+        }
+    }
+}
+
+@Composable
+private fun LensZoomDial(
+    minZoom: Float,
+    maxZoom: Float,
+    currentZoom: Float,
+    screenHeightDp: Dp,
+    enabled: Boolean,
+    rotationDeg: Float = 0f,
+    onZoomChange: (Float) -> Unit,
+    onInteraction: () -> Unit
+) {
+    val startAngle = 198f
+    val sweepAngle = 144f
+    val indicatorAngle = 270f
+    val trackColor = Color.White.copy(alpha = if (enabled) 0.36f else 0.16f)
+    val activeColor = if (enabled) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.2f)
+    var dialZoom by remember { mutableStateOf(currentZoom) }
+    var isDragging by remember { mutableStateOf(false) }
+    var dragBaseZoom by remember { mutableStateOf(currentZoom) }
+
+    LaunchedEffect(currentZoom) {
+        if (!isDragging) dialZoom = currentZoom
+    }
+
+    fun toProgress(value: Float): Float {
+        if (maxZoom <= minZoom) return 0f
+        return ((value - minZoom) / (maxZoom - minZoom)).coerceIn(0f, 1f)
+    }
+
+    fun zoomFromDragDx(baseZoom: Float, dx: Float): Float {
+        if (maxZoom <= minZoom) return minZoom
+        val deltaProgress = (-dx / 800f) // right-to-left increases zoom; 800px = full range
+        val zoomDelta = (maxZoom - minZoom) * deltaProgress
+        return (baseZoom + zoomDelta).coerceIn(minZoom, maxZoom)
+    }
+
+    fun isWithinArcWindow(angle: Float): Boolean {
+        var normalized = angle
+        while (normalized < startAngle) normalized += 360f
+        while (normalized > startAngle + 360f) normalized -= 360f
+        return normalized in startAngle..(startAngle + sweepAngle)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(360.dp)
+            .pointerInput(minZoom, maxZoom, enabled) {
+                if (!enabled) return@pointerInput
+                detectDragGestures(
+                    onDragStart = {
+                        onInteraction()
+                        isDragging = true
+                        dragBaseZoom = dialZoom
+                    },
+                    onDrag = { _, dragAmount ->
+                        onInteraction()
+                        val nextZoom = zoomFromDragDx(dragBaseZoom, dragAmount.x)
+                        if (abs(nextZoom - dialZoom) > 0.0005f) {
+                            dialZoom = nextZoom
+                            onZoomChange(nextZoom)
+                        }
+                        dragBaseZoom = dialZoom
+                    },
+                    onDragEnd = {
+                        isDragging = false
+                    },
+                    onDragCancel = {
+                        isDragging = false
+                    }
+                )
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        val textSizePx = with(androidx.compose.ui.platform.LocalDensity.current) { 11.sp.toPx() }
+        val labelPaint = remember(activeColor, trackColor, textSizePx) {
+            Paint().apply {
+                isAntiAlias = true
+                textAlign = Paint.Align.CENTER
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textSize = textSizePx
+                color = trackColor.toArgb()
+            }
+        }
+
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val diameter = screenHeightDp.toPx()
+            val radius = diameter / 2f
+            val cx = size.width / 2f
+            val cy = size.height + radius * 0.42f
+            val topLeft = Offset(cx - radius, cy - radius)
+            val arcSize = ComposeSize(diameter, diameter)
+
+            drawArc(
+                color = Color.Black.copy(alpha = 0.28f),
+                startAngle = startAngle,
+                sweepAngle = sweepAngle,
+                useCenter = true,
+                topLeft = topLeft,
+                size = arcSize
+            )
+
+            val progress = toProgress(dialZoom)
+            // Place current zoom exactly at the indicator (indicatorAngle - startAngle = 72°)
+            val rotation = (indicatorAngle - startAngle) - progress * sweepAngle
+
+            val tickStep = (maxZoom - minZoom) / 60f
+            for (i in 0..60) {
+                val t = i / 60f
+                val angle = startAngle + (t * sweepAngle) + rotation
+                if (!isWithinArcWindow(angle)) continue
+                val rad = Math.toRadians(angle.toDouble())
+                val tickZoom = minZoom + t * (maxZoom - minZoom)
+                val major = abs(tickZoom - tickZoom.roundToInt()) < tickStep * 0.5f
+                val inner = radius - if (major) 20.dp.toPx() else 12.dp.toPx()
+                val outer = radius + if (major) 5.dp.toPx() else 2.dp.toPx()
+                val x1 = cx + inner * cos(rad).toFloat()
+                val y1 = cy + inner * sin(rad).toFloat()
+                val x2 = cx + outer * cos(rad).toFloat()
+                val y2 = cy + outer * sin(rad).toFloat()
+                drawLine(
+                    color = if (major) Color.White.copy(alpha = 0.55f) else trackColor,
+                    start = Offset(x1, y1),
+                    end = Offset(x2, y2),
+                    strokeWidth = if (major) 2.2.dp.toPx() else 1.2.dp.toPx(),
+                    cap = StrokeCap.Round
+                )
+            }
+
+            val rulerLabels = listOf(minZoom, 1f, 2f, 5f, 10f, 20f, maxZoom)
+                .filter { it in minZoom..maxZoom }
+                .distinctBy { (it * 10f).roundToInt() }
+                .sorted()
+
+            drawIntoCanvas { canvas ->
+                rulerLabels.forEach { value ->
+                    val p = toProgress(value)
+                    val angle = startAngle + (p * sweepAngle) + rotation
+                    if (!isWithinArcWindow(angle)) return@forEach
+                    val rad = Math.toRadians(angle.toDouble())
+                    val tx = cx + (radius - 34.dp.toPx()) * cos(rad).toFloat()
+                    val ty = cy + (radius - 34.dp.toPx()) * sin(rad).toFloat()
+
+                    labelPaint.color = if (abs(value - dialZoom) < 0.15f) activeColor.toArgb() else trackColor.toArgb()
+                    val text = if (abs(value - value.roundToInt().toFloat()) < 0.05f) {
+                        value.roundToInt().toString()
+                    } else {
+                        ((value * 10f).roundToInt() / 10f).toString()
+                    }
+                    canvas.nativeCanvas.save()
+                    canvas.nativeCanvas.rotate(rotationDeg, tx, ty)
+                    canvas.nativeCanvas.drawText(text, tx, ty, labelPaint)
+                    canvas.nativeCanvas.restore()
+                }
+            }
+
+            val pointerRad = Math.toRadians(indicatorAngle.toDouble())
+            val p1 = Offset(
+                cx + (radius - 16.dp.toPx()) * cos(pointerRad).toFloat(),
+                cy + (radius - 16.dp.toPx()) * sin(pointerRad).toFloat()
+            )
+            val p2 = Offset(
+                cx + (radius + 6.dp.toPx()) * cos(pointerRad).toFloat(),
+                cy + (radius + 6.dp.toPx()) * sin(pointerRad).toFloat()
+            )
+            drawLine(
+                color = activeColor,
+                start = p1,
+                end = p2,
+                strokeWidth = 3.dp.toPx(),
+                cap = StrokeCap.Round
+            )
+        }
+
+        Text(
+            text = "${(dialZoom * 10f).roundToInt() / 10f}×",
+            color = if (enabled) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.32f),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.offset(y = (-122).dp).rotate(rotationDeg)
+        )
+    }
+}
+
+@Composable
+private fun ZoomPresetBar(
+    selectedZoom: Float,
+    minZoom: Float,
+    maxZoom: Float,
+    enabled: Boolean,
+    rotationDeg: Float = 0f,
+    onSelect: (Float) -> Unit,
+    onOpenDial: () -> Unit
+) {
+    val replacementSlot = when {
+        selectedZoom < 2f -> 1f
+        selectedZoom <= 5f -> 2f
+        else -> 5f
+    }
+    val presets = listOf(1f, 2f, 5f)
+        .map { slot -> if (abs(slot - replacementSlot) < 0.001f) selectedZoom else slot }
+        .filter { it in minZoom..maxZoom }
+        .distinctBy { (it * 10f).roundToInt() }
+    if (presets.isEmpty()) return
+
+    Row(
+        modifier = Modifier
+            .background(Color.Black.copy(alpha = 0.52f), RoundedCornerShape(24.dp))
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        presets.forEach { zoom ->
+            val isSelected = abs(selectedZoom - zoom) < 0.08f
+            Box(
+                modifier = Modifier
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.22f) else Color.Transparent,
+                        CircleShape
+                    )
+                    .pointerInput(enabled, isSelected) {
+                        detectTapGestures(
+                            onLongPress = { if (enabled) onOpenDial() },
+                            onTap = { if (enabled) onSelect(zoom) }
+                        )
+                    }
+                    .padding(horizontal = 14.dp, vertical = 7.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                val zoomLabel = if (abs(zoom - zoom.roundToInt().toFloat()) < 0.05f) {
+                    "${zoom.roundToInt()}×"
+                } else {
+                    "${(zoom * 10f).roundToInt() / 10f}×"
+                }
+                Text(
+                    text = zoomLabel,
+                    color = when {
+                        !enabled -> Color.White.copy(alpha = 0.25f)
+                        isSelected -> MaterialTheme.colorScheme.primary
+                        else -> Color.White.copy(alpha = 0.55f)
+                    },
+                    fontSize = if (isSelected) 14.sp else 13.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    modifier = Modifier.rotate(rotationDeg)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LastVideoThumbnail(uri: Uri, onClick: () -> Unit) {
+    val context = LocalContext.current
+    var bitmap by remember(uri) { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(uri) {
+        bitmap = withContext(Dispatchers.IO) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    context.contentResolver.loadThumbnail(uri, Size(128, 128), null)
+                } else {
+                    @Suppress("DEPRECATION")
+                    val path = uri.path ?: return@withContext null
+                    ThumbnailUtils.createVideoThumbnail(path, MediaStore.Images.Thumbnails.MINI_KIND)
+                }
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .size(52.dp)
+            .clip(CircleShape)
+            .border(1.5.dp, Color.White.copy(alpha = 0.6f), CircleShape)
+            .background(Color.Black.copy(alpha = 0.5f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap!!.asImageBitmap(),
+                contentDescription = "Último vídeo",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            // Ícone de play sobreposto
+            Icon(
+                Icons.Default.PlayArrow,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.85f),
+                modifier = Modifier.size(24.dp)
+            )
+        } else {
+            Icon(
+                Icons.Default.VideoFile,
+                contentDescription = "Último vídeo",
+                tint = Color.White.copy(alpha = 0.7f),
+                modifier = Modifier.size(26.dp)
+            )
+        }
+    }
+}
+
+
+// Resolution two-line button
+@Composable
+private fun ModeSelector(
+    modes: List<CameraMode>,
+    selectedMode: CameraMode,
+    onModeSelect: (CameraMode) -> Unit
+) {
+    val selectedIndex = modes.indexOf(selectedMode).coerceAtLeast(0)
+    // Cada item ocupa 88dp; o offset anima o Row para centralizar o modo ativo
+    val itemWidthDp = 88f
+    val targetOffsetDp = itemWidthDp * ((modes.size - 1) / 2f - selectedIndex)
+    val animatedOffset by animateFloatAsState(
+        targetValue = targetOffsetDp,
+        animationSpec = tween(durationMillis = 300),
+        label = "modeSelectorOffset"
+    )
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier.offset(x = animatedOffset.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            modes.forEach { mode ->
+                val isSelected = mode == selectedMode
+                Box(
+                    modifier = Modifier.width(itemWidthDp.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = mode.label,
+                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.38f),
+                        fontSize = if (isSelected) 15.sp else 14.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) { onModeSelect(mode) }
+                            .padding(vertical = 8.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LastPhotoThumbnail(uri: Uri, onClick: () -> Unit) {
+    val context = LocalContext.current
+    var bitmap by remember(uri) { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(uri) {
+        bitmap = withContext(Dispatchers.IO) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    context.contentResolver.loadThumbnail(uri, Size(128, 128), null)
+                } else {
+                    null
+                }
+            } catch (e: Exception) { null }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .size(52.dp)
+            .clip(CircleShape)
+            .border(1.5.dp, Color.White.copy(alpha = 0.6f), CircleShape)
+            .background(Color.Black.copy(alpha = 0.5f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap!!.asImageBitmap(),
+                contentDescription = "Última foto",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Icon(
+                Icons.Default.PhotoCamera,
+                contentDescription = "Última foto",
+                tint = Color.White.copy(alpha = 0.7f),
+                modifier = Modifier.size(26.dp)
+            )
+        }
+    }
+}
+
+// Resolution two-line button (original — video mode)
+@Composable
+private fun ResolutionTopBarButton(
+    option: com.spacecamera.camera.VideoOption,
+    isActive: Boolean,
+    enabled: Boolean = true,
+    rotationDeg: Float = 0f,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .background(
+                if (isActive && enabled) Color.White.copy(alpha = 0.22f) else Color.Transparent,
+                RoundedCornerShape(7.dp)
+            )
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                enabled = enabled,
+                onClick = onClick
+            )
+            .padding(horizontal = 10.dp, vertical = 2.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy((-2).dp),
+            modifier = Modifier.rotate(rotationDeg)
+        ) {
+            Text(
+                option.qualityLabel,
+                color = if (enabled) Color.White else Color.White.copy(alpha = 0.28f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                lineHeight = 12.sp
+            )
+            Text(
+                "${option.fps}",
+                color = if (enabled) Color.White.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.2f),
+                fontSize = 8.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                lineHeight = 8.sp
+            )
+        }
+    }
+}
+
+// Resolution button — photo mode (single label like "MAX", "12MP")
+@Composable
+private fun ResolutionTopBarButton(
+    displayLabel: String,
+    isActive: Boolean,
+    enabled: Boolean = true,
+    rotationDeg: Float = 0f,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .background(
+                if (isActive && enabled) Color.White.copy(alpha = 0.22f) else Color.Transparent,
+                RoundedCornerShape(7.dp)
+            )
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                enabled = enabled,
+                onClick = onClick
+            )
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            displayLabel,
+            color = if (enabled) Color.White else Color.White.copy(alpha = 0.28f),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.rotate(rotationDeg)
+        )
+    }
+}
+
+// Text-only toggle (EIS) — no background, white when on, gray when off
+@Composable
+private fun TopBarTextToggle(
+    label: String,
+    isOn: Boolean,
+    enabled: Boolean = true,
+    rotationDeg: Float = 0f,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                enabled = enabled,
+                onClick = onClick
+            )
+            .padding(horizontal = 8.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            label,
+            color = when {
+                !enabled -> Color.White.copy(alpha = 0.2f)
+                isOn -> Color.White
+                else -> Color.White.copy(alpha = 0.38f)
+            },
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.rotate(rotationDeg)
+        )
+    }
+}
+
+@Composable
+private fun TopBarIconToggle(
+    isOn: Boolean,
+    iconOn: ImageVector,
+    iconOff: ImageVector,
+    desc: String,
+    enabled: Boolean = true,
+    iconSize: Dp = 26.dp,
+    rotationDeg: Float = 0f,
+    onClick: () -> Unit
+) {
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.size(46.dp)
+    ) {
+        Icon(
+            if (isOn) iconOn else iconOff,
+            contentDescription = desc,
+            tint = when {
+                !enabled -> Color.White.copy(alpha = 0.2f)
+                isOn -> Color.White
+                else -> Color.White.copy(alpha = 0.38f)
+            },
+            modifier = Modifier.size(iconSize).rotate(rotationDeg)
+        )
+    }
+}
+
+@Composable
+private fun TopBarTimerButton(
+    delay: RecordingDelay,
+    enabled: Boolean = true,
+    rotationDeg: Float = 0f,
+    onClick: () -> Unit
+) {
+    val iconTint = when {
+        !enabled -> Color.White.copy(alpha = 0.2f)
+        delay != RecordingDelay.OFF -> Color.White
+        else -> Color.White.copy(alpha = 0.38f)
+    }
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.size(46.dp)
+    ) {
+        when (delay) {
+            RecordingDelay.OFF -> Icon(
+                Icons.Outlined.TimerOff,
+                contentDescription = "Timer desativado",
+                tint = iconTint,
+                modifier = Modifier.size(26.dp).rotate(rotationDeg)
+            )
+            RecordingDelay.THREE -> Icon(
+                TimerIcon3,
+                contentDescription = "Timer 3s",
+                tint = iconTint,
+                modifier = Modifier.size(26.dp).rotate(rotationDeg)
+            )
+            RecordingDelay.FIVE -> Icon(
+                TimerIcon5,
+                contentDescription = "Timer 5s",
+                tint = iconTint,
+                modifier = Modifier.size(26.dp).rotate(rotationDeg)
+            )
+            RecordingDelay.TEN -> Icon(
+                TimerIcon10,
+                contentDescription = "Timer 10s",
+                tint = iconTint,
+                modifier = Modifier.size(26.dp).rotate(rotationDeg)
+            )
+        }
+    }
+}
+
+// Barra horizontal genérica de seleção
+@Composable
+private fun <T> HorizontalPickerBar(
+    modifier: Modifier = Modifier,
+    items: List<Pair<T, String>>,
+    selectedKey: T,
+    onSelect: (T) -> Unit
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color(0xFF1C1C1E).copy(alpha = 0.97f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        items.forEach { (key, label) ->
+            val isSelected = key == selectedKey
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 4.dp)
+                    .background(
+                        if (isSelected) Color.White.copy(alpha = 0.18f) else Color.Transparent,
+                        RoundedCornerShape(8.dp)
+                    )
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) { onSelect(key) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label,
+                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.38f),
+                    fontSize = 13.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExposureSlider(
+    modifier: Modifier = Modifier,
+    index: Int,
+    min: Int,
+    max: Int,
+    alpha: Float = 1f
+) {
+    if (max <= min) return
+    val range = (max - min).toFloat()
+    val progress = ((index - min) / range).coerceIn(0f, 1f)
+    val trackFraction = 0.75f
+    var boxHeightPx by remember { mutableStateOf(0f) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    Box(
+        modifier = modifier.onGloballyPositioned { boxHeightPx = it.size.height.toFloat() },
+        contentAlignment = Alignment.Center
+    ) {
+        // Track line
+        Box(
+            modifier = Modifier
+                .width(1.5.dp)
+                .fillMaxHeight(trackFraction)
+                .background(Color.White.copy(alpha = 0.4f * alpha), RoundedCornerShape(1.dp))
+        )
+        // Sun icon tracks exposure position
+        // offset: progress=1 (max/bright) → top of track; progress=0 (min/dark) → bottom
+        val iconOffsetDp = with(density) {
+            (boxHeightPx * (1f - 2f * progress) * trackFraction / 2f).toDp()
+        }
+        Icon(
+            imageVector = Icons.Default.WbSunny,
+            contentDescription = "Exposição",
+            tint = if (index == 0) Color.White.copy(alpha = 0.75f * alpha) else MaterialTheme.colorScheme.primary.copy(alpha = alpha),
+            modifier = Modifier
+                .size(18.dp)
+                .offset(y = iconOffsetDp)
+        )
+    }
+}

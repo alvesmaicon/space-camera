@@ -1,0 +1,36 @@
+{
+  "name": "space-camera",
+  "version": "1.0.0",
+  "description": "High-quality video recording app for Android with Full HD and 4K support",
+  "scripts": {
+    "generate:icons": "node scripts/generateIcons.js",
+    "generate:notification-icons": "node scripts/generateNotificationIcons.js",
+    "generate:all-icons": "npm run generate:icons && npm run generate:notification-icons",
+    "build:debug": "./gradlew assembleDebug",
+    "build:release": "./gradlew assembleRelease",
+    "build:bundle": "./gradlew bundleRelease",
+    "install:debug": "./gradlew installDebug",
+    "run:debug": "npm run install:debug && adb shell am start -n com.spacecamera/.MainActivity",
+    "clean": "./gradlew clean",
+    "test": "./gradlew test",
+    "lint": "./gradlew lint",
+    "check": "npm run lint && npm run test"
+  },
+  "keywords": [
+    "android",
+    "camera",
+    "video",
+    "recording",
+    "4k",
+    "full-hd",
+    "kotlin"
+  ],
+  "author": "Space Camera Dev",
+  "license": "MIT",
+  "devDependencies": {
+    "sharp": "^0.33.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
