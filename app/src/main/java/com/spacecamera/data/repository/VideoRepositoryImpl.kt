@@ -1,10 +1,10 @@
 package com.spacecamera.data.repository
 
-import com.spacecamera.camera.CameraManager
+import com.spacecamera.camera.CameraController
 import com.spacecamera.domain.repository.VideoRepository
 
 class VideoRepositoryImpl(
-    private val cameraManager: CameraManager
+    private val cameraManager: CameraController
 ) : VideoRepository {
 
     override suspend fun startRecording(micEnabled: Boolean, targetRotation: Int) {

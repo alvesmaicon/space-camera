@@ -9,6 +9,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.camera.video.Quality
+import com.spacecamera.camera.CameraController
+import com.spacecamera.camera.CameraControllerFactory
 import com.spacecamera.camera.CameraManager
 import com.spacecamera.camera.CameraMode
 import com.spacecamera.camera.PhotoQualityPreset
@@ -23,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 enum class RecordingDelay(val seconds: Int) {
     OFF(0), THREE(3), FIVE(5), TEN(10);
@@ -31,9 +34,22 @@ enum class RecordingDelay(val seconds: Int) {
 
 enum class PhotoFlashMode { OFF, AUTO, ON }
 
-class CameraViewModel : ViewModel() {
+/**
+ * @param controllerFactory como obter o [CameraController]. Em produção cria um
+ *   [CameraManager]; no teste, um dublê — é o que permite exercitar countdown,
+ *   ciclo de flash e EIS por modo na JVM, sem device.
+ * @param settingsStorageFactory idem para a persistência.
+ *
+ * Todos os parâmetros têm default, então o Kotlin gera o construtor sem
+ * argumentos que `viewModel()` precisa para instanciar por reflexão.
+ */
+class CameraViewModel(
+    private val controllerFactory: CameraControllerFactory =
+        CameraControllerFactory { context, lifecycleOwner -> CameraManager(context, lifecycleOwner) },
+    private val settingsStorageFactory: (Context) -> SettingsStorage = { SettingsStorage(it) }
+) : ViewModel() {
 
-    private var cameraManager: CameraManager? = null
+    private var cameraManager: CameraController? = null
     private var videoRepository: VideoRepositoryImpl? = null
     private var timerJob: Job? = null
     private var countdownJob: Job? = null
@@ -160,7 +176,7 @@ class CameraViewModel : ViewModel() {
             if (cameraManager == null) {
                 val ctx = context.applicationContext
                 // Carrega configurações persistidas antes de criar o CameraManager
-                if (settingsStorage == null) settingsStorage = SettingsStorage(ctx)
+                if (settingsStorage == null) settingsStorage = settingsStorageFactory(ctx)
                 val storage = settingsStorage!!
                 // isKeepSettings é sempre carregado
                 _isKeepSettingsEnabled.value = storage.isKeepSettingsEnabled
@@ -204,7 +220,7 @@ class CameraViewModel : ViewModel() {
                     _isImageEnhancementEnabled.value = false
                     storage.isImageEnhancementEnabled = false
                 }
-                cameraManager = CameraManager(ctx, lifecycleOwner).also { mgr ->
+                cameraManager = controllerFactory.create(ctx, lifecycleOwner).also { mgr ->
                     mgr.isStabilizationEnabled = _isStabilizationEnabled.value
                     mgr.isNoiseReductionEnabled = _isNoiseReductionEnabled.value
                     mgr.bitratePreset = _bitratePreset.value
@@ -318,7 +334,7 @@ class CameraViewModel : ViewModel() {
                 cameraManager!!.isCameraReady.collect { _isCameraReady.value = it }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e(e, "evt=camera_init_failed")
             _cameraInitialized.value = false
         }
     }

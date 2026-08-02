@@ -7,6 +7,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -60,7 +61,7 @@ class VideoStorage(private val context: Context) {
                 true
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e(e, "evt=save_video_failed name=%s", videoFile.name)
             false
         }
     }

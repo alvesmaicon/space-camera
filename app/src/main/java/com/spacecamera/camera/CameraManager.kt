@@ -2,6 +2,7 @@ package com.spacecamera.camera
 
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
@@ -20,7 +21,6 @@ import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
-import android.util.Log
 import android.util.Range as AndroidRange
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
@@ -48,6 +48,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Executor
 import androidx.camera.core.FocusMeteringAction
+import timber.log.Timber
 
 sealed class RecordingState {
     object Idle : RecordingState()
@@ -98,9 +99,7 @@ enum class VideoBitratePreset(val bpp: Float, val label: String) {
 class CameraManager(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner
-) {
-    private val TAG = "CameraManager"
-
+) : CameraController {
     private val EXIF_CAMERA_TAGS = listOf(
         ExifInterface.TAG_MAKE, ExifInterface.TAG_MODEL,
         ExifInterface.TAG_F_NUMBER, ExifInterface.TAG_APERTURE_VALUE,
@@ -119,7 +118,7 @@ class CameraManager(
     private val rebindRunnable = Runnable { bindCameraUseCases() }
 
     private fun scheduleBind(delayMs: Long = 0) {
-        Log.d(TAG, "scheduleBind(delay=${delayMs}ms) EIS=$isStabilizationEnabled NR=$isNoiseReductionEnabled HDR=$isHdrEnabled")
+        Timber.d("scheduleBind(delay=${delayMs}ms) EIS=$isStabilizationEnabled NR=$isNoiseReductionEnabled HDR=$isHdrEnabled")
         mainHandler.removeCallbacks(rebindRunnable)
         mainHandler.postDelayed(rebindRunnable, delayMs)
     }
@@ -135,64 +134,64 @@ class CameraManager(
     private var currentPreview: Preview? = null
 
     private val _recordingState = MutableStateFlow<RecordingState>(RecordingState.Idle)
-    val recordingState: StateFlow<RecordingState> = _recordingState
+    override val recordingState: StateFlow<RecordingState> = _recordingState
 
     private val _isCameraReady = MutableStateFlow(false)
-    val isCameraReady: StateFlow<Boolean> = _isCameraReady
+    override val isCameraReady: StateFlow<Boolean> = _isCameraReady
 
     private val _isEisSupported = MutableStateFlow(false)
-    val isEisSupported: StateFlow<Boolean> = _isEisSupported
+    override val isEisSupported: StateFlow<Boolean> = _isEisSupported
 
     private val _availableVideoOptions = MutableStateFlow<List<VideoOption>>(emptyList())
-    val availableVideoOptions: StateFlow<List<VideoOption>> = _availableVideoOptions
+    override val availableVideoOptions: StateFlow<List<VideoOption>> = _availableVideoOptions
 
     private val _lastVideoUri = MutableStateFlow<Uri?>(null)
-    val lastVideoUri: StateFlow<Uri?> = _lastVideoUri
+    override val lastVideoUri: StateFlow<Uri?> = _lastVideoUri
 
     private val _lastPhotoUri = MutableStateFlow<Uri?>(null)
-    val lastPhotoUri: StateFlow<Uri?> = _lastPhotoUri
+    override val lastPhotoUri: StateFlow<Uri?> = _lastPhotoUri
 
     /** Aspect ratio strings actually supported by the active camera (e.g. ["9:16", "3:4"]). */
     private val _availableAspectRatios = MutableStateFlow<List<String>>(listOf("9:16", "3:4"))
-    val availableAspectRatios: StateFlow<List<String>> = _availableAspectRatios
+    override val availableAspectRatios: StateFlow<List<String>> = _availableAspectRatios
 
     private val _availableZoomLevels = MutableStateFlow<List<Float>>(listOf(1f))
-    val availableZoomLevels: StateFlow<List<Float>> = _availableZoomLevels
+    override val availableZoomLevels: StateFlow<List<Float>> = _availableZoomLevels
 
     private val _selectedZoomLevel = MutableStateFlow(1f)
-    val selectedZoomLevel: StateFlow<Float> = _selectedZoomLevel
+    override val selectedZoomLevel: StateFlow<Float> = _selectedZoomLevel
 
     private val _minZoomRatio = MutableStateFlow(1f)
-    val minZoomRatio: StateFlow<Float> = _minZoomRatio
+    override val minZoomRatio: StateFlow<Float> = _minZoomRatio
 
     private val _maxZoomRatio = MutableStateFlow(1f)
-    val maxZoomRatio: StateFlow<Float> = _maxZoomRatio
+    override val maxZoomRatio: StateFlow<Float> = _maxZoomRatio
 
     private val _exposureIndex = MutableStateFlow(0)
-    val exposureIndex: StateFlow<Int> = _exposureIndex
+    override val exposureIndex: StateFlow<Int> = _exposureIndex
 
     private val _exposureMin = MutableStateFlow(-8)
-    val exposureMin: StateFlow<Int> = _exposureMin
+    override val exposureMin: StateFlow<Int> = _exposureMin
 
     private val _exposureMax = MutableStateFlow(8)
-    val exposureMax: StateFlow<Int> = _exposureMax
+    override val exposureMax: StateFlow<Int> = _exposureMax
 
-    var isStabilizationEnabled: Boolean = true
-    var isNoiseReductionEnabled: Boolean = true
-    var isHdrEnabled: Boolean = false
-    var bitratePreset: VideoBitratePreset = VideoBitratePreset.MEDIUM
-    var isFrontCameraMirrorEnabled: Boolean = false
-    var isSaveLocationEnabled: Boolean = false
-    var isImageEnhancementEnabled: Boolean = false
+    override var isStabilizationEnabled: Boolean = true
+    override var isNoiseReductionEnabled: Boolean = true
+    override var isHdrEnabled: Boolean = false
+    override var bitratePreset: VideoBitratePreset = VideoBitratePreset.MEDIUM
+    override var isFrontCameraMirrorEnabled: Boolean = false
+    override var isSaveLocationEnabled: Boolean = false
+    override var isImageEnhancementEnabled: Boolean = false
 
     private val _isHdrSupported = MutableStateFlow(true)
-    val isHdrSupported: StateFlow<Boolean> = _isHdrSupported
+    override val isHdrSupported: StateFlow<Boolean> = _isHdrSupported
 
     private var selectedVideoOption: VideoOption = VideoOption(Quality.FHD, 30)
     private var selectedAspectRatio: String = "9:16"   // aspect ratio do modo FOTO
     private var currentCameraMode: CameraMode = CameraMode.VIDEO
     private var currentPhotoFlashMode: Int = ImageCapture.FLASH_MODE_OFF
-    var photoQualityPreset: PhotoQualityPreset = PhotoQualityPreset.MAXIMA
+    override var photoQualityPreset: PhotoQualityPreset = PhotoQualityPreset.MAXIMA
     var isFrontCamera = false
         private set
     private var useUltraWide = false
@@ -224,7 +223,7 @@ class CameraManager(
         }
     }
 
-    suspend fun initializeCamera(surfaceProvider: Preview.SurfaceProvider?) {
+    override suspend fun initializeCamera(surfaceProvider: Preview.SurfaceProvider?) {
         try {
             this.surfaceProvider = surfaceProvider
             val future = ProcessCameraProvider.getInstance(context)
@@ -233,7 +232,7 @@ class CameraManager(
             refreshAvailableResolutions()
             bindCameraUseCases()
         } catch (e: Exception) {
-            Log.e(TAG, "Error initializing camera", e)
+            Timber.e(e, "Error initializing camera")
         }
     }
 
@@ -241,7 +240,7 @@ class CameraManager(
      * Called when the PreviewView is recreated after navigation (e.g. back from Settings).
      * Updates the surface provider on the existing Preview use case without a full rebind.
      */
-    fun updateSurfaceProvider(newSurfaceProvider: Preview.SurfaceProvider) {
+    override fun updateSurfaceProvider(newSurfaceProvider: Preview.SurfaceProvider) {
         surfaceProvider = newSurfaceProvider
         mainHandler.post {
             currentPreview?.setSurfaceProvider(newSurfaceProvider)
@@ -269,7 +268,7 @@ class CameraManager(
             } catch (e: Exception) { null }
         }
 
-        Log.d(TAG, "All back cameras (Camera2): ${backCameras.map { "${it.id}@${it.minFocal}mm" }}")
+        Timber.d("All back cameras (Camera2): ${backCameras.map { "${it.id}@${it.minFocal}mm" }}")
 
         if (backCameras.size < 2) {
             ultraWideCameraSelector = null
@@ -280,7 +279,7 @@ class CameraManager(
         val ultraWide = sorted.first()
         val main = sorted.last()
 
-        Log.d(TAG, "Ultra-wide candidate: id=${ultraWide.id} focal=${ultraWide.minFocal}mm  main: id=${main.id} focal=${main.minFocal}mm")
+        Timber.d("Ultra-wide candidate: id=${ultraWide.id} focal=${ultraWide.minFocal}mm  main: id=${main.id} focal=${main.minFocal}mm")
 
         if (ultraWide.minFocal >= main.minFocal) {
             ultraWideCameraSelector = null
@@ -293,7 +292,7 @@ class CameraManager(
                 infos.filter { Camera2CameraInfo.from(it).cameraId == uwId }
             }
             .build()
-        Log.d(TAG, "Ultra-wide selector created for camera $uwId")
+        Timber.d("Ultra-wide selector created for camera $uwId")
     }
 
     private fun refreshAvailableResolutions() {
@@ -315,11 +314,11 @@ class CameraManager(
         val characteristics = try { camera2Manager?.getCameraCharacteristics(cameraId) } catch (e: Exception) { null }
         val aeRanges = characteristics?.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
         val camera2MaxFps = aeRanges?.maxOfOrNull { it.upper } ?: 0
-        Log.d(TAG, "cameraId=$cameraId camera2MaxFps=$camera2MaxFps aeRanges=${aeRanges?.toList()}")
+        Timber.d("cameraId=$cameraId camera2MaxFps=$camera2MaxFps aeRanges=${aeRanges?.toList()}")
 
         val streamMap = characteristics?.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
         val mediaRecorderSizes = streamMap?.getOutputSizes(android.media.MediaRecorder::class.java)
-        Log.d(TAG, "MediaRecorder output sizes: ${mediaRecorderSizes?.toList()}")
+        Timber.d("MediaRecorder output sizes: ${mediaRecorderSizes?.toList()}")
 
         val qualityToCamcorderProfile = mapOf(
             Quality.UHD to CamcorderProfile.QUALITY_2160P,
@@ -353,7 +352,7 @@ class CameraManager(
                     mutableListOf(30)
                 }
             }
-            Log.d(TAG, "quality=$quality camProfile=$camProfile fpsList(OEM)=$fpsList")
+            Timber.d("quality=$quality camProfile=$camProfile fpsList(OEM)=$fpsList")
 
             // 2) Verifica se o sensor suporta 60fps para esta resolução via StreamConfigurationMap
             if (!fpsList.contains(60)) {
@@ -365,14 +364,14 @@ class CameraManager(
                     val minDuration = if (matchedSize != null)
                         streamMap.getOutputMinFrameDuration(android.media.MediaRecorder::class.java, matchedSize)
                     else -1L
-                    Log.d(TAG, "quality=$quality targetSize=$targetSize matchedSize=$matchedSize minDuration=$minDuration")
+                    Timber.d("quality=$quality targetSize=$targetSize matchedSize=$matchedSize minDuration=$minDuration")
                     matchedSize != null && minDuration > 0 && minDuration <= 16_666_667L
                 } else false
 
-                Log.d(TAG, "quality=$quality supportsVia60Ranges=$supportsVia60Ranges supportsViaStreamMap=$supportsViaStreamMap")
+                Timber.d("quality=$quality supportsVia60Ranges=$supportsVia60Ranges supportsViaStreamMap=$supportsViaStreamMap")
                 if (supportsVia60Ranges && supportsViaStreamMap) {
                     fpsList.add(60)
-                    Log.d(TAG, "60fps adicionado para $quality via Camera2")
+                    Timber.d("60fps adicionado para $quality via Camera2")
                 }
             }
 
@@ -404,7 +403,8 @@ class CameraManager(
 
     private fun bindCameraUseCases() {
         val cameraProvider = cameraProvider ?: return
-        Log.d(TAG, "bindCameraUseCases START — EIS=$isStabilizationEnabled NR=$isNoiseReductionEnabled HDR=$isHdrEnabled")
+        val bindStartedAt = SystemClock.elapsedRealtime()
+        Timber.d("bindCameraUseCases START — EIS=$isStabilizationEnabled NR=$isNoiseReductionEnabled HDR=$isHdrEnabled")
         cameraProvider.unbindAll()
 
         val aspectRatio = cameraXAspectRatio()
@@ -476,7 +476,7 @@ class CameraManager(
             .setFlashMode(currentPhotoFlashMode)
             .build()
 
-        Log.d(TAG, "bindCameraUseCases: EIS=${isStabilizationEnabled} NR=${isNoiseReductionEnabled} HDR=${isHdrEnabled}")
+        Timber.d("bindCameraUseCases: EIS=${isStabilizationEnabled} NR=${isNoiseReductionEnabled} HDR=${isHdrEnabled}")
         _isCameraReady.value = false
 
         try {
@@ -513,7 +513,7 @@ class CameraManager(
             val requestCaps = cam2Info.getCameraCharacteristic(
                 CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES
             )
-            Log.d(TAG, "HAL stabilization — video modes=${availableStabModes?.toList()}  OIS modes=${availableOisModes?.toList()}")
+            Timber.d("HAL stabilization — video modes=${availableStabModes?.toList()}  OIS modes=${availableOisModes?.toList()}")
             _isEisSupported.value = availableStabModes?.contains(
                 CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON
             ) == true
@@ -525,10 +525,10 @@ class CameraManager(
                 true
             }
             _isHdrSupported.value = hasHdrSceneMode && hasHighQualityToneMap && hasTenBitCapability
-            Log.d(TAG, "HDR support: scene=$hasHdrSceneMode tonemapHQ=$hasHighQualityToneMap tenBit=$hasTenBitCapability => supported=${_isHdrSupported.value}")
+            Timber.d("HDR support: scene=$hasHdrSceneMode tonemapHQ=$hasHighQualityToneMap tenBit=$hasTenBitCapability => supported=${_isHdrSupported.value}")
 
             if (!_isHdrSupported.value && isHdrEnabled) {
-                Log.w(TAG, "HDR solicitado, mas não suportado por scene mode neste dispositivo. Desativando HDR.")
+                Timber.w("HDR solicitado, mas não suportado por scene mode neste dispositivo. Desativando HDR.")
                 isHdrEnabled = false
             }
 
@@ -539,39 +539,58 @@ class CameraManager(
             // isCameraReady=true é sinalizado pelo wrappedProvider acima, não aqui.
 
             updateAvailableZoomLevels()
+
+            CameraTelemetry.bind(
+                mode = currentCameraMode,
+                option = selectedVideoOption,
+                aspectRatio = if (currentCameraMode == CameraMode.VIDEO) "9:16" else selectedAspectRatio,
+                bitrate = bitratePreset.bitrateFor(selectedVideoOption),
+                eis = isStabilizationEnabled,
+                noiseReduction = isNoiseReductionEnabled,
+                hdr = isHdrEnabled,
+                frontCamera = isFrontCamera,
+                elapsedMs = SystemClock.elapsedRealtime() - bindStartedAt
+            )
+            CameraTelemetry.capabilities(
+                cameraId = cam2Info.cameraId,
+                eisSupported = _isEisSupported.value,
+                hdrSupported = _isHdrSupported.value,
+                videoOptions = _availableVideoOptions.value,
+                zoomRange = _minZoomRatio.value.._maxZoomRatio.value
+            )
         } catch (e: Exception) {
-            Log.e(TAG, "Error binding camera use cases", e)
+            CameraTelemetry.bindFailed(e)
         }
     }
 
-    fun setVideoOption(option: VideoOption) {
+    override fun setVideoOption(option: VideoOption) {
         selectedVideoOption = option
         scheduleBind()
     }
 
-    fun setStabilization(enabled: Boolean) {
-        Log.d(TAG, "setStabilization($enabled) — anterior=$isStabilizationEnabled")
+    override fun setStabilization(enabled: Boolean) {
+        Timber.d("setStabilization($enabled) — anterior=$isStabilizationEnabled")
         isStabilizationEnabled = enabled
         applyEisNrImmediate()
     }
 
-    fun setNoiseReduction(enabled: Boolean) {
+    override fun setNoiseReduction(enabled: Boolean) {
         isNoiseReductionEnabled = enabled
         applyEisNrImmediate()
     }
 
-    fun setHdr(enabled: Boolean) {
+    override fun setHdr(enabled: Boolean) {
         isHdrEnabled = if (_isHdrSupported.value) enabled else false
         applyEisNrImmediate()
     }
 
     private fun applyEisNrImmediate() {
         val cam = camera ?: run {
-            Log.w(TAG, "applyEisNrImmediate: camera null, agendando rebind")
+            Timber.w("applyEisNrImmediate: camera null, agendando rebind")
             scheduleBind(150)
             return
         }
-        Log.d(TAG, "applyEisNrImmediate: EIS=$isStabilizationEnabled NR=$isNoiseReductionEnabled HDR=$isHdrEnabled")
+        Timber.d("applyEisNrImmediate: EIS=$isStabilizationEnabled NR=$isNoiseReductionEnabled HDR=$isHdrEnabled")
         // NOTE: Do NOT set CONTROL_AF_MODE here. Camera2CameraControl options merge into every
         // CaptureRequest but do NOT carry over CONTROL_AF_REGIONS set by startFocusAndMetering.
         // Setting AF_MODE without regions would cause the HAL to re-run AF on the whole frame,
@@ -605,12 +624,12 @@ class CameraManager(
         Camera2CameraControl.from(cam.cameraControl)
             .setCaptureRequestOptions(builder.build())
             .addListener(
-                { Log.d(TAG, "applyEisNrImmediate aplicado: EIS=$isStabilizationEnabled NR=$isNoiseReductionEnabled HDR=$isHdrEnabled supported=${_isHdrSupported.value}") },
+                { Timber.d("applyEisNrImmediate aplicado: EIS=$isStabilizationEnabled NR=$isNoiseReductionEnabled HDR=$isHdrEnabled supported=${_isHdrSupported.value}") },
                 ContextCompat.getMainExecutor(context)
             )
     }
 
-    fun setZoomLevel(ratio: Float) {
+    override fun setZoomLevel(ratio: Float) {
         val minAllowed = _minZoomRatio.value
         val maxAllowed = _maxZoomRatio.value
         val safeRatio = ratio.coerceIn(minAllowed, maxAllowed)
@@ -652,7 +671,7 @@ class CameraManager(
             maxZoom = cam2Info.getCameraCharacteristic(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) ?: 1f
         }
 
-        Log.d(TAG, "CONTROL_ZOOM_RATIO_RANGE: min=$minZoom max=$maxZoom  physicalUltraWide=${ultraWideCameraSelector != null}")
+        Timber.d("CONTROL_ZOOM_RATIO_RANGE: min=$minZoom max=$maxZoom  physicalUltraWide=${ultraWideCameraSelector != null}")
 
         // Suporta zoom-out via câmera lógica (Android 11+, logical multi-camera)
         supportsLogicalZoomOut = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && minZoom < 0.9f
@@ -674,51 +693,51 @@ class CameraManager(
         _selectedZoomLevel.value = (if (useUltraWide && minForUi < 1f) minForUi else 1f).coerceIn(minForUi, maxForUi)
     }
 
-    fun setAspectRatio(ratio: String) {
+    override fun setAspectRatio(ratio: String) {
         selectedAspectRatio = ratio
         bindCameraUseCases()
     }
 
-    fun updateBitratePreset(preset: VideoBitratePreset) {
+    override fun updateBitratePreset(preset: VideoBitratePreset) {
         bitratePreset = preset
         scheduleBind()
     }
 
-    fun rebindWithCurrentSettings() {
+    override fun rebindWithCurrentSettings() {
         scheduleBind()
     }
 
-    fun setCameraMode(mode: CameraMode) {
+    override fun setCameraMode(mode: CameraMode) {
         if (currentCameraMode == mode) return
         currentCameraMode = mode
         _isCameraReady.value = false  // sinaliza "não pronto" imediatamente antes do rebind
         scheduleBind()
     }
 
-    fun tapToFocus(action: FocusMeteringAction, onFocusAcquired: () -> Unit = {}) {
+    override fun tapToFocus(action: FocusMeteringAction, onFocusAcquired: () -> Unit) {
         val cam = camera ?: return
         // Log max AF regions supported — 0 means this device ignores CONTROL_AF_REGIONS
         val maxAfRegions = Camera2CameraInfo.from(cam.cameraInfo)
             .getCameraCharacteristic(CameraCharacteristics.CONTROL_MAX_REGIONS_AF)
-        Log.d(TAG, "tapToFocus: maxAfRegions=$maxAfRegions")
+        Timber.d("tapToFocus: maxAfRegions=$maxAfRegions")
         val future = cam.cameraControl.startFocusAndMetering(action)
         future.addListener({
             try {
                 if (future.get().isFocusSuccessful) {
-                    Log.d(TAG, "tapToFocus: focus acquired successfully")
+                    Timber.d("tapToFocus: focus acquired successfully")
                     onFocusAcquired()
                 } else {
-                    Log.w(TAG, "tapToFocus: isFocusSuccessful=false (HAL may have rejected the metering region)")
+                    Timber.w("tapToFocus: isFocusSuccessful=false (HAL may have rejected the metering region)")
                 }
             } catch (_: Exception) {}
         }, ContextCompat.getMainExecutor(context))
     }
 
-    fun cancelFocusLock() {
+    override fun cancelFocusLock() {
         camera?.cameraControl?.cancelFocusAndMetering()
     }
 
-    fun setExposureCompensationIndex(index: Int) {
+    override fun setExposureCompensationIndex(index: Int) {
         val clamped = index.coerceIn(_exposureMin.value, _exposureMax.value)
         _exposureIndex.value = clamped
         camera?.cameraControl?.setExposureCompensationIndex(clamped)
@@ -742,10 +761,10 @@ class CameraManager(
         return lm.getLastKnownLocation(provider)
     }
 
-    fun startRecording(micEnabled: Boolean = true, targetRotation: Int = 0) {
+    override fun startRecording(micEnabled: Boolean, targetRotation: Int) {
         val videoCapture = videoCapture ?: return
         if (currentRecording != null) {
-            Log.w(TAG, "Recording already in progress")
+            Timber.w("Recording already in progress")
             return
         }
         // Lock video orientation to the physical phone orientation at recording start
@@ -753,7 +772,7 @@ class CameraManager(
 
         // Captura localização agora (início da gravação) para aplicar ao finalizar
         val recordingLocation: Location? = if (isSaveLocationEnabled) getLastKnownLocation() else null
-        Log.d(TAG, "startRecording: location=$recordingLocation saveEnabled=$isSaveLocationEnabled")
+        Timber.d("startRecording: location=$recordingLocation saveEnabled=$isSaveLocationEnabled")
 
         val dateStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val displayName = "VID_$dateStamp.mp4"
@@ -781,14 +800,17 @@ class CameraManager(
                 when (event) {
                     is VideoRecordEvent.Start -> {
                         _recordingState.value = RecordingState.Recording
-                        Log.d(TAG, "Recording started")
+                        CameraTelemetry.recordingStarted(
+                            option = selectedVideoOption,
+                            bitrate = bitratePreset.bitrateFor(selectedVideoOption),
+                            micEnabled = micEnabled
+                        )
                     }
                     is VideoRecordEvent.Pause -> _recordingState.value = RecordingState.Paused
                     is VideoRecordEvent.Resume -> _recordingState.value = RecordingState.Recording
                     is VideoRecordEvent.Finalize -> {
                         if (!event.hasError()) {
                             val uri = event.outputResults.outputUri
-                            Log.d(TAG, "Recording saved: $uri")
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                 val cv = ContentValues().apply {
                                     put(MediaStore.Video.Media.IS_PENDING, 0)
@@ -796,8 +818,15 @@ class CameraManager(
                                 context.contentResolver.update(uri, cv, null, null)
                             }
                             _lastVideoUri.value = uri
+                            CameraTelemetry.recordingFinished(
+                                // Só o id do MediaStore: o caminho completo expõe
+                                // nome de arquivo e pasta do usuário no logcat.
+                                mediaId = uri.lastPathSegment,
+                                durationMs = event.recordingStats.recordedDurationNanos / 1_000_000,
+                                sizeBytes = event.recordingStats.numBytesRecorded
+                            )
                         } else {
-                            Log.e(TAG, "Recording error: ${event.error}")
+                            CameraTelemetry.recordingFailed("code=${event.error}")
                         }
                         currentRecording = null
                         _recordingState.value = RecordingState.Idle
@@ -807,15 +836,20 @@ class CameraManager(
             }
     }
 
-    fun pauseRecording() { currentRecording?.pause() }
-    fun resumeRecording() { currentRecording?.resume() }
-    fun stopRecording() { currentRecording?.stop(); currentRecording = null }
+    override fun pauseRecording() { currentRecording?.pause() }
+    override fun resumeRecording() { currentRecording?.resume() }
+    override fun stopRecording() { currentRecording?.stop(); currentRecording = null }
 
-    fun takePhoto(targetRotation: Int = android.view.Surface.ROTATION_0, onSaved: (Uri) -> Unit, onError: (String) -> Unit = {}) {
-        val capture = imageCapture ?: run { onError("ImageCapture não inicializado"); return }
+    override fun takePhoto(targetRotation: Int, onSaved: (Uri) -> Unit, onError: (String) -> Unit) {
+        val capture = imageCapture ?: run {
+            CameraTelemetry.photoFailed("image_capture_nao_inicializado")
+            onError("ImageCapture não inicializado")
+            return
+        }
+        val captureStartedAt = SystemClock.elapsedRealtime()
         capture.targetRotation = targetRotation
         val photoLocation: Location? = if (isSaveLocationEnabled) getLastKnownLocation() else null
-        Log.d(TAG, "takePhoto: location=$photoLocation saveEnabled=$isSaveLocationEnabled enhancement=$isImageEnhancementEnabled aspectRatio=$selectedAspectRatio targetRotation=$targetRotation")
+        Timber.d("takePhoto: location=$photoLocation saveEnabled=$isSaveLocationEnabled enhancement=$isImageEnhancementEnabled aspectRatio=$selectedAspectRatio targetRotation=$targetRotation")
         val dateStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val displayName = "IMG_$dateStamp.jpg"
 
@@ -830,18 +864,24 @@ class CameraManager(
                         image.close()
                         val processed = processCapturedBitmap(raw, rotationDegrees, targetRotation)
                         val uri = saveBitmapWithExif(processed, displayName, photoLocation, jpegBytes)
+                        CameraTelemetry.photoCaptured(
+                            preset = photoQualityPreset,
+                            widthPx = processed.width,
+                            heightPx = processed.height,
+                            elapsedMs = SystemClock.elapsedRealtime() - captureStartedAt
+                        )
                         processed.recycle()
                         _lastPhotoUri.value = uri
                         ContextCompat.getMainExecutor(context).execute { onSaved(uri) }
                     } catch (e: Exception) {
-                        Log.e(TAG, "Photo processing failed", e)
+                        CameraTelemetry.photoFailed("processamento", e)
                         ContextCompat.getMainExecutor(context).execute {
                             onError(e.message ?: "Erro ao processar foto")
                         }
                     }
                 }
                 override fun onError(exception: ImageCaptureException) {
-                    Log.e(TAG, "Photo capture failed: ${exception.message}", exception)
+                    CameraTelemetry.photoFailed("captura code=${exception.imageCaptureError}", exception)
                     ContextCompat.getMainExecutor(context).execute {
                         onError(exception.message ?: "Erro ao capturar foto")
                     }
@@ -870,12 +910,19 @@ class CameraManager(
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                         val uri = outputFileResults.savedUri ?: return
-                        Log.d(TAG, "Photo saved: $uri")
+                        CameraTelemetry.photoCaptured(
+                            preset = photoQualityPreset,
+                            // Caminho direto não decodifica o bitmap, então o tamanho
+                            // real não é conhecido aqui: reporta o alvo do preset.
+                            widthPx = photoQualityPreset.targetSize?.width ?: 0,
+                            heightPx = photoQualityPreset.targetSize?.height ?: 0,
+                            elapsedMs = SystemClock.elapsedRealtime() - captureStartedAt
+                        )
                         _lastPhotoUri.value = uri
                         onSaved(uri)
                     }
                     override fun onError(exception: ImageCaptureException) {
-                        Log.e(TAG, "Photo capture failed: ${exception.message}", exception)
+                        CameraTelemetry.photoFailed("captura code=${exception.imageCaptureError}", exception)
                         onError(exception.message ?: "Erro ao capturar foto")
                     }
                 }
@@ -955,7 +1002,7 @@ class CameraManager(
         val baseContrast = 1.03f + (avgVal.coerceIn(0.2f, 0.8f) - 0.2f) / 0.6f * 0.07f  // 1.03..1.10
         val contrastBoost = baseContrast - skinFactor * 0.04f
 
-        Log.d(TAG, "enhanceBitmap: avgSat=${"%.2f".format(avgSat)} avgVal=${"%.2f".format(avgVal)} skinRatio=${"%.2f".format(skinRatio)} satBoost=${"%.2f".format(satBoost)} contrast=${"%.2f".format(contrastBoost)}")
+        Timber.d("enhanceBitmap: avgSat=${"%.2f".format(avgSat)} avgVal=${"%.2f".format(avgVal)} skinRatio=${"%.2f".format(skinRatio)} satBoost=${"%.2f".format(satBoost)} contrast=${"%.2f".format(contrastBoost)}")
 
         val satMatrix = ColorMatrix()
         satMatrix.setSaturation(satBoost)
@@ -1004,7 +1051,7 @@ class CameraManager(
                         src.getAttribute(tag)?.let { exif.setAttribute(tag, it) }
                     }
                 } catch (e: Exception) {
-                    Log.w(TAG, "EXIF copy failed: ${e.message}")
+                    Timber.w("EXIF copy failed: ${e.message}")
                 }
             }
             // GPS
@@ -1079,19 +1126,19 @@ class CameraManager(
         } else bitmap
     }
 
-    fun toggleFlash(enable: Boolean) { camera?.cameraControl?.enableTorch(enable) }
+    override fun toggleFlash(enable: Boolean) { camera?.cameraControl?.enableTorch(enable) }
 
-    fun setPhotoFlashMode(mode: Int) {
+    override fun setPhotoFlashMode(mode: Int) {
         currentPhotoFlashMode = mode
         imageCapture?.flashMode = mode
     }
 
-    fun applyPhotoQualityPreset(preset: PhotoQualityPreset) {
+    override fun applyPhotoQualityPreset(preset: PhotoQualityPreset) {
         photoQualityPreset = preset
         scheduleBind()
     }
 
-    fun flipCamera() {
+    override fun flipCamera() {
         isFrontCamera = !isFrontCamera
         useUltraWide = false
         detectUltraWideCamera()
@@ -1099,7 +1146,7 @@ class CameraManager(
         bindCameraUseCases()
     }
 
-    fun release() {
+    override fun release() {
         currentRecording?.stop()
         cameraProvider?.unbindAll()
     }
