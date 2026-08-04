@@ -123,6 +123,33 @@ class CameraViewModelTest {
         assertFalse(viewModel.cameraInitialized.value)
     }
 
+    /**
+     * Requirements: FR-3
+     *
+     * A UI define a proporção efetiva durante a primeira composição, **antes** de
+     * `initializeCamera` criar o controller. A primeira implementação só repassava
+     * (`cameraManager?.previewAspectLabel = label`), então a atribuição se perdia em
+     * silêncio e o `evt=bind` reportava sempre `9:16` — pego só na verificação em
+     * tablet. Este teste tranca o caminho.
+     */
+    @Test
+    fun `proporcao definida antes de inicializar chega ao controller`() = teste {
+        viewModel.setPreviewAspectLabel("16:9")
+
+        inicializar()
+
+        assertEquals("16:9", controller.previewAspectLabel)
+    }
+
+    @Test
+    fun `proporcao definida depois de inicializar chega ao controller`() = teste {
+        inicializar()
+
+        viewModel.setPreviewAspectLabel("4:3")
+
+        assertEquals("4:3", controller.previewAspectLabel)
+    }
+
     @Test
     fun `inicializar semeia o controller com o que estava persistido`() = teste {
         storage.isStabilizationEnabled = false

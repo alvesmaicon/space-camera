@@ -3,9 +3,9 @@
 ## Visão geral
 
 - **Total:** 6
-- **Concluídas:** 2 (Task 1, Task 5) — **Wave 0 fechada**
+- **Concluídas:** 5 — **Waves 0 e 1 fechadas**
 - **Em andamento:** 0
-- **Pendentes:** 4 (Wave 1: Tasks 2, 3, 4 · Wave 2: Task 6)
+- **Pendentes:** 1 (Wave 2: Task 6)
 - **Estratégia de decomposição:** fatias verticais por grupo de controle. A Task 1 é
   contrato de Wave 0 (predicado + helper de eixo), do qual quatro tarefas dependem —
   extraí-lo evita que virem uma corrente serial. A Task 5 (orientação da mídia) é
@@ -37,15 +37,15 @@ Contrato de Wave 0. Existe separado porque quatro tarefas dependem dele.
   - **DADO** `AxisContainer(vertical = false)` **QUANDO** composto **ENTÃO** produz
     layout idêntico ao `Row` que substituiu
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest --tests '*WideWindow*'`
-  - [ ] Build: `./gradlew assembleDebug`
-  - [ ] Manual: o app em telefone continua idêntico (nada consome o predicado ainda)
+  - [x] Testes passam: `./gradlew testDebugUnitTest --tests '*WideWindow*'` (7)
+  - [x] Build: `./gradlew assembleDebug`
+  - [x] Manual: o app em telefone continua idêntico (nada consome o predicado ainda)
 - **_Requirements: FR-1, NFR-4_**
 - **_Decisions: ADR-002, ADR-003_**
 
 ---
 
-### [ ] 2. Inverter a barra superior
+### [x] 2. Inverter a barra superior
 
 - **Size:** M
 - **Complexity:** medium
@@ -66,15 +66,17 @@ Contrato de Wave 0. Existe separado porque quatro tarefas dependem dele.
   - **DADO** recorte de câmera na lateral **QUANDO** em paisagem **ENTÃO** a barra não
     fica por baixo dele
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest`
-  - [ ] Manual: `scripts/smoke.sh` em telefone, captura comparada com a de hoje
-  - [ ] Manual: girar o tablet e conferir a barra à esquerda
+  - [x] Testes passam: `./gradlew testDebugUnitTest` (59)
+  - [x] Manual: telefone em retrato, 29 de 29 caixas de layout com bounds idênticos
+        ao build anterior (NFR-1)
+  - [x] Manual: tablet com a ponte removida localmente — barra à esquerda, medida em
+        `uiautomator` nos x 22–119 de 2560
 - **_Requirements: FR-2, FR-5, NFR-1_**
 - **_Decisions: ADR-001, ADR-003_**
 
 ---
 
-### [ ] 3. Inverter os controles inferiores e a proporção da pré-visualização
+### [x] 3. Inverter os controles inferiores e a proporção da pré-visualização
 
 - **Size:** M
 - **Complexity:** medium
@@ -96,15 +98,16 @@ Contrato de Wave 0. Existe separado porque quatro tarefas dependem dele.
     `evt=bind` traz `aspect` com o valor efetivo
   - **DADO** janela em retrato **QUANDO** a tela compõe **ENTÃO** tudo igual a antes
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest`
-  - [ ] Manual: `scripts/logcat.sh 'evt=bind'` mostra `aspect` mudando ao girar
-  - [ ] Manual: `elapsed_ms` do bind após girar ≤ 800 (NFR-3)
+  - [x] Testes passam: `./gradlew testDebugUnitTest` (59)
+  - [x] Manual: `evt=bind` traz `aspect=16:9` em tablet e `aspect=9:16` em telefone
+  - [x] Manual: `elapsed_ms` de 263, 264 e 317 — teto do NFR-3 é 800
+  - [x] Manual: caixa de pré-visualização medida em `[0,80]-[2560,1520]` = 1280×720dp
 - **_Requirements: FR-2, FR-3, FR-5, NFR-1, NFR-3_**
 - **_Decisions: ADR-001, ADR-003_**
 
 ---
 
-### [ ] 4. Barras auxiliares verticais e fundo de contraste
+### [x] 4. Barras auxiliares verticais e fundo de contraste
 
 - **Size:** M
 - **Complexity:** medium
@@ -126,11 +129,36 @@ Contrato de Wave 0. Existe separado porque quatro tarefas dependem dele.
   - **DADO** câmera apontada para superfície branca **QUANDO** medido o contraste entre
     ícone e fundo composto **ENTÃO** é ≥ 4,5:1
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest`
-  - [ ] Manual: captura com cena branca, medir contraste do ícone contra o fundo
-  - [ ] Manual: janela dividida estreita em altura, conferir transbordo
+  - [x] Testes passam: `./gradlew testDebugUnitTest` (59)
+  - [x] Contraste medido: ícone ativo 15,7:1 sobre o fundo composto no pior caso de
+        preview branco. **Estado "desligado" fica em 3,5:1** — ver ressalva abaixo
+  - [ ] **Não verificado:** transbordo em janela larga e baixa. Ver ressalva abaixo
 - **_Requirements: FR-4, FR-5, NFR-2_**
 - **_Decisions: ADR-001, ADR-003_**
+
+> **Ressalva 1 — contraste do estado "desligado" não alcança o limiar.** Medido em
+> 2026-08-04 com o fundo composto no pior caso (scrim `0xFF1C1C1E` com alfa 0,97
+> sobre preview branco = `#232325`):
+>
+> | Estado do ícone | Contraste | Limiar NFR-2 |
+> |---|---|---|
+> | Ativo, branco cheio | **15,7:1** | passa |
+> | Desligado, alfa 0,38 | **3,5:1** | não passa |
+>
+> O alfa 0,38 é o valor que o app já usava, e em retrato sobre a faixa preta ele dá
+> 3,4:1 — ou seja, esta spec **melhora** marginalmente o pior caso em vez de piorá-lo,
+> mas não atinge 4,5:1 nesse estado. Subir o alfa mudaria a aparência **também em
+> retrato**, o que o NFR-1 proíbe. Fica como decisão de produto.
+>
+> **Ressalva 2 — transbordo (AC-4.3) não foi exercitado.** Tentativa com
+> `wm size 2560x760` falhou como teste: a 380dp de altura o `smallestWidth` cai abaixo
+> de 600dp, o Android volta a honrar `screenOrientation` e a janela sai pillarboxed em
+> retrato — o layout largo nem ativa. Nesse aparelho, janela larga implica
+> `sw >= 600dp`, logo pelo menos 600dp de altura para cinco slots de ~46dp, e o
+> transbordo é inalcançável. Com os grupos compactos (o peso saiu do eixo vertical) a
+> folga é ainda maior, mas **não há rolagem de fallback**: numa janela livre curta o
+> suficiente, os controles se sobreporiam. Exigiria um container que meça antes de
+> escolher entre peso e rolagem.
 
 ---
 

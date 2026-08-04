@@ -10,8 +10,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 /**
  * Requirements: FR-1
@@ -58,16 +56,25 @@ internal fun rememberIsWideWindow(): Boolean {
  * mantém os call sites idênticos aos de hoje.
  */
 internal interface AxisScope {
+    /**
+     * Qual eixo está em uso. Exposto porque distribuir com peso só faz sentido no
+     * horizontal: numa coluna da altura da tela, o peso espalha os controles por
+     * centenas de pixels e o grupo deixa de parecer um grupo.
+     */
+    val vertical: Boolean
+
     /** Distribui o espaço do eixo principal, seja ele a largura ou a altura. */
     fun Modifier.axisWeight(weight: Float = 1f): Modifier
 }
 
 private class RowAxisScope(private val scope: RowScope) : AxisScope {
+    override val vertical = false
     override fun Modifier.axisWeight(weight: Float): Modifier =
         with(scope) { this@axisWeight.weight(weight) }
 }
 
 private class ColumnAxisScope(private val scope: ColumnScope) : AxisScope {
+    override val vertical = true
     override fun Modifier.axisWeight(weight: Float): Modifier =
         with(scope) { this@axisWeight.weight(weight) }
 }
@@ -77,22 +84,26 @@ private class ColumnAxisScope(private val scope: ColumnScope) : AxisScope {
  *
  * `Row` ou `Column` conforme [vertical], fornecendo [AxisScope] ao conteúdo.
  *
- * Com `vertical = false` e [spacing] zerado, produz exatamente o `Row` que
- * substitui: o alinhamento no eixo cruzado é centralizado (o que todos os call
- * sites já pediam) e a distribuição no eixo principal fica no default do Compose.
+ * [arrangement] é tipado como `Arrangement.HorizontalOrVertical` justamente porque é
+ * o subconjunto que serve aos dois eixos — `SpaceAround`, `SpaceEvenly`,
+ * `SpaceBetween`, `Center` e `spacedBy`. `Start` e `Top`, que existem em só um eixo,
+ * ficam de fora por construção: são o default de cada eixo quando não se passa nada.
+ *
+ * Com `vertical = false` e `arrangement` nulo, produz exatamente o `Row` que
+ * substitui — alinhamento centralizado no eixo cruzado, que é o que todos os call
+ * sites já pediam.
  */
 @Composable
 internal fun AxisContainer(
     vertical: Boolean,
     modifier: Modifier = Modifier,
-    spacing: Dp = 0.dp,
+    arrangement: Arrangement.HorizontalOrVertical? = null,
     content: @Composable AxisScope.() -> Unit
 ) {
     if (vertical) {
         Column(
             modifier = modifier,
-            verticalArrangement =
-                if (spacing > 0.dp) Arrangement.spacedBy(spacing) else Arrangement.Top,
+            verticalArrangement = arrangement ?: Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             ColumnAxisScope(this).content()
@@ -100,8 +111,7 @@ internal fun AxisContainer(
     } else {
         Row(
             modifier = modifier,
-            horizontalArrangement =
-                if (spacing > 0.dp) Arrangement.spacedBy(spacing) else Arrangement.Start,
+            horizontalArrangement = arrangement ?: Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
             RowAxisScope(this).content()

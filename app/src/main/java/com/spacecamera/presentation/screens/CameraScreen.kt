@@ -80,6 +80,7 @@ import com.spacecamera.camera.VideoOption
 import com.spacecamera.presentation.layout.AxisContainer
 import com.spacecamera.presentation.layout.AxisScope
 import com.spacecamera.presentation.layout.captureRotation
+import com.spacecamera.presentation.layout.rememberIsWideWindow
 import com.spacecamera.presentation.layout.uiRotation
 import com.spacecamera.presentation.layout.windowRelativeRoll
 import com.spacecamera.presentation.viewmodels.CameraViewModel
@@ -450,13 +451,27 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp.dp
     val screenHeightDp = configuration.screenHeightDp.dp
+
+    // Fonte única de verdade do layout adaptativo (FR-1). Retrato é o caminho
+    // default: qualquer falha na detecção cai no layout de hoje (NFR-1).
+    val isWide = rememberIsWideWindow()
+
+    // Em janela larga a proporção retrato vira paisagem (FR-3). O 3:4 do modo foto
+    // acompanha pelo mesmo motivo: uma caixa alta numa janela larga desperdiça a tela.
+    val previewAspectLabel = when {
+        cameraMode == CameraMode.PHOTO && selectedAspectRatio == "Full" -> "Full"
+        cameraMode == CameraMode.VIDEO || selectedAspectRatio == "9:16" ->
+            if (isWide) "16:9" else "9:16"
+        else -> if (isWide) "4:3" else "3:4"
+    }
     val previewSizeModifier: Modifier = when {
         cameraMode == CameraMode.PHOTO && selectedAspectRatio == "Full" -> Modifier.fillMaxSize()
         else -> {
-            val (rW, rH) = when {
-                cameraMode == CameraMode.VIDEO -> 9f to 16f
-                selectedAspectRatio == "9:16" -> 9f to 16f
-                else -> 3f to 4f  // "3:4" usa proporção 3:4 (sensor nativo)
+            val (rW, rH) = when (previewAspectLabel) {
+                "16:9" -> 16f to 9f
+                "9:16" -> 9f to 16f
+                "4:3" -> 4f to 3f
+                else -> 3f to 4f
             }
             val desiredH = screenWidthDp * (rH / rW)
             if (desiredH <= screenHeightDp)
@@ -464,6 +479,18 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
             else Modifier.width(screenHeightDp * (rW / rH)).height(screenHeightDp)
         }
     }
+
+    // AC-3.2: o `evt=bind` seguinte precisa trazer a proporção efetiva. Uma virada
+    // recria a activity (o manifesto não declara configChanges), então há bind novo.
+    LaunchedEffect(previewAspectLabel) { viewModel.setPreviewAspectLabel(previewAspectLabel) }
+
+    // FR-5: em retrato as barras ficam sobre a faixa preta fora do preview; em
+    // paisagem o preview ocupa a largura toda e elas passam a ficar sobre a imagem.
+    // Mesma cor e alfa já usados na linha expansível, para não inventar um segundo
+    // tom de fundo. Fica condicionado à janela larga porque em retrato aplicar o
+    // fundo seria mudança visível, e o NFR-1 proíbe.
+    val controlScrimColor =
+        if (isWide) Color(0xFF1C1C1E).copy(alpha = 0.97f) else Color.Transparent
 
     val dynamicColorScheme = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
         dynamicDarkColorScheme(context)
@@ -485,17 +512,28 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
             }
     ) {
         // ── Barra superior (fora do preview) ─────────────────────────────
-        Column(
+        // Em janela larga vai para o bordo esquerdo e empilha na vertical (FR-2):
+        // o eixo do container externo inverte, as linhas internas viram colunas.
+        AxisContainer(
+            vertical = !isWide,
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
+                // Em paisagem o grupo envolve o próprio conteúdo e o `CenterStart`
+                // o centraliza na vertical. Com `fillMaxHeight` os cinco ícones se
+                // espalhavam pelos 1600px e virava um paredão vazio.
+                .align(if (isWide) Alignment.CenterStart else Alignment.TopCenter)
+                .then(if (isWide) Modifier else Modifier.fillMaxWidth())
                 .zIndex(1f)
                 // safeDrawing em vez de statusBarsPadding: a status bar é
                 // escondida em onWindowFocusChanged, então o inset dela vira 0 e
                 // a barra subiria para debaixo do recorte da câmera (o manifesto
                 // usa windowLayoutInDisplayCutoutMode="shortEdges"). safeDrawing
-                // considera também o displayCutout e resolve os dois casos.
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
+                // considera também o displayCutout e resolve os dois casos —
+                // inclusive recorte na lateral, quando o eixo é o horizontal.
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(
+                        if (isWide) WindowInsetsSides.Start else WindowInsetsSides.Top
+                    )
+                )
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             // ── Linha principal (sempre visível) ─────────────────────
@@ -516,8 +554,12 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
             ) { mode ->
                 if (mode == CameraMode.VIDEO) {
                     AxisContainer(
-                        vertical = false,
-                        modifier = Modifier.fillMaxWidth()
+                        vertical = isWide,
+                        arrangement = if (isWide) Arrangement.spacedBy(2.dp) else null,
+                        modifier = Modifier
+                            .then(if (isWide) Modifier else Modifier.fillMaxWidth())
+                            .background(controlScrimColor, RoundedCornerShape(28.dp))
+                            .padding(if (isWide) PaddingValues(vertical = 6.dp) else PaddingValues())
                     ) {
                         TopBarSlot {
                             ResolutionTopBarButton(
@@ -573,8 +615,12 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                     }
                 } else {
                     AxisContainer(
-                        vertical = false,
-                        modifier = Modifier.fillMaxWidth()
+                        vertical = isWide,
+                        arrangement = if (isWide) Arrangement.spacedBy(2.dp) else null,
+                        modifier = Modifier
+                            .then(if (isWide) Modifier else Modifier.fillMaxWidth())
+                            .background(controlScrimColor, RoundedCornerShape(28.dp))
+                            .padding(if (isWide) PaddingValues(vertical = 6.dp) else PaddingValues())
                     ) {
                         TopBarSlot {
                             ResolutionTopBarButton(
@@ -652,14 +698,15 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 enter = fadeIn() + slideInVertically(),
                 exit = fadeOut() + slideOutVertically()
             ) {
-                Row(
+                AxisContainer(
+                    vertical = isWide,
+                    arrangement = Arrangement.SpaceAround,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 6.dp)
+                        .then(if (isWide) Modifier else Modifier.fillMaxWidth())
+                        // Em paisagem a linha abre ao lado da barra, não abaixo dela.
+                        .padding(if (isWide) PaddingValues(start = 6.dp) else PaddingValues(top = 6.dp))
                         .background(Color(0xFF1C1C1E).copy(alpha = 0.97f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
                 ) {
                     if (cameraMode == CameraMode.VIDEO) {
                         TopBarTextToggle(
@@ -734,8 +781,11 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 enter = fadeIn() + slideInVertically(),
                 exit = fadeOut() + slideOutVertically()
             ) {
-                HorizontalPickerBar(
-                    modifier = Modifier.padding(top = 6.dp),
+                PickerBar(
+                    modifier = Modifier.padding(
+                        if (isWide) PaddingValues(start = 6.dp) else PaddingValues(top = 6.dp)
+                    ),
+                    vertical = isWide,
                     items = availableVideoOptions.map { opt -> opt to opt.label },
                     selectedKey = selectedVideoOption,
                     onSelect = {
@@ -1016,16 +1066,23 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
         }
 
         // ── Controles inferiores ─────────────────────────────────────
+        // Em janela larga vão para o bordo direito, empilhados (FR-2). O eixo do
+        // grupo não inverte: continua empilhando zoom, modo e botões na ordem de
+        // sempre — o que muda é a âncora e de que lado vem o respiro do sistema.
         Column(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
+                .align(if (isWide) Alignment.CenterEnd else Alignment.BottomCenter)
+                .then(if (isWide) Modifier else Modifier.fillMaxWidth())
                 // Era `padding(bottom = 36.dp)` fixo, provavelmente calibrado a
                 // olho num aparelho com navegação por gestos (~24dp de inset).
                 // Em navegação de 3 botões (~48dp) o obturador ficava por baixo
                 // da barra. O inset do sistema mais um respiro fixo se adapta.
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
-                .padding(bottom = 12.dp),
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(
+                        if (isWide) WindowInsetsSides.End else WindowInsetsSides.Bottom
+                    )
+                )
+                .padding(if (isWide) PaddingValues(end = 12.dp) else PaddingValues(bottom = 12.dp)),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -1039,6 +1096,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                     minZoom = minZoomRatio,
                     maxZoom = maxZoomRatio,
                     enabled = true,
+                    vertical = isWide,
                     rotationDeg = iconRotation,
                     onSelect = { zoom ->
                         val alreadySelected = abs(selectedZoomLevel - zoom) < 0.08f
@@ -1066,20 +1124,22 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 ModeSelector(
                     modes = CameraMode.entries.toList(),
                     selectedMode = cameraMode,
+                    vertical = isWide,
+                    scrimColor = controlScrimColor,
                     onModeSelect = { switchMode(it) }
                 )
             }
 
-            // Linha de botões: Flip | Gravar | Pausar/Thumb
+            // Linha de botões: Flip | Gravar | Pausar/Thumb.
+            //
+            // Em retrato é um `Box` com âncoras, e não um `Row`: é o que mantém o
+            // obturador exatamente no centro da tela mesmo quando a miniatura não
+            // existe. Em paisagem isso não serve — âncoras num `Box` empilhado
+            // sobrepõem os três — então ali é uma coluna compacta de verdade, e os
+            // três controles são declarados uma única vez como lambdas.
+            val controleFlip: @Composable () -> Unit = {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp)
-            ) {
-            // Flip câmera (esquerda)
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
                     .size(52.dp)
                     .background(Color.Black.copy(alpha = 0.45f), CircleShape)
                     .clickable(enabled = !isRecording) { viewModel.flipCamera() },
@@ -1092,11 +1152,12 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                     modifier = Modifier.size(26.dp).rotate(iconRotation)
                 )
             }
+            }
 
             // Gravar / Parar / Foto (centro)
+            val controleObturador: @Composable () -> Unit = {
             Box(
                 modifier = Modifier
-                    .align(Alignment.Center)
                     .size(80.dp)
                     .background(Color.White.copy(alpha = 0.12f), CircleShape)
                     .clickable {
@@ -1139,9 +1200,11 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                     }
                 }
             }
+            }
 
-            // Direita: controle de pausa/thumb (vídeo) ou thumb da foto
-            Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+            // Pausa/thumb (vídeo) ou thumb da foto
+            val controleFinal: @Composable () -> Unit = {
+            Box {
                 if (cameraMode == CameraMode.VIDEO) {
                     PauseOrThumbnailControl(
                         isRecording = isRecording,
@@ -1172,7 +1235,28 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                     }
                 }
             }
-        }
+            }
+
+            if (isWide) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    controleFlip()
+                    controleObturador()
+                    controleFinal()
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp)
+                ) {
+                    Box(modifier = Modifier.align(Alignment.CenterStart)) { controleFlip() }
+                    Box(modifier = Modifier.align(Alignment.Center)) { controleObturador() }
+                    Box(modifier = Modifier.align(Alignment.CenterEnd)) { controleFinal() }
+                }
+            }
         } // end Column controles
 
         // ── Overlay de contagem regressiva ───────────────────────────────
@@ -1211,8 +1295,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 0.dp)
+                .align(if (isWide) Alignment.CenterEnd else Alignment.BottomCenter)
                 .zIndex(2f)
         ) {
             LensZoomDial(
@@ -1220,6 +1303,8 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 maxZoom = maxZoomRatio,
                 currentZoom = selectedZoomLevel,
                 screenHeightDp = screenHeightDp,
+                railLengthDp = if (isWide) screenHeightDp else screenWidthDp,
+                vertical = isWide,
                 enabled = true,
                 rotationDeg = iconRotation,
                 onZoomChange = {
@@ -1247,7 +1332,10 @@ private fun AxisScope.TopBarSlot(
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
-        modifier = Modifier.axisWeight(),
+        // Peso só no horizontal: numa coluna, distribuir a altura da tela entre
+        // cinco slots deixa 300px de vazio entre ícones. No vertical o slot tem o
+        // tamanho do conteúdo e o grupo fica compacto.
+        modifier = if (vertical) Modifier else Modifier.axisWeight(),
         contentAlignment = Alignment.Center,
         content = content
     )
@@ -1294,12 +1382,22 @@ private fun PauseOrThumbnailControl(
     }
 }
 
+/**
+ * Disco de zoom decimal.
+ *
+ * @param railLengthDp comprimento do eixo em que o disco corre: a largura da tela em
+ *   retrato, a altura em paisagem. Documentado aqui e não na lista de parâmetros
+ *   porque a assinatura entra na chave do baseline do Detekt — comentário inline ali
+ *   faz a entrada deixar de casar.
+ */
 @Composable
 private fun LensZoomDial(
     minZoom: Float,
     maxZoom: Float,
     currentZoom: Float,
     screenHeightDp: Dp,
+    railLengthDp: Dp,
+    vertical: Boolean,
     enabled: Boolean,
     rotationDeg: Float = 0f,
     onZoomChange: (Float) -> Unit,
@@ -1337,10 +1435,25 @@ private fun LensZoomDial(
         return normalized in startAngle..(startAngle + sweepAngle)
     }
 
+    // O arco é sempre desenhado "deitado", com o centro do círculo abaixo da caixa.
+    // Em paisagem a caixa externa reserva o espaço na lateral e o conteúdo é girado
+    // -90°, então o arco passa a abrir para dentro da tela e a arrastar na vertical.
+    //
+    // `requiredSize` é necessário: o conteúdo continua medindo o comprimento do
+    // trilho no eixo maior, o que a caixa externa girada não permitiria.
+    // `Modifier.rotate` também transforma as coordenadas de toque, então o arraste
+    // segue lido em `dragAmount.x` — no eixo do próprio disco, não da tela.
+    Box(
+        modifier = if (vertical)
+            Modifier.width(DIAL_DEPTH).height(railLengthDp)
+        else
+            Modifier.fillMaxWidth().height(DIAL_DEPTH),
+        contentAlignment = Alignment.Center
+    ) {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(360.dp)
+            .requiredSize(width = railLengthDp, height = DIAL_DEPTH)
+            .then(if (vertical) Modifier.rotate(-90f) else Modifier)
             .pointerInput(minZoom, maxZoom, enabled) {
                 if (!enabled) return@pointerInput
                 detectDragGestures(
@@ -1444,7 +1557,11 @@ private fun LensZoomDial(
                         ((value * 10f).roundToInt() / 10f).toString()
                     }
                     canvas.nativeCanvas.save()
-                    canvas.nativeCanvas.rotate(rotationDeg, tx, ty)
+                    // +90 quando vertical para contrarrotacionar o giro do disco:
+                    // sem isso os números das marcas saem tombados.
+                    canvas.nativeCanvas.rotate(
+                        rotationDeg + if (vertical) 90f else 0f, tx, ty
+                    )
                     canvas.nativeCanvas.drawText(text, tx, ty, labelPaint)
                     canvas.nativeCanvas.restore()
                 }
@@ -1473,10 +1590,59 @@ private fun LensZoomDial(
             color = if (enabled) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.32f),
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.offset(y = (-122).dp).rotate(rotationDeg)
+            // O rótulo contrarrotaciona os -90° do disco para continuar legível.
+            modifier = Modifier
+                .offset(y = (-122).dp)
+                .rotate(rotationDeg + if (vertical) 90f else 0f)
         )
     }
+    }
 }
+
+/** Profundidade do disco de zoom: o quanto ele avança para dentro da tela. */
+private val DIAL_DEPTH = 360.dp
+
+/**
+ * Presets de zoom visíveis: 1×, 2× e 5×, com o slot da faixa atual substituído pelo
+ * zoom exato em uso, filtrados pelo que o hardware suporta.
+ *
+ * Extraída de [ZoomPresetBar] em 2026-08-04. O motivo imediato foi a complexidade
+ * ciclomática, que estava em 16 e congelada no baseline do Detekt — adicionar o
+ * parâmetro de eixo mudou a assinatura e desfez o casamento da entrada. Em vez de
+ * recongelar, a dívida foi paga.
+ */
+private const val ZOOM_SLOT_WIDE = 1f
+private const val ZOOM_SLOT_MID = 2f
+private const val ZOOM_SLOT_TELE = 5f
+
+/** Tolerância para casar um preset com o slot que ele substitui. */
+private const val ZOOM_SLOT_EPSILON = 0.001f
+
+/** Uma casa decimal: o rótulo mostra `1.5×`, não `1.4999×`. */
+private const val ZOOM_DECIMAL_SCALE = 10f
+
+/** Abaixo disso o zoom é tratado como inteiro no rótulo. */
+private const val ZOOM_INTEGER_EPSILON = 0.05f
+
+private fun zoomPresets(selectedZoom: Float, minZoom: Float, maxZoom: Float): List<Float> {
+    val replacementSlot = when {
+        selectedZoom < ZOOM_SLOT_MID -> ZOOM_SLOT_WIDE
+        selectedZoom <= ZOOM_SLOT_TELE -> ZOOM_SLOT_MID
+        else -> ZOOM_SLOT_TELE
+    }
+    return listOf(ZOOM_SLOT_WIDE, ZOOM_SLOT_MID, ZOOM_SLOT_TELE)
+        .map { slot -> if (abs(slot - replacementSlot) < ZOOM_SLOT_EPSILON) selectedZoom else slot }
+        .filter { it in minZoom..maxZoom }
+        .distinctBy { (it * ZOOM_DECIMAL_SCALE).roundToInt() }
+}
+
+/** `2×` para valores inteiros, `1.5×` para o resto. */
+private fun zoomLabel(zoom: Float): String =
+    if (abs(zoom - zoom.roundToInt().toFloat()) < ZOOM_INTEGER_EPSILON) {
+        "${zoom.roundToInt()}×"
+    } else {
+        "${(zoom * ZOOM_DECIMAL_SCALE).roundToInt() / ZOOM_DECIMAL_SCALE}×"
+    }
 
 @Composable
 private fun ZoomPresetBar(
@@ -1484,27 +1650,20 @@ private fun ZoomPresetBar(
     minZoom: Float,
     maxZoom: Float,
     enabled: Boolean,
+    vertical: Boolean,
     rotationDeg: Float = 0f,
     onSelect: (Float) -> Unit,
     onOpenDial: () -> Unit
 ) {
-    val replacementSlot = when {
-        selectedZoom < 2f -> 1f
-        selectedZoom <= 5f -> 2f
-        else -> 5f
-    }
-    val presets = listOf(1f, 2f, 5f)
-        .map { slot -> if (abs(slot - replacementSlot) < 0.001f) selectedZoom else slot }
-        .filter { it in minZoom..maxZoom }
-        .distinctBy { (it * 10f).roundToInt() }
+    val presets = zoomPresets(selectedZoom, minZoom, maxZoom)
     if (presets.isEmpty()) return
 
-    Row(
+    AxisContainer(
+        vertical = vertical,
+        arrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
             .background(Color.Black.copy(alpha = 0.52f), RoundedCornerShape(24.dp))
-            .padding(horizontal = 6.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 6.dp, vertical = 4.dp)
     ) {
         presets.forEach { zoom ->
             val isSelected = abs(selectedZoom - zoom) < 0.08f
@@ -1523,13 +1682,8 @@ private fun ZoomPresetBar(
                     .padding(horizontal = 14.dp, vertical = 7.dp),
                 contentAlignment = Alignment.Center
             ) {
-                val zoomLabel = if (abs(zoom - zoom.roundToInt().toFloat()) < 0.05f) {
-                    "${zoom.roundToInt()}×"
-                } else {
-                    "${(zoom * 10f).roundToInt() / 10f}×"
-                }
                 Text(
-                    text = zoomLabel,
+                    text = zoomLabel(zoom),
                     color = when {
                         !enabled -> Color.White.copy(alpha = 0.25f)
                         isSelected -> MaterialTheme.colorScheme.primary
@@ -1605,6 +1759,8 @@ private fun LastVideoThumbnail(uri: Uri, onClick: () -> Unit) {
 private fun ModeSelector(
     modes: List<CameraMode>,
     selectedMode: CameraMode,
+    vertical: Boolean,
+    scrimColor: Color,
     onModeSelect: (CameraMode) -> Unit
 ) {
     val selectedIndex = modes.indexOf(selectedMode).coerceAtLeast(0)
@@ -1616,34 +1772,47 @@ private fun ModeSelector(
         animationSpec = tween(durationMillis = 300),
         label = "modeSelectorOffset"
     )
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            modifier = Modifier.offset(x = animatedOffset.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            modes.forEach { mode ->
-                val isSelected = mode == selectedMode
-                Box(
-                    modifier = Modifier.width(itemWidthDp.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = mode.label,
-                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.38f),
-                        fontSize = if (isSelected) 15.sp else 14.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        modifier = Modifier
-                            .clickable(
-                                indication = null,
-                                interactionSource = remember { MutableInteractionSource() }
-                            ) { onModeSelect(mode) }
-                            .padding(vertical = 8.dp)
-                    )
-                }
+    val itens: @Composable AxisScope.() -> Unit = {
+        modes.forEach { mode ->
+            val isSelected = mode == selectedMode
+            Box(
+                modifier = Modifier.width(itemWidthDp.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = mode.label,
+                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.38f),
+                    fontSize = if (isSelected) 15.sp else 14.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    modifier = Modifier
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) { onModeSelect(mode) }
+                        .padding(vertical = 8.dp)
+                )
             }
+        }
+    }
+    if (vertical) {
+        // Sem o viewport de largura total e sem o deslizamento: com dois modos, os
+        // dois cabem empilhados e não há o que revelar. O `fillMaxWidth` do viewport
+        // era o que impedia o grupo de controles de encostar no bordo direito.
+        AxisContainer(
+            vertical = true,
+            modifier = Modifier.background(scrimColor, RoundedCornerShape(12.dp)),
+            content = itens
+        )
+    } else {
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            AxisContainer(
+                vertical = false,
+                modifier = Modifier.offset(x = animatedOffset.dp),
+                content = itens
+            )
         }
     }
 }
@@ -1887,25 +2056,26 @@ private fun TopBarTimerButton(
 
 // Barra horizontal genérica de seleção
 @Composable
-private fun <T> HorizontalPickerBar(
+private fun <T> PickerBar(
     modifier: Modifier = Modifier,
+    vertical: Boolean,
     items: List<Pair<T, String>>,
     selectedKey: T,
     onSelect: (T) -> Unit
 ) {
-    Row(
+    AxisContainer(
+        vertical = vertical,
+        arrangement = Arrangement.SpaceAround,
         modifier = modifier
-            .fillMaxWidth()
+            .then(if (vertical) Modifier else Modifier.fillMaxWidth())
             .background(Color(0xFF1C1C1E).copy(alpha = 0.97f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 8.dp, vertical = 6.dp)
     ) {
         items.forEach { (key, label) ->
             val isSelected = key == selectedKey
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .then(if (vertical) Modifier else Modifier.axisWeight())
                     .padding(horizontal = 4.dp)
                     .background(
                         if (isSelected) Color.White.copy(alpha = 0.18f) else Color.Transparent,

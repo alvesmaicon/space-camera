@@ -73,6 +73,7 @@ class FakeCameraController : CameraController {
     override var isFrontCameraMirrorEnabled: Boolean = false
     override var isSaveLocationEnabled: Boolean = false
     override var isImageEnhancementEnabled: Boolean = false
+    override var previewAspectLabel: String = "9:16"
 
     // ── Chamadas registradas ────────────────────────────────────────────────
 

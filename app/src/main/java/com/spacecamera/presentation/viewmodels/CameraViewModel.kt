@@ -229,6 +229,7 @@ class CameraViewModel(
                     mgr.isFrontCameraMirrorEnabled = _isFrontCameraMirrorEnabled.value
                     mgr.isSaveLocationEnabled = _isSaveLocationEnabled.value
                     mgr.isImageEnhancementEnabled = _isImageEnhancementEnabled.value
+                    mgr.previewAspectLabel = pendingPreviewAspectLabel
                 }
                 videoRepository = VideoRepositoryImpl(cameraManager!!)
                 viewModelScope.launch {
@@ -508,6 +509,25 @@ class CameraViewModel(
     fun setAspectRatio(ratio: String) {
         _selectedAspectRatio.value = ratio
         cameraManager?.setAspectRatio(ratio)
+    }
+
+    private var pendingPreviewAspectLabel: String = "9:16"
+
+    /**
+     * Requirements: FR-3
+     *
+     * Informa ao controller a proporção que a pré-visualização está usando de fato,
+     * para o `evt=bind` registrá-la (AC-3.2). Não persiste e não reconfigura a
+     * câmera — é só rótulo de diagnóstico.
+     *
+     * Guarda o valor em campo além de repassar: a UI chama isto durante a primeira
+     * composição, quando o `cameraManager` ainda não existe. Sem o campo, a
+     * atribuição se perdia em silêncio e o `evt=bind` reportava sempre `9:16` — foi
+     * o que a verificação em tablet pegou.
+     */
+    fun setPreviewAspectLabel(label: String) {
+        pendingPreviewAspectLabel = label
+        cameraManager?.previewAspectLabel = label
     }
 
     fun toggleStabilization() {

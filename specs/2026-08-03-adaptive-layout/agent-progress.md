@@ -2,9 +2,9 @@
 
 ## Estado atual
 
-- **Fase:** Implementação — Wave 0
-- **Gate atual:** D (documentação da Task 1) / bloqueado na Task 5
-- **Status:** Task 1 concluída; Task 5 bloqueada em decisão do usuário (Q-01)
+- **Fase:** Implementação — Waves 0 e 1 concluídas
+- **Gate atual:** E (aguarda autorização de commit da Wave 1)
+- **Status:** 5 de 6 tarefas concluídas; falta a Task 6
 - **Confiança:** 93%
 - **Última atualização:** 2026-08-04
 
@@ -104,15 +104,68 @@ de 180°, que não altera a `Configuration`.
 A ponte foi removida **só localmente** para o experimento e está restaurada no
 manifesto.
 
+### Sessão 2026-08-04 (continuação) — skill `dev`, Wave 1
+
+- **Agent:** dev
+- **Gates:** A, C, D (Gate B não se aplica: são mudanças de layout Compose, sem
+  lógica nova testável na JVM — o que era testável, o predicado, veio na Task 1)
+- **Testes:** 59 passando (2 novos, de regressão do `previewAspectLabel`)
+- **Detekt e Lint:** limpos
+
+**Tasks 2, 3 e 4 concluídas.** Em janela larga: barra superior no bordo esquerdo,
+controles no direito, pré-visualização 16:9 entre os dois, presets de zoom e seletor
+de modo verticais, disco de zoom girado para o mesmo eixo.
+
+**Duas correções vindas de feedback visual do usuário** (Gate D.1), não de teste:
+
+1. *"nossa ta muito feio"* — a primeira versão usava `fillMaxHeight()` mais
+   `axisWeight()` nos slots, então os cinco ícones se espalhavam pelos 1600px e a
+   barra virava um paredão vazio. Corrigido para **grupos compactos**: em paisagem os
+   containers envolvem o próprio conteúdo e a âncora `CenterStart`/`CenterEnd` os
+   centraliza. `AxisScope` passou a expor `vertical` para o slot saber que peso só
+   faz sentido no eixo horizontal.
+2. *"o disco de zoom decimal esta na horizontal mas os seletores estao na barra
+   lateral"* — o `LensZoomDial` tinha passado batido. Agora o arco é desenhado sempre
+   "deitado" e girado −90° por `Modifier.rotate` quando a janela é larga, dentro de
+   uma caixa externa que reserva o espaço na lateral. `requiredSize` é necessário
+   porque o conteúdo continua medindo o comprimento do trilho no eixo maior. Como
+   `Modifier.rotate` também transforma as coordenadas de toque, o arraste segue lido
+   em `dragAmount.x` — no eixo do próprio disco. O rótulo do zoom e os números das
+   marcas contrarrotacionam +90° para continuar legíveis.
+
+**Bug encontrado e trancado com teste.** `setPreviewAspectLabel` só repassava
+(`cameraManager?.previewAspectLabel = label`), mas a UI chama isso na primeira
+composição, antes de `initializeCamera` criar o controller — a atribuição se perdia
+em silêncio e o `evt=bind` reportava `9:16` mesmo em tablet. Passou a guardar em campo
+e semear no `.also` da criação, como os outros ajustes já faziam. Dois testes novos,
+um deles verificado por mutação (removendo a linha de semeadura, só ele falha).
+
+**Nota de método — o Gradle mentiu duas vezes.** Depois dos ciclos de `git stash` do
+A/B, `assembleDebug` reportou `UP-TO-DATE` com o APK do build anterior no disco, e
+duas rodadas de verificação em aparelho foram feitas contra código velho. Também
+`./gradlew assembleDebug detekt` aborta antes de empacotar quando o detekt falha, e
+o `adb install` seguinte instala o APK antigo sem reclamar. Desde então, todo APK é
+conferido por marcador no dex (`unzip classes*.dex | grep`) antes de instalar. Vale
+virar hábito.
+
+**Dívida do Detekt.** Adicionar parâmetro muda a assinatura, que é a chave das
+entradas do baseline — o achado antigo reaparece como novo. `ZoomPresetBar` foi
+**paga**: `zoomPresets` e `zoomLabel` extraídas, complexidade abaixo do limite e a
+entrada removida do baseline (118 → 117 IDs). `LensZoomDial` (152 linhas,
+complexidade 30) é grande demais para pagar de passagem, então só as duas chaves
+foram atualizadas para a nova assinatura — a dívida segue registrada, nada novo foi
+congelado. Descoberta útil: a chave embute comentários da lista de parâmetros, então
+KDoc de parâmetro ali torna a entrada frágil.
+
 ## Status das tarefas
 
 | Tarefa | Onda | Status | Observação |
 |---|---|---|---|
 | 1. Predicado + helper de eixo | 0 | **Concluída** | 7 testes; contrato pronto, Wave 1 destravada |
 | 5. Captura vs compensação da UI | 0 | **Concluída** | 12 testes; redefinida pela Q-01, verificada nos dois AVDs |
-| 2. Barra superior | 1 | Pendente | |
-| 3. Controles inferiores + proporção | 1 | Pendente | Caminho crítico |
-| 4. Barras auxiliares + contraste | 1 | Pendente | |
+| 2. Barra superior | 1 | **Concluída** | Grupo compacto no bordo esquerdo, x 22–119 de 2560 |
+| 3. Controles inferiores + proporção | 1 | **Concluída** | `aspect=16:9`, caixa 1280×720dp, bind em 263–317ms |
+| 4. Barras auxiliares + contraste | 1 | **Concluída** | Duas ressalvas em tasks.md: contraste do estado desligado e transbordo |
 | 6. Leitura, ponte, integração | 2 | Pendente | Remove o opt-out do manifesto |
 
 ## Pendências
@@ -120,19 +173,47 @@ manifesto.
 - [x] Iniciar a Wave 0
 - [x] Decidir Q-01 — usuário escolheu dividir em duas grandezas
 - [x] Commit da Task 1 (`8caf152`)
-- [ ] Commit da Task 5 (Gate E — aguarda autorização)
-- [ ] Pedir à skill `spec` para reescrever o FR-6 em `requirements.md` conforme a
-      Q-01. A skill `dev` não altera `requirements.md`; hoje o texto do FR-6 ainda
-      descreve a composição que a medição refutou.
-- [ ] Iniciar a Wave 1 (Tasks 2, 3, 4 — dependem só do contrato da Task 1)
+- [x] Commit da Task 5 (`2e2039c`)
+- [x] Emenda do FR-6 / criação do FR-9 em `requirements.md`
+- [ ] Commit da Wave 1 (Gate E — aguarda autorização)
+- [x] Iniciar a Wave 1 (Tasks 2, 3, 4)
+- [ ] Decidir as duas ressalvas da Task 4 (contraste do estado desligado, transbordo)
+- [ ] Wave 2 — Task 6: largura de leitura em Configurações/Sobre, remoção da ponte,
+      verificação integrada nos dois aparelhos
 
 ## Bloqueadores
 
-Nenhum. Wave 0 fechada: `./gradlew assembleDebug testDebugUnitTest detekt lint` verde
-com 57 testes, e o app se comporta como antes em telefone — nada consome ainda o
-predicado de janela larga.
+Nenhum. `./gradlew assembleDebug testDebugUnitTest detekt lint` verde com 59 testes.
+
+`CameraScreen.kt` está em **2.141 linhas** contra o teto de 2.240 do NFR-5 — 99 linhas
+de folga. A Task 6 ainda precisa mexer nele e vai conferir isso; se apertar, a saída é
+extrair a barra superior, o que antecipa parte do item 1 do `REFACTORING.md`.
 
 ## Notas para quem implementar
+
+0. **A proporção da câmera é fixada no bind, e o que salva o app é não declarar
+   `configChanges`.** Levantado pelo usuário de memória em 2026-08-04 e confirmado:
+   `Preview.Builder().setTargetAspectRatio()` e `Recorder.Builder().setAspectRatio()`
+   (`CameraManager.kt:415` e `:443`) são definidos **uma vez**, interpretados em
+   relação à `targetRotation` daquele instante, e nada os reavalia sem rebind. O
+   `Preview` também nunca recebe `setTargetRotation` — medido: a `TransformationInfo`
+   reporta `getTargetRotation=-1`.
+
+   Hoje isso não causa problema porque o manifesto **não** declara
+   `android:configChanges`: girar recria a activity e rebinda. Medido em janela larga
+   `aspect=16:9`, e após a virada `aspect=9:16`, com `evt=bind` novo nas duas.
+
+   **A armadilha:** declarar `configChanges="orientation|screenSize"` — otimização
+   tentadora para acelerar a virada e melhorar o NFR-3 — congelaria a proporção. A
+   UI se adaptaria, o buffer não, e a pré-visualização ficaria com faixas até um
+   rebind manual. Se alguém fizer isso, tem de chamar `rebindCamera()` na mudança de
+   configuração.
+
+   Nota relacionada: no AVD Tablet_API36 o preview aparece com faixas laterais mesmo
+   em janela larga, mas a causa é outra — `SENSOR_ORIENTATION: 90` num aparelho de
+   orientação natural paisagem, então o campo de visão físico é mais alto que largo
+   (`getCropRect=1280x720` com `getRotationDegrees=90`). Num tablet com o sensor
+   montado a 0° ou 270° a imagem preenche a caixa 16:9.
 
 1. **Retrato é o caminho default.** Escreva os condicionais de forma que qualquer
    falha na detecção caia no layout de hoje. NFR-1 é Critical.

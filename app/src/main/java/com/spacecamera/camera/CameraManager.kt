@@ -189,6 +189,8 @@ class CameraManager(
 
     private var selectedVideoOption: VideoOption = VideoOption(Quality.FHD, 30)
     private var selectedAspectRatio: String = "9:16"   // aspect ratio do modo FOTO
+    // Só telemetria — quem define é a UI, conforme a janela. Ver CameraController.
+    override var previewAspectLabel: String = "9:16"
     private var currentCameraMode: CameraMode = CameraMode.VIDEO
     private var currentPhotoFlashMode: Int = ImageCapture.FLASH_MODE_OFF
     override var photoQualityPreset: PhotoQualityPreset = PhotoQualityPreset.MAXIMA
@@ -543,7 +545,9 @@ class CameraManager(
             CameraTelemetry.bind(
                 mode = currentCameraMode,
                 option = selectedVideoOption,
-                aspectRatio = if (currentCameraMode == CameraMode.VIDEO) "9:16" else selectedAspectRatio,
+                // A proporção efetiva da caixa de pré-visualização, que depende da
+                // janela — não a preferência de foto persistida (FR-3, AC-3.2).
+                aspectRatio = previewAspectLabel,
                 bitrate = bitratePreset.bitrateFor(selectedVideoOption),
                 eis = isStabilizationEnabled,
                 noiseReduction = isNoiseReductionEnabled,

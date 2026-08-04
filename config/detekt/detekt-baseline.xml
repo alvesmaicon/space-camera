@@ -9,8 +9,7 @@
     <ID>CyclomaticComplexMethod:CameraManager.kt$CameraManager$private fun saveBitmapWithExif(bitmap: Bitmap, displayName: String, location: Location?, originalJpegBytes: ByteArray? = null): Uri</ID>
     <ID>CyclomaticComplexMethod:CameraManager.kt$CameraManager$private fun updateAvailableZoomLevels()</ID>
     <ID>CyclomaticComplexMethod:CameraScreen.kt$@Composable fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () -&gt; Unit = {})</ID>
-    <ID>CyclomaticComplexMethod:CameraScreen.kt$@Composable private fun LensZoomDial( minZoom: Float, maxZoom: Float, currentZoom: Float, screenHeightDp: Dp, enabled: Boolean, rotationDeg: Float = 0f, onZoomChange: (Float) -&gt; Unit, onInteraction: () -&gt; Unit )</ID>
-    <ID>CyclomaticComplexMethod:CameraScreen.kt$@Composable private fun ZoomPresetBar( selectedZoom: Float, minZoom: Float, maxZoom: Float, enabled: Boolean, rotationDeg: Float = 0f, onSelect: (Float) -&gt; Unit, onOpenDial: () -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:CameraScreen.kt$@Composable private fun LensZoomDial( minZoom: Float, maxZoom: Float, currentZoom: Float, screenHeightDp: Dp, railLengthDp: Dp, vertical: Boolean, enabled: Boolean, rotationDeg: Float = 0f, onZoomChange: (Float) -&gt; Unit, onInteraction: () -&gt; Unit )</ID>
     <ID>CyclomaticComplexMethod:CameraViewModel.kt$CameraViewModel$suspend fun initializeCamera(context: Context, lifecycleOwner: LifecycleOwner, surfaceProvider: Preview.SurfaceProvider?)</ID>
     <ID>EmptyFunctionBlock:CameraScreen.kt$&lt;no name provided&gt;${}</ID>
     <ID>ImplicitDefaultLocale:VideoStorage.kt$VideoStorage$String.format("%.2f GB", sizeInBytes / (1024.0 * 1024.0 * 1024.0))</ID>
@@ -19,7 +18,7 @@
     <ID>LargeClass:CameraManager.kt$CameraManager : CameraController</ID>
     <ID>LongMethod:CameraManager.kt$CameraManager$private fun bindCameraUseCases()</ID>
     <ID>LongMethod:CameraScreen.kt$@Composable fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () -&gt; Unit = {})</ID>
-    <ID>LongMethod:CameraScreen.kt$@Composable private fun LensZoomDial( minZoom: Float, maxZoom: Float, currentZoom: Float, screenHeightDp: Dp, enabled: Boolean, rotationDeg: Float = 0f, onZoomChange: (Float) -&gt; Unit, onInteraction: () -&gt; Unit )</ID>
+    <ID>LongMethod:CameraScreen.kt$@Composable private fun LensZoomDial( minZoom: Float, maxZoom: Float, currentZoom: Float, screenHeightDp: Dp, railLengthDp: Dp, vertical: Boolean, enabled: Boolean, rotationDeg: Float = 0f, onZoomChange: (Float) -&gt; Unit, onInteraction: () -&gt; Unit )</ID>
     <ID>LongMethod:CameraViewModel.kt$CameraViewModel$suspend fun initializeCamera(context: Context, lifecycleOwner: LifecycleOwner, surfaceProvider: Preview.SurfaceProvider?)</ID>
     <ID>LongMethod:SettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SettingsScreen( navController: NavController, viewModel: CameraViewModel )</ID>
     <ID>LongParameterList:CameraTelemetry.kt$CameraTelemetry$( mode: CameraMode, option: VideoOption, aspectRatio: String, bitrate: Int, eis: Boolean, noiseReduction: Boolean, hdr: Boolean, frontCamera: Boolean, elapsedMs: Long )</ID>

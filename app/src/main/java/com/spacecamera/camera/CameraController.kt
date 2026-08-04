@@ -59,6 +59,19 @@ interface CameraController {
     var isSaveLocationEnabled: Boolean
     var isImageEnhancementEnabled: Boolean
 
+    /**
+     * Requirements: FR-3
+     *
+     * Proporção que a **caixa de pré-visualização** está usando na tela, só para o
+     * `evt=bind` registrar. Não reconfigura nada: em vídeo o CameraX é sempre
+     * `RATIO_16_9` independente disso.
+     *
+     * Existe separado de [setAspectRatio] de propósito — aquele é a preferência de
+     * foto escolhida pelo usuário e persistida, e não pode ser sobrescrita pela
+     * orientação da janela.
+     */
+    var previewAspectLabel: String
+
     // ── Ciclo de vida ───────────────────────────────────────────────────────
 
     suspend fun initializeCamera(surfaceProvider: Preview.SurfaceProvider?)
