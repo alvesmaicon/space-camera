@@ -10,7 +10,9 @@
 # App
 appVersionName = "0.4.1"
 appVersionCode = "41"        # derivado do semver (0.4.1 -> 41) para sempre crescer
-compileSdk = "34"
+compileSdk = "36"
+# targetSdk sobe para 36 numa etapa separada: compilar contra o SDK novo é uma
+# coisa, aceitar as mudanças de comportamento dele é outra.
 targetSdk = "34"
 minSdk = "24"
 
@@ -20,7 +22,9 @@ minSdk = "24"
 # ligar buildConfig=true passou a gerar BuildConfig.java e expôs a falha.
 # AGP >= 8.2.1 corrige. Kotlin fica na 1.9.25 (última 1.9.x) para casar com o AGP
 # novo sem trocar de linguagem; o Compose Compiler é amarrado ao Kotlin.
-agp = "8.7.3"
+# AGP 8.13.2 é a última 8.x e compila contra o SDK 36. A 9.x já existe, mas exige
+# Kotlin 2.x e traz mudanças estruturais — fica para depois de publicar.
+agp = "8.13.2"
 kotlin = "1.9.25"
 composeCompiler = "1.5.15"
 

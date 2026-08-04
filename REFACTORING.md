@@ -34,10 +34,11 @@ As que têm chance real de afetar este app:
   status bar, então está no caminho certo — mas todos os `padding` da
   `CameraScreen` e o `Scaffold` das telas de configuração precisam ser conferidos
   contra os insets, principalmente em aparelho com barra de gestos.
-- **Alinhamento de 16 KB de página.** Confirmado que o app **tem** biblioteca
-  nativa: o CameraX empacota `libimage_processing_util_jni.so` nas quatro ABIs.
-  Então esse requisito se aplica de fato, e provavelmente vai exigir subir o
-  CameraX (hoje 1.4.0) junto com o SDK.
+- **Alinhamento de 16 KB de página — verificado, já conforme.** O app tem
+  biblioteca nativa (o CameraX empacota `libimage_processing_util_jni.so` nas
+  quatro ABIs), mas medindo os cabeçalhos ELF os segmentos `PT_LOAD` já vêm com
+  `p_align = 0x4000` (16 KB) no CameraX 1.4.0, e o `zipalign -c -P 16` passa nas
+  quatro ABIs. **Não é preciso subir o CameraX por causa disso.**
 - **Permissões de mídia.** `READ_EXTERNAL_STORAGE` já não vale desde a API 33.
   As miniaturas da última foto/vídeo hoje só funcionam para mídia do próprio app.
   Ao subir o target, decidir entre declarar `READ_MEDIA_IMAGES`/`READ_MEDIA_VIDEO`
