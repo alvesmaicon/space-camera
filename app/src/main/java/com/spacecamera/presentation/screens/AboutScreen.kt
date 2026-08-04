@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.spacecamera.BuildConfig
+import com.spacecamera.presentation.layout.rememberReadingGutter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,10 +36,16 @@ fun AboutScreen(navController: NavController) {
     MaterialTheme(colorScheme = colorScheme) {
         val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
+        // A mesma margem da lista vai na barra de título, senão o título fica colado
+        // na borda esquerda enquanto o conteúdo está centralizado (FR-8). Padding no
+        // app bar é seguro aqui porque o containerColor é o próprio fundo da página.
+        val readingGutter = rememberReadingGutter()
+
         Scaffold(
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = {
                 LargeTopAppBar(
+                    modifier = Modifier.padding(horizontal = readingGutter),
                     title = { Text("Sobre") },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
@@ -56,7 +63,9 @@ fun AboutScreen(navController: NavController) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+                    // FR-8: limita a largura de leitura em janela larga; zero em retrato.
+                    .padding(horizontal = readingGutter),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 item { AboutSectionHeader("App") }

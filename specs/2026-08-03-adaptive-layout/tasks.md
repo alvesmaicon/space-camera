@@ -3,9 +3,9 @@
 ## Visão geral
 
 - **Total:** 6
-- **Concluídas:** 5 — **Waves 0 e 1 fechadas**
+- **Concluídas:** 6 — **spec implementada**
 - **Em andamento:** 0
-- **Pendentes:** 1 (Wave 2: Task 6)
+- **Pendentes:** 0
 - **Estratégia de decomposição:** fatias verticais por grupo de controle. A Task 1 é
   contrato de Wave 0 (predicado + helper de eixo), do qual quatro tarefas dependem —
   extraí-lo evita que virem uma corrente serial. A Task 5 (orientação da mídia) é
@@ -205,7 +205,7 @@ grandeza que precisa da rotação da janela é a compensação da UI.
 
 ---
 
-### [ ] 6. Largura de leitura, remoção da ponte e verificação integrada
+### [x] 6. Largura de leitura, remoção da ponte e verificação integrada
 
 Fecha a spec. Depende de tudo porque só faz sentido remover a ponte com o adaptativo
 funcionando.
@@ -231,12 +231,18 @@ funcionando.
     conteúdo tem largura limitada e centralizada
   - **DADO** `CameraScreen.kt` **QUANDO** contado **ENTÃO** tem ≤ 2.240 linhas
 - **Verification:**
-  - [ ] Verificação completa: `./gradlew assembleDebug testDebugUnitTest lint detekt`
-  - [ ] Manual: `scripts/smoke.sh` no AVD Pixel_9_Pro
-  - [ ] Manual: `scripts/smoke.sh` no AVD Tablet_API36
-  - [ ] Manual: `adb shell dumpsys activity activities | grep -A2 spacecamera` mostra
-        bounds de 2560×1600
-  - [ ] `wc -l app/src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt`
+  - [x] Verificação completa: `./gradlew assembleDebug testDebugUnitTest lint detekt`
+        verde, 64 testes
+  - [x] Manual: Tablet_API36 sem a ponte — `mBounds=Rect(0, 0 - 2560, 1600)`, sem
+        pillarbox, `aspect=16:9`, bind em 62ms
+  - [x] Manual: ausência da ponte conferida também no manifesto **compilado** do APK
+        (`aapt2 dump xmltree`), não só no fonte
+  - [x] Manual: Configurações em janela larga com conteúdo em 640dp centralizado, e o
+        título do app bar alinhado à lista
+  - [x] `wc -l CameraScreen.kt` = **2.141**, teto do NFR-5 = 2.240
+  - [ ] Pendente: reconferir o telefone depois destas mudanças. O recuo de leitura é
+        zero em 411dp (coberto por teste) e a remoção da ponte não afeta tela
+        < 600dp, mas a medição de 29/29 caixas é da Wave 1, não desta.
 - **_Requirements: FR-7, FR-8, NFR-1, NFR-5_**
 - **_Decisions: ADR-001_**
 

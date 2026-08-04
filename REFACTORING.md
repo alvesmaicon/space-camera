@@ -1,27 +1,23 @@
 # Backlog de refatoração
 
-Levantamento feito na rodada de instrumentação. **Nada aqui foi executado** — é
-mapa, não plano aprovado. A ordem sugerida vai do que mais destrava para o que
-mais custa.
+Levantamento feito na rodada de instrumentação. É mapa, não plano aprovado. A ordem
+sugerida vai do que mais destrava para o que mais custa.
+
+**O item 0 foi executado** (API 36, em 2026-08-04, mais o layout adaptativo que a
+mudança de orientação exigiu). Os itens 1 a 5 seguem pendentes.
 
 Por que só agora: refatorar sem git, sem teste e sem build reprodutível é
 trabalhar no escuro. Essas três coisas estão no lugar; a partir daqui cada passo
 abaixo pode ser feito com rede de segurança.
 
-## 0. Subir para API 36 (Android 16) — tem prazo
+## 0. Subir para API 36 (Android 16) — CONCLUÍDO em 2026-08-04
 
-**Prioridade acima de tudo o que vem abaixo**, porque tem data: a Play Store
-exige `targetSdk` a no máximo um ano da versão mais recente do Android, e a
-partir de **31/10/2026** não aceita mais atualização de app fora dessa regra. O
-projeto está em `targetSdk = 34` (Android 14), duas versões atrás.
+Tinha data: a Play Store exige `targetSdk` a no máximo um ano da versão mais recente
+do Android, e a partir de **31/10/2026** não aceita mais atualização fora dessa regra.
 
-Isso não é refatoração — é pré-requisito para publicar. Faça antes dos itens 1 a 4.
-
-### O que muda no build
-
-`compileSdk` e `targetSdk` para 36 em `gradle/libs.versions.toml`. O AGP 8.7.3
-atual **não compila contra o SDK 36**; provavelmente será preciso subir o AGP de
-novo (e o Gradle junto). `minSdk = 24` pode ficar como está.
+**Como ficou:** `compileSdk` e `targetSdk` em 36, AGP 8.13.2 e Gradle 8.14.3 (o 8.7.3
+de fato não compilava contra o SDK 36), `minSdk 24` mantido. Tudo em
+`gradle/libs.versions.toml`.
 
 ### O que precisa ser verificado no app
 
@@ -47,27 +43,28 @@ As que têm chance real de afetar este app:
   de configuração e Sobre continua funcionando (volta para a câmera sem fechar o
   app). Sem animação preditiva, que exigiria `PredictiveBackHandler` — cosmético.
 
-- **Orientação em telas grandes — quebrado, sem opt-out.** A partir do targetSdk
-  36 o Android ignora `screenOrientation="portrait"` em telas com largura mínima
-  >= 600dp. Verificado em emulador de tablet API 36 (2560x1600 @320dpi, 800dp): a
-  activity recebe os limites de paisagem cheios e o layout de retrato se espalha —
-  barra superior esticada na largura toda, pré-visualização como uma faixa
-  estreita ao centro, controles inferiores amontoados sobre ela e a barra de zoom
-  colidindo com o seletor Vídeo/Foto.
+- **Orientação em telas grandes — RESOLVIDO com layout adaptativo.** A partir do
+  targetSdk 36 o Android ignora `screenOrientation="portrait"` em telas com largura
+  mínima >= 600dp. Em tablet API 36 (2560x1600 @320dpi) a activity recebia os limites
+  de paisagem cheios e o layout de retrato se espalhava.
 
-  Não existe escapatória: nenhuma `PROPERTY_COMPAT_*` do SDK 36 restaura a
-  restrição (conferido no `android.jar` e no `dumpsys package` do device). Duas
-  saídas, em ordem de custo:
+  **Correção de registro:** este documento afirmava que "não existe escapatória". Isso
+  estava errado, e o erro veio de um nome de propriedade inventado. A escapatória é
+  `android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY`, foi usada como ponte
+  temporária e **já foi removida** — o framework a elimina no targetSdk 37 de qualquer
+  forma.
 
-  1. **Auto-letterbox** — limitar a largura do conteúdo da `CameraScreen` e
-     centralizá-lo em telas largas, mantendo as proporções de telefone. Contido,
-     e faz o tablet parecer intencional em vez de quebrado.
-  2. **Layout adaptativo de verdade** — controles na lateral em paisagem, como
-     fazem as câmeras nativas. É o certo, e depende de a `CameraScreen` já estar
-     quebrada em pedaços (item 1 deste documento).
+  A solução definitiva está especificada e implementada em
+  [specs/2026-08-03-adaptive-layout/](specs/2026-08-03-adaptive-layout/): em janela
+  larga a barra superior vai para o bordo esquerdo, os controles para o direito e a
+  pré-visualização usa 16:9. Não dependeu de quebrar a `CameraScreen` antes (o
+  item 1 abaixo) — os três blocos já eram âncoras de um `Box`, então bastou inverter
+  eixo e âncora.
 
-  Não bloqueia a publicação, mas conta na avaliação de qualidade para telas
-  grandes da Play Store.
+  Duas ressalvas ficaram abertas, registradas em
+  [tasks.md](specs/2026-08-03-adaptive-layout/tasks.md): o contraste do estado
+  "desligado" dos ícones fica em 3,5:1 contra o limiar de 4,5:1 da spec, e o
+  transbordo em janela larga e baixa não tem rolagem de fallback.
 
 ### Além do target, para publicar
 
@@ -87,7 +84,7 @@ aparelho passar a reportar capacidades diferentes, aparece ali.
 
 | Arquivo | Linhas | Problema |
 |---|---:|---|
-| `presentation/screens/CameraScreen.kt` | ~1.950 | um composable de ~1.100 linhas |
+| `presentation/screens/CameraScreen.kt` | ~2.150 | um composable de ~1.200 linhas |
 | `camera/CameraManager.kt` | ~1.130 | cinco responsabilidades no mesmo arquivo |
 | `presentation/viewmodels/CameraViewModel.kt` | ~615 | ~30 `StateFlow` soltos |
 

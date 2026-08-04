@@ -2,9 +2,9 @@
 
 ## Estado atual
 
-- **Fase:** Implementação — Waves 0 e 1 concluídas
-- **Gate atual:** E (aguarda autorização de commit da Wave 1)
-- **Status:** 5 de 6 tarefas concluídas; falta a Task 6
+- **Fase:** Implementação concluída — 6 de 6 tarefas
+- **Gate atual:** E (aguarda autorização de commit da Task 6)
+- **Status:** spec implementada; ponte removida; duas ressalvas em aberto
 - **Confiança:** 93%
 - **Última atualização:** 2026-08-04
 
@@ -166,7 +166,29 @@ KDoc de parâmetro ali torna a entrada frágil.
 | 2. Barra superior | 1 | **Concluída** | Grupo compacto no bordo esquerdo, x 22–119 de 2560 |
 | 3. Controles inferiores + proporção | 1 | **Concluída** | `aspect=16:9`, caixa 1280×720dp, bind em 263–317ms |
 | 4. Barras auxiliares + contraste | 1 | **Concluída** | Duas ressalvas em tasks.md: contraste do estado desligado e transbordo |
-| 6. Leitura, ponte, integração | 2 | Pendente | Remove o opt-out do manifesto |
+| 6. Leitura, ponte, integração | 2 | **Concluída** | Ponte removida; largura de leitura em 640dp |
+
+### Sessão 2026-08-04 (continuação) — skill `dev`, Wave 2
+
+- **Gates:** A, B, C, D · **Testes:** 64 (5 novos) · **Detekt e Lint:** limpos
+
+**Task 6 concluída.**
+
+- `readingGutterDp(widthDp)` + `rememberReadingGutter()` em `WindowAxis.kt`, com TDD:
+  RED nos dois casos que discriminam (1280dp e 700dp), verde nos de retrato. Aplicado
+  como padding no container em vez de `widthIn`, para a área de rolagem continuar
+  ocupando a janela toda e só o conteúdo ficar centralizado.
+- A mesma margem foi para o `LargeTopAppBar` das duas telas: sem isso o título ficava
+  colado na borda esquerda com a lista no centro. Padding no app bar é seguro porque
+  o `containerColor` é o próprio fundo da página.
+- **Ponte removida** do manifesto, com comentário explicando por que
+  `screenOrientation="portrait"` **fica** (ainda é honrado em telefone, e é o que
+  trava o caso de uso principal) e por que `configChanges` não deve ser declarado.
+  A ausência foi conferida no manifesto compilado do APK, não só no fonte.
+
+**Pendência de verificação:** a medição de 29/29 caixas no telefone é da Wave 1. O
+recuo é zero em 411dp (com teste) e a remoção da ponte não afeta tela < 600dp, mas
+não foi remedido depois da Task 6.
 
 ## Pendências
 
@@ -175,11 +197,12 @@ KDoc de parâmetro ali torna a entrada frágil.
 - [x] Commit da Task 1 (`8caf152`)
 - [x] Commit da Task 5 (`2e2039c`)
 - [x] Emenda do FR-6 / criação do FR-9 em `requirements.md`
-- [ ] Commit da Wave 1 (Gate E — aguarda autorização)
+- [x] Commit da Wave 1 (`892d131`)
+- [ ] Commit da Task 6 (Gate E — aguarda autorização)
 - [x] Iniciar a Wave 1 (Tasks 2, 3, 4)
 - [ ] Decidir as duas ressalvas da Task 4 (contraste do estado desligado, transbordo)
-- [ ] Wave 2 — Task 6: largura de leitura em Configurações/Sobre, remoção da ponte,
-      verificação integrada nos dois aparelhos
+- [x] Wave 2 — Task 6
+- [ ] Reconferir o telefone depois da Task 6 (NFR-1)
 
 ## Bloqueadores
 

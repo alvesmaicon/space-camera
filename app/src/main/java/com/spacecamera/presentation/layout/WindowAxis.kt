@@ -10,6 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 /**
  * Requirements: FR-1
@@ -45,6 +47,33 @@ internal fun rememberIsWideWindow(): Boolean {
     val widthDp = configuration.screenWidthDp
     val heightDp = configuration.screenHeightDp
     return remember(widthDp, heightDp) { isWideWindow(widthDp, heightDp) }
+}
+
+/**
+ * Requirements: FR-8
+ *
+ * Largura máxima confortável para conteúdo de leitura — listas de configuração, texto
+ * da tela Sobre. Acima disso a linha fica longa demais e a leitura piora.
+ */
+internal const val READING_WIDTH_MAX_DP = 640
+
+/**
+ * Requirements: FR-8
+ *
+ * Recuo lateral que centraliza o conteúdo em [READING_WIDTH_MAX_DP]. Zero quando a
+ * janela já é mais estreita que isso, o que mantém o telefone em retrato idêntico.
+ *
+ * Aplicado como padding no container e não como `widthIn`: assim a área de rolagem
+ * continua ocupando a janela toda e só o conteúdo fica centralizado.
+ */
+internal fun readingGutterDp(widthDp: Int): Int =
+    ((widthDp - READING_WIDTH_MAX_DP) / 2).coerceAtLeast(0)
+
+/** Versão composable de [readingGutterDp], lendo a configuração atual da janela. */
+@Composable
+internal fun rememberReadingGutter(): Dp {
+    val widthDp = LocalConfiguration.current.screenWidthDp
+    return remember(widthDp) { readingGutterDp(widthDp).dp }
 }
 
 /**

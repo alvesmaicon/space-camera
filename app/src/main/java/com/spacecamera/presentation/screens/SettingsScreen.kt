@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.spacecamera.camera.PhotoQualityPreset
 import com.spacecamera.camera.VideoBitratePreset
+import com.spacecamera.presentation.layout.rememberReadingGutter
 import com.spacecamera.presentation.viewmodels.CameraViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,10 +70,16 @@ fun SettingsScreen(
     MaterialTheme(colorScheme = colorScheme) {
         val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
+        // A mesma margem da lista vai na barra de título, senão o título fica colado
+        // na borda esquerda enquanto o conteúdo está centralizado (FR-8). Padding no
+        // app bar é seguro aqui porque o containerColor é o próprio fundo da página.
+        val readingGutter = rememberReadingGutter()
+
         Scaffold(
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = {
                 LargeTopAppBar(
+                    modifier = Modifier.padding(horizontal = readingGutter),
                     title = { Text("Configurações da câmera") },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
@@ -90,7 +97,10 @@ fun SettingsScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+                    // FR-8: em tablet cada linha se esticava por 1.280dp. Zero em
+                    // retrato, então o telefone continua idêntico.
+                    .padding(horizontal = readingGutter),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 // ── Câmera ────────────────────────────────────────────────

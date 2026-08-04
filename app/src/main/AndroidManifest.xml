@@ -45,6 +45,23 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SpaceCamera">
 
+        <!--
+          screenOrientation="portrait" continua declarado de propósito: a partir do
+          targetSdk 36 o Android o ignora em telas com largura mínima >= 600dp, mas
+          segue honrando em telefone. É o que trava o telefone em retrato — o caso de
+          uso principal — enquanto o tablet recebe o layout adaptativo.
+
+          A ponte PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY foi removida em
+          2026-08-04, quando o layout adaptativo ficou pronto. Ela existia para o
+          tablet não abrir com o layout de retrato esticado, e o framework a eliminaria
+          no targetSdk 37 de qualquer forma. Não recoloque: sem a adaptação sendo
+          exercitada por uso real, ela volta a apodrecer.
+
+          Não declare android:configChanges aqui. Sem ele, girar recria a activity e
+          o CameraX rebinda, reavaliando a proporção; com ele, a proporção do buffer
+          congelaria no valor do primeiro bind e a pré-visualização ficaria com faixas.
+          Ver a nota 0 em specs/2026-08-03-adaptive-layout/agent-progress.md.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -52,20 +69,6 @@
             android:windowSoftInputMode="adjustNothing"
             android:windowLayoutInDisplayCutoutMode="shortEdges"
             android:theme="@style/Theme.SpaceCamera">
-
-            <!--
-              A partir do targetSdk 36 o Android ignora screenOrientation, proporção
-              e resizability em telas com largura mínima >= 600dp. Verificado em
-              emulador de tablet API 36: sem esta propriedade a activity recebe os
-              limites de paisagem cheios (2560x1600) e o layout de retrato se espalha.
-
-              Esta é a fuga oficial, e é temporária: o framework remove o opt-out
-              no targetSdk 37. Vale como ponte até a UI adaptativa ficar pronta —
-              ver a spec de layout adaptativo em specs/.
-            -->
-            <property
-                android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
-                android:value="true" />
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
