@@ -3,9 +3,10 @@
 ## Visão geral
 
 - **Total:** 6
-- **Concluídas:** 0
+- **Concluídas:** 1 (Task 1)
 - **Em andamento:** 0
-- **Pendentes:** 6
+- **Bloqueadas:** 1 (Task 5 — ver "Questão aberta" em decisions.md)
+- **Pendentes:** 4
 - **Estratégia de decomposição:** fatias verticais por grupo de controle. A Task 1 é
   contrato de Wave 0 (predicado + helper de eixo), do qual quatro tarefas dependem —
   extraí-lo evita que virem uma corrente serial. A Task 5 (orientação da mídia) é
@@ -13,7 +14,7 @@
 
 ---
 
-### [ ] 1. Predicado de janela larga e helper de eixo
+### [x] 1. Predicado de janela larga e helper de eixo
 
 Contrato de Wave 0. Existe separado porque quatro tarefas dependem dele.
 

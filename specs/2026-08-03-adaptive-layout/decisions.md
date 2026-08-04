@@ -507,3 +507,97 @@ Consistência entre artefatos conferida:
    validada — senão o trabalho fica inerte. É a Task 6.
 
 **Status:** pronto para construir.
+
+---
+
+## Questão aberta (levantada na implementação, 2026-08-04)
+
+### Q-01: a premissa do FR-6 não se reproduz — a Task 5 está bloqueada
+
+**Levantada por:** skill `dev`, durante a Wave 0
+**Status:** aguardando decisão do usuário
+**Afeta:** FR-6, AC-6.1, AC-6.2, AC-6.3, Task 5, design.md §5.2
+
+O FR-6 afirma que a rotação física e a rotação da janela "se somam e o arquivo sai
+torto". Ao implementar a Task 5, a medição em aparelho **não reproduz** isso, e a
+composição especificada introduziria o defeito que ela pretende corrigir.
+
+#### Medição 1 — as duas fontes são a mesma grandeza
+
+AVD Tablet_API36, janela livre (ponte removida localmente), quatro estados de rotação.
+`Display.getRotation()` via `dumpsys window displays`; `rollDegrees` calculado de
+`adb emu sensor get acceleration` com o mesmo `atan2(x, y)` do app:
+
+| `Display.getRotation()` | acelerômetro (x:y:z) | `rollDegrees` | mapeamento do app |
+|---|---|---|---|
+| ROTATION_0 | `0 : 9.81 : 0` | 0° | ROTATION_0 |
+| ROTATION_270 | `-9.81 : ~0 : 0` | −90° | ROTATION_270 |
+| ROTATION_180 | `~0 : -9.81 : 0` | −180° | ROTATION_180 |
+| ROTATION_90 | `9.81 : ~0 : 0` | +90° | ROTATION_90 |
+
+Correspondência 1:1 nos quatro estados, mesma convenção. Enquanto a janela acompanha
+o aparelho, `Display.getRotation()` **é** a rotação física — não uma segunda
+informação. Somar as duas produz rotação dobrada.
+
+#### Medição 2 — a mídia atual já sai de pé
+
+Verificado no arquivo, como o AC-6.2 exige, com inspeção de conteúdo além do metadado:
+
+| Estado | `targetRotation` usado | Arquivo | Conteúdo |
+|---|---|---|---|
+| janela paisagem (W=0), aparelho natural | ROTATION_0 (só sensor) | MP4 1280×720 + `rotate=90` → 720×1280 | cena **de pé**: céu no topo, chão embaixo |
+| janela retrato (W=90), aparelho girado 90° | ROTATION_90 (só sensor) | JPEG 1280×720, EXIF orientation=1 | cena **de pé** |
+
+A fórmula do CameraX foi confirmada pelos dois pontos:
+`rotação de saída = (SENSOR_ORIENTATION − targetRotation) mod 360`, com
+`SENSOR_ORIENTATION = 90` neste AVD (`dumpsys media.camera`). O arquivo sair retrato
+com a janela em paisagem **não é** erro de rotação: é consequência do sensor montado
+a 90° num aparelho de orientação natural paisagem — o campo de visão físico é mesmo
+mais alto que largo. É assunto de proporção (FR-3), não de orientação.
+
+#### Medição 3 — existe um defeito real, mas é na UI, não na mídia
+
+Captura de tela do tablet com a janela em retrato (1600×2560): o compositor já
+deixou a UI de pé, mas `rollDegrees = +90` gira **cada ícone outra vez**. `HD 30`,
+`EIS`, flash e temporizador aparecem de lado; `Vídeo`/`Foto` e `1x 2x 5x`, que não
+recebem `iconRotation`, ficam retos. É dupla rotação, visível na tela, e aparece
+exatamente quando a ponte sai do manifesto (Task 6).
+
+A grandeza que precisa da rotação da janela é a **compensação da UI**, não a rotação
+de captura:
+
+- ícone: `iconDegrees(rollDegrees) − displayRotation × 90`, normalizado para −180..180
+  - telefone travado em retrato: `W = 0` → resultado inalterado (AC-6.3 preservado)
+  - tablet com janela livre: `W = S` → resultado 0, ícones retos
+- captura: permanece `f(rollDegrees)` — a evidência não sustenta a composição
+
+O mesmo vale para o nível de horizonte e o slider de exposição, que também derivam de
+`rollDegrees`.
+
+#### Caso em que a captura de fato divergiria
+
+`W ≠ S` acontece em dois cenários: janela travada com o aparelho girado (telefone
+hoje — AC-6.3 escolheu deliberadamente seguir o aparelho) e **rotação automática
+desligada pelo usuário** no tablet. No segundo, a janela fica presa e o arquivo não
+acompanha o enquadramento. É o espelho do AC-6.3, e resolver um contradiz o outro —
+por isso é decisão de produto, não de implementação.
+
+#### Recomendação
+
+Redefinir o FR-6 em duas partes e devolver ao Gate 1/3 da skill `spec`:
+
+1. **Compensação de rotação da UI** — `uiRotation(rollDegrees, displayRotation)`,
+   pura, testável na JVM. Corrige defeito medido e visível. Deveria vir **antes** da
+   Wave 1: sem ela, a verificação visual das barras laterais fica confundida por
+   ícones tortos.
+2. **Rotação de captura** — extrair `captureRotation(rollDegrees)` como função pura
+   (ganho de NFR-4, comportamento idêntico ao de hoje), sem compor com a janela.
+   Registrar o caso "rotação automática desligada" como pendência conhecida.
+
+A Task 5 fica **bloqueada** até essa decisão. Implementar a composição como está
+especificada tornaria a mídia torta na janela livre — o oposto do objetivo do FR-6.
+
+**Nota de método:** a primeira leitura desta sessão concluiu, por raciocínio, que o
+arquivo saía torto; a segunda concluiu o contrário, também por raciocínio. As duas
+foram descartadas. O que sustenta o registro acima são as três medições, incluindo
+inspeção do conteúdo dos arquivos — o AC-6.2 existe exatamente por isso.

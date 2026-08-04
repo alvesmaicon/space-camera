@@ -76,6 +76,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.spacecamera.camera.CameraMode
 import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoOption
+import com.spacecamera.presentation.layout.AxisContainer
+import com.spacecamera.presentation.layout.AxisScope
 import com.spacecamera.presentation.viewmodels.CameraViewModel
 import com.spacecamera.presentation.viewmodels.PhotoFlashMode
 import com.spacecamera.presentation.viewmodels.RecordingDelay
@@ -499,9 +501,9 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 label = "topBarMainRow"
             ) { mode ->
                 if (mode == CameraMode.VIDEO) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                    AxisContainer(
+                        vertical = false,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         TopBarSlot {
                             ResolutionTopBarButton(
@@ -556,9 +558,9 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                         }
                     }
                 } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                    AxisContainer(
+                        vertical = false,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         TopBarSlot {
                             ResolutionTopBarButton(
@@ -1223,11 +1225,11 @@ private fun formatSeconds(seconds: Int): String {
 }
 
 @Composable
-private fun RowScope.TopBarSlot(
+private fun AxisScope.TopBarSlot(
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
-        modifier = Modifier.weight(1f),
+        modifier = Modifier.axisWeight(),
         contentAlignment = Alignment.Center,
         content = content
     )

@@ -2,11 +2,11 @@
 
 ## Estado atual
 
-- **Fase:** Planejamento concluído
-- **Gate atual:** 5 — Go/No-Go
-- **Status:** Concluído
+- **Fase:** Implementação — Wave 0
+- **Gate atual:** D (documentação da Task 1) / bloqueado na Task 5
+- **Status:** Task 1 concluída; Task 5 bloqueada em decisão do usuário (Q-01)
 - **Confiança:** 93%
-- **Última atualização:** 2026-08-03
+- **Última atualização:** 2026-08-04
 
 ## Log de sessões
 
@@ -43,12 +43,45 @@
 **Próximo:** implementação pela skill `dev`, começando pela Wave 0 (Task 1 e Task 5
 em paralelo).
 
+### Sessão 2026-08-04 — skill `dev`, Wave 0
+
+- **Agent:** dev
+- **Gates:** A, B, C, D
+- **Testes:** 45 passando (38 anteriores + 7 novos), 0 falhando
+- **Detekt:** limpo, sem novo item de baseline
+
+**Task 1 — concluída (Gate C verde).**
+
+Ciclo TDD respeitado: `WindowAxisTest` escrito primeiro contra um stub
+`isWideWindow(...) = false`; RED com 3 `AssertionError` nos casos que discriminam
+janela larga (1280×800, 801×800, 891×411) e 4 verdes triviais nos de retrato — o que
+confirma que os testes medem o predicado, não a compilação.
+
+Entregue em `presentation/layout/WindowAxis.kt`, arquivo novo em vez de dentro da
+`CameraScreen.kt` (ajuda o NFR-5 e permite reuso na Task 6):
+
+- `isWideWindow(widthDp, heightDp)` — pura, JVM
+- `rememberIsWideWindow()` — lê `LocalConfiguration` (ADR-002)
+- `AxisScope` com `Modifier.axisWeight()` e `AxisContainer(vertical, spacing)` (ADR-003)
+- `RowScope.TopBarSlot` → `AxisScope.TopBarSlot`; os dois `Row` da barra superior
+  passaram a `AxisContainer(vertical = false)`
+
+Nada consome o predicado ainda — o app se comporta como antes, que é o critério do
+checkpoint da Wave 0.
+
+**Task 5 — bloqueada.** Ver Q-01 em `decisions.md`. Três medições em AVD Tablet_API36
+(correspondência 1:1 entre `Display.getRotation()` e o acelerômetro nos quatro
+estados; inspeção do conteúdo do MP4 e do JPEG salvos; captura de tela com os ícones
+em dupla rotação) não reproduzem a premissa do FR-6. A composição especificada
+tornaria a mídia torta na janela livre. A ponte foi removida **só localmente** para o
+experimento e já está restaurada no manifesto.
+
 ## Status das tarefas
 
 | Tarefa | Onda | Status | Observação |
 |---|---|---|---|
-| 1. Predicado + helper de eixo | 0 | Pendente | Contrato; destrava a Wave 1 |
-| 5. Rotação combinada da mídia | 0 | Pendente | Ortogonal; risco alto, defeito invisível na tela |
+| 1. Predicado + helper de eixo | 0 | **Concluída** | 7 testes; contrato pronto, Wave 1 destravada |
+| 5. Rotação combinada da mídia | 0 | **Bloqueada** | Q-01 — premissa do FR-6 não se reproduz |
 | 2. Barra superior | 1 | Pendente | |
 | 3. Controles inferiores + proporção | 1 | Pendente | Caminho crítico |
 | 4. Barras auxiliares + contraste | 1 | Pendente | |
@@ -56,11 +89,15 @@ em paralelo).
 
 ## Pendências
 
-- [ ] Iniciar a Wave 0
+- [x] Iniciar a Wave 0
+- [ ] Decidir Q-01 (redefinição do FR-6) para desbloquear a Task 5
+- [ ] Commit da Task 1 (Gate E — aguarda autorização)
 
 ## Bloqueadores
 
-Nenhum. Especificação aprovada.
+**Q-01** — a premissa do FR-6 não se reproduz em aparelho. Bloqueia a Task 5 e
+recomenda-se resolver antes da Wave 1: a dupla rotação dos ícones confunde a
+verificação visual das barras laterais.
 
 ## Notas para quem implementar
 
