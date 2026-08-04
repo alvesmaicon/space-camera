@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#1F1F1F</color>
-    <color name="secondary">#FF6200EE</color>
+    <!--
+      Só a cor de fundo do arranque mora aqui. As demais (primary, secondary,
+      surface, error, white) foram removidas: nenhuma era referenciada desde que
+      a UI passou a ser Compose — as telas de configuração e Sobre usam Material 3
+      com cor dinâmica do sistema, e a tela da câmera define as cores no próprio
+      código.
+    -->
     <color name="background">#121212</color>
-    <color name="surface">#1E1E1E</color>
-    <color name="error">#FFB3261E</color>
-    <color name="white">#FFFFFF</color>
 </resources>

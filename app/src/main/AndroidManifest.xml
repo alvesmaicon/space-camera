@@ -1,18 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permissions -->
+    <!-- Permissões pedidas em runtime na CameraScreen -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
+
+    <!--
+      Só relevantes até o Android 9. A partir do 10 (API 29) o app escreve pelo
+      MediaStore, que não exige permissão para a própria mídia; sem o
+      maxSdkVersion, o Google Play trata como acesso amplo a armazenamento e
+      exige justificativa. O código já reflete isso: WRITE_EXTERNAL_STORAGE só é
+      pedido em runtime quando SDK_INT < Q.
+    -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <!-- Opcionais: só usadas quando "Salvar localização" está ligado -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- Features -->
-    <uses-feature android:name="android.hardware.camera" />
-    <uses-feature android:name="android.hardware.camera.autofocus" />
+    <!--
+      ACCESS_MEDIA_LOCATION foi removida: serve para ler o GPS embutido em mídia
+      de terceiros, e este app só escreve o próprio EXIF. Permissão declarada e
+      não usada é passivo no formulário de segurança de dados da loja.
+    -->
+
+    <!--
+      A câmera é obrigatória — sem ela o app não tem função. Já o autofoco não:
+      exigi-lo excluía aparelhos da Play Store sem necessidade, porque a captura
+      funciona com foco fixo.
+    -->
+    <uses-feature android:name="android.hardware.camera" android:required="true" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <application
         android:name=".SpaceCameraApp"
@@ -31,6 +52,19 @@
             android:windowSoftInputMode="adjustNothing"
             android:windowLayoutInDisplayCutoutMode="shortEdges"
             android:theme="@style/Theme.SpaceCamera">
+
+            <!--
+              android:screenOrientation="portrait" acima continua valendo em
+              telefones, mas a partir do targetSdk 36 o Android **ignora** essa
+              restrição em telas com largura mínima >= 600dp (tablets e dobráveis
+              abertos). Verificado em emulador de tablet API 36: a activity recebe
+              os limites de paisagem cheios (2560x1600) e o layout de retrato se
+              espalha.
+
+              Não há opt-out: nenhuma PROPERTY_COMPAT_* do SDK 36 restaura a
+              restrição. A saída é a UI passar a se adaptar — ver REFACTORING.md.
+            -->
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

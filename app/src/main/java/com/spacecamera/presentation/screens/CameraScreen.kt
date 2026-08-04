@@ -474,7 +474,12 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
                 .zIndex(1f)
-                .statusBarsPadding()
+                // safeDrawing em vez de statusBarsPadding: a status bar é
+                // escondida em onWindowFocusChanged, então o inset dela vira 0 e
+                // a barra subiria para debaixo do recorte da câmera (o manifesto
+                // usa windowLayoutInDisplayCutoutMode="shortEdges"). safeDrawing
+                // considera também o displayCutout e resolve os dois casos.
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             // ── Linha principal (sempre visível) ─────────────────────
@@ -995,7 +1000,12 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(bottom = 36.dp),
+                // Era `padding(bottom = 36.dp)` fixo, provavelmente calibrado a
+                // olho num aparelho com navegação por gestos (~24dp de inset).
+                // Em navegação de 3 botões (~48dp) o obturador ficava por baixo
+                // da barra. O inset do sistema mais um respiro fixo se adapta.
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
+                .padding(bottom = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {

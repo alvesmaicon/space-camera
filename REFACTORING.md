@@ -43,8 +43,31 @@ As que têm chance real de afetar este app:
   As miniaturas da última foto/vídeo hoje só funcionam para mídia do próprio app.
   Ao subir o target, decidir entre declarar `READ_MEDIA_IMAGES`/`READ_MEDIA_VIDEO`
   ou usar o photo picker.
-- **Predictive back.** Vale conferir o comportamento do `BackHandler` nas telas
-  de configuração e Sobre.
+- **Predictive back.** Verificado em emulador API 36: o `BackHandler` das telas
+  de configuração e Sobre continua funcionando (volta para a câmera sem fechar o
+  app). Sem animação preditiva, que exigiria `PredictiveBackHandler` — cosmético.
+
+- **Orientação em telas grandes — quebrado, sem opt-out.** A partir do targetSdk
+  36 o Android ignora `screenOrientation="portrait"` em telas com largura mínima
+  >= 600dp. Verificado em emulador de tablet API 36 (2560x1600 @320dpi, 800dp): a
+  activity recebe os limites de paisagem cheios e o layout de retrato se espalha —
+  barra superior esticada na largura toda, pré-visualização como uma faixa
+  estreita ao centro, controles inferiores amontoados sobre ela e a barra de zoom
+  colidindo com o seletor Vídeo/Foto.
+
+  Não existe escapatória: nenhuma `PROPERTY_COMPAT_*` do SDK 36 restaura a
+  restrição (conferido no `android.jar` e no `dumpsys package` do device). Duas
+  saídas, em ordem de custo:
+
+  1. **Auto-letterbox** — limitar a largura do conteúdo da `CameraScreen` e
+     centralizá-lo em telas largas, mantendo as proporções de telefone. Contido,
+     e faz o tablet parecer intencional em vez de quebrado.
+  2. **Layout adaptativo de verdade** — controles na lateral em paisagem, como
+     fazem as câmeras nativas. É o certo, e depende de a `CameraScreen` já estar
+     quebrada em pedaços (item 1 deste documento).
+
+  Não bloqueia a publicação, mas conta na avaliação de qualidade para telas
+  grandes da Play Store.
 
 ### Além do target, para publicar
 

@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.SpaceCamera" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:colorPrimary">@color/primary</item>
-        <item name="android:colorSecondary">@color/secondary</item>
+    <!--
+      Tema só do arranque: a UI inteira é Compose (Material 3 com cor dinâmica
+      nas telas de configuração e Sobre; a da câmera é deliberadamente escura e
+      fora do esquema de cores).
+
+      Parent trocado de Material.Light para o escuro porque a primeira tela é a
+      da câmera, preta — o tema claro dava um flash branco no arranque.
+
+      android:statusBarColor foi removido: a partir do targetSdk 35 o sistema
+      ignora essa propriedade, porque a janela é desenhada de borda a borda. O
+      contraste passa a ser responsabilidade do próprio conteúdo.
+    -->
+    <style name="Theme.SpaceCamera" parent="android:Theme.Material.NoActionBar">
         <item name="android:colorBackground">@color/background</item>
-        <item name="android:statusBarColor">@color/primary</item>
+        <item name="android:windowBackground">@color/background</item>
     </style>
 </resources>

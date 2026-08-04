@@ -11,9 +11,7 @@
 appVersionName = "0.4.1"
 appVersionCode = "41"        # derivado do semver (0.4.1 -> 41) para sempre crescer
 compileSdk = "36"
-# targetSdk sobe para 36 numa etapa separada: compilar contra o SDK novo é uma
-# coisa, aceitar as mudanças de comportamento dele é outra.
-targetSdk = "34"
+targetSdk = "36"
 minSdk = "24"
 
 # Toolchain

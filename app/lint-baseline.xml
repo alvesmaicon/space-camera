@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.7.3" type="baseline" client="gradle" dependencies="false" name="AGP (8.7.3)" variant="all" version="8.7.3">
+<issues format="6" by="lint 8.13.2" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.2)" variant="all" version="8.13.2">
 
     <issue
         id="MissingPermission"
@@ -10,28 +10,6 @@
             file="src/main/java/com/spacecamera/camera/CameraManager.kt"
             line="798"
             column="38"/>
-    </issue>
-
-    <issue
-        id="ScopedStorage"
-        message="READ_EXTERNAL_STORAGE is deprecated (and is not granted) when targeting Android 13+. If you need to query or interact with MediaStore or media files on the shared storage, you should instead use one or more new storage permissions: `READ_MEDIA_IMAGES`, `READ_MEDIA_VIDEO` or `READ_MEDIA_AUDIO`."
-        errorLine1="    &lt;uses-permission android:name=&quot;android.permission.READ_EXTERNAL_STORAGE&quot; />"
-        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="7"
-            column="36"/>
-    </issue>
-
-    <issue
-        id="ScopedStorage"
-        message="WRITE_EXTERNAL_STORAGE is deprecated (and is not granted) when targeting Android 13+. If you need to write to shared storage, use the `MediaStore.createWriteRequest` intent."
-        errorLine1="    &lt;uses-permission android:name=&quot;android.permission.WRITE_EXTERNAL_STORAGE&quot; />"
-        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="8"
-            column="36"/>
     </issue>
 
     <issue
@@ -81,6 +59,28 @@
     <issue
         id="ExifInterface"
         message="Avoid using `android.media.ExifInterface`; use `androidx.exifinterface.media.ExifInterface` instead"
+        errorLine1="            val exif = ExifInterface(pfd.fileDescriptor)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
+            line="1045"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="ExifInterface"
+        message="Avoid using `android.media.ExifInterface`; use `androidx.exifinterface.media.ExifInterface` instead"
+        errorLine1="                    val src = ExifInterface(originalJpegBytes.inputStream())"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
+            line="1049"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="ExifInterface"
+        message="Avoid using `android.media.ExifInterface`; use `androidx.exifinterface.media.ExifInterface` instead"
         errorLine1="import android.media.ExifInterface"
         errorLine2="       ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -90,14 +90,14 @@
     </issue>
 
     <issue
-        id="NewApi"
-        message="`android:colorSecondary` requires API level 25 (current min is 24)"
-        errorLine1="        &lt;item name=&quot;android:colorSecondary&quot;>@color/secondary&lt;/item>"
-        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="ExifInterface"
+        message="Avoid using `android.media.ExifInterface`; use `androidx.exifinterface.media.ExifInterface` instead"
+        errorLine1="                    ExifInterface(it).getAttributeInt("
+        errorLine2="                    ^">
         <location
-            file="src/main/res/values/themes.xml"
-            line="5"
-            column="15"/>
+            file="src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt"
+            line="217"
+            column="21"/>
     </issue>
 
     <issue
@@ -107,40 +107,29 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="32"
+            line="53"
             column="13"/>
     </issue>
 
     <issue
         id="AndroidGradlePluginVersion"
-        message="A newer version of com.android.application than 8.7.3 is available: 9.3.1"
-        errorLine1="agp = &quot;8.7.3&quot;"
-        errorLine2="      ~~~~~~~">
+        message="A newer version of Gradle than 8.14.3 is available: 8.14.5"
+        errorLine1="distributionUrl=https\://services.gradle.org/distributions/gradle-8.14.3-bin.zip"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="23"
-            column="7"/>
+            file="$HOME/projetos/space-camera/gradle/wrapper/gradle-wrapper.properties"
+            line="3"
+            column="17"/>
     </issue>
 
     <issue
         id="AndroidGradlePluginVersion"
-        message="A newer version of com.android.application than 8.7.3 is available: 9.3.1"
-        errorLine1="agp = &quot;8.7.3&quot;"
-        errorLine2="      ~~~~~~~">
+        message="A newer version of com.android.application than 8.13.2 is available: 9.3.1"
+        errorLine1="agp = &quot;8.13.2&quot;"
+        errorLine2="      ~~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="23"
-            column="7"/>
-    </issue>
-
-    <issue
-        id="AndroidGradlePluginVersion"
-        message="A newer version of com.android.application than 8.7.3 is available: 9.3.1"
-        errorLine1="agp = &quot;8.7.3&quot;"
-        errorLine2="      ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="23"
+            line="25"
             column="7"/>
     </issue>
 
@@ -151,29 +140,7 @@
         errorLine2="          ~~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="28"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.core:core-ktx than 1.12.0 is available: 1.19.0"
-        errorLine1="coreKtx = &quot;1.12.0&quot;"
-        errorLine2="          ~~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="28"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.core:core-ktx than 1.12.0 is available: 1.19.0"
-        errorLine1="coreKtx = &quot;1.12.0&quot;"
-        errorLine2="          ~~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="28"
+            line="30"
             column="11"/>
     </issue>
 
@@ -184,29 +151,7 @@
         errorLine2="            ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="29"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.appcompat:appcompat than 1.6.1 is available: 1.7.1"
-        errorLine1="appcompat = &quot;1.6.1&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="29"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.appcompat:appcompat than 1.6.1 is available: 1.7.1"
-        errorLine1="appcompat = &quot;1.6.1&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="29"
+            line="31"
             column="13"/>
     </issue>
 
@@ -217,29 +162,7 @@
         errorLine2="                  ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="30"
-            column="19"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.activity:activity-compose than 1.8.0 is available: 1.13.0"
-        errorLine1="activityCompose = &quot;1.8.0&quot;"
-        errorLine2="                  ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="30"
-            column="19"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.activity:activity-compose than 1.8.0 is available: 1.13.0"
-        errorLine1="activityCompose = &quot;1.8.0&quot;"
-        errorLine2="                  ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="30"
+            line="32"
             column="19"/>
     </issue>
 
@@ -250,29 +173,7 @@
         errorLine2="            ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.lifecycle:lifecycle-livedata-ktx than 2.6.2 is available: 2.11.0"
-        errorLine1="lifecycle = &quot;2.6.2&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.lifecycle:lifecycle-livedata-ktx than 2.6.2 is available: 2.11.0"
-        errorLine1="lifecycle = &quot;2.6.2&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
+            line="33"
             column="13"/>
     </issue>
 
@@ -283,29 +184,7 @@
         errorLine2="            ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.6.2 is available: 2.11.0"
-        errorLine1="lifecycle = &quot;2.6.2&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.6.2 is available: 2.11.0"
-        errorLine1="lifecycle = &quot;2.6.2&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
+            line="33"
             column="13"/>
     </issue>
 
@@ -316,29 +195,7 @@
         errorLine2="            ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.6.2 is available: 2.11.0"
-        errorLine1="lifecycle = &quot;2.6.2&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.6.2 is available: 2.11.0"
-        errorLine1="lifecycle = &quot;2.6.2&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
+            line="33"
             column="13"/>
     </issue>
 
@@ -349,29 +206,7 @@
         errorLine2="            ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.6.2 is available: 2.11.0"
-        errorLine1="lifecycle = &quot;2.6.2&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.6.2 is available: 2.11.0"
-        errorLine1="lifecycle = &quot;2.6.2&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
+            line="33"
             column="13"/>
     </issue>
 
@@ -382,29 +217,7 @@
         errorLine2="            ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-ktx than 2.6.2 is available: 2.11.0"
-        errorLine1="lifecycle = &quot;2.6.2&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-ktx than 2.6.2 is available: 2.11.0"
-        errorLine1="lifecycle = &quot;2.6.2&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="31"
+            line="33"
             column="13"/>
     </issue>
 
@@ -415,29 +228,7 @@
         errorLine2="                    ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="32"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.navigation:navigation-compose than 2.7.5 is available: 2.9.8"
-        errorLine1="navigationCompose = &quot;2.7.5&quot;"
-        errorLine2="                    ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="32"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.navigation:navigation-compose than 2.7.5 is available: 2.9.8"
-        errorLine1="navigationCompose = &quot;2.7.5&quot;"
-        errorLine2="                    ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="32"
+            line="34"
             column="21"/>
     </issue>
 
@@ -448,29 +239,7 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.material:material-icons-extended than 1.5.4 is available: 1.7.8"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.material:material-icons-extended than 1.5.4 is available: 1.7.8"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
+            line="37"
             column="11"/>
     </issue>
 
@@ -481,29 +250,7 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.runtime:runtime than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.runtime:runtime than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
+            line="37"
             column="11"/>
     </issue>
 
@@ -514,29 +261,7 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.ui:ui than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.ui:ui than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
+            line="37"
             column="11"/>
     </issue>
 
@@ -547,29 +272,7 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.ui:ui-graphics than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.ui:ui-graphics than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
+            line="37"
             column="11"/>
     </issue>
 
@@ -580,29 +283,7 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.ui:ui-test-junit4 than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.ui:ui-test-junit4 than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
+            line="37"
             column="11"/>
     </issue>
 
@@ -613,29 +294,7 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.ui:ui-test-manifest than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.ui:ui-test-manifest than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
+            line="37"
             column="11"/>
     </issue>
 
@@ -646,29 +305,7 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.ui:ui-tooling than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.ui:ui-tooling than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
+            line="37"
             column="11"/>
     </issue>
 
@@ -679,29 +316,7 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.ui:ui-tooling-preview than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.ui:ui-tooling-preview than 1.5.4 is available: 1.11.4"
-        errorLine1="compose = &quot;1.5.4&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="35"
+            line="37"
             column="11"/>
     </issue>
 
@@ -712,29 +327,7 @@
         errorLine2="            ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="36"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.material3:material3 than 1.1.2 is available: 1.4.0"
-        errorLine1="material3 = &quot;1.1.2&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="36"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.compose.material3:material3 than 1.1.2 is available: 1.4.0"
-        errorLine1="material3 = &quot;1.1.2&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="36"
+            line="38"
             column="13"/>
     </issue>
 
@@ -745,29 +338,7 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.camera:camera-camera2 than 1.4.0 is available: 1.6.1"
-        errorLine1="camerax = &quot;1.4.0&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.camera:camera-camera2 than 1.4.0 is available: 1.6.1"
-        errorLine1="camerax = &quot;1.4.0&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
+            line="41"
             column="11"/>
     </issue>
 
@@ -778,29 +349,7 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.camera:camera-core than 1.4.0 is available: 1.6.1"
-        errorLine1="camerax = &quot;1.4.0&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.camera:camera-core than 1.4.0 is available: 1.6.1"
-        errorLine1="camerax = &quot;1.4.0&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
+            line="41"
             column="11"/>
     </issue>
 
@@ -811,29 +360,7 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.camera:camera-lifecycle than 1.4.0 is available: 1.6.1"
-        errorLine1="camerax = &quot;1.4.0&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.camera:camera-lifecycle than 1.4.0 is available: 1.6.1"
-        errorLine1="camerax = &quot;1.4.0&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
+            line="41"
             column="11"/>
     </issue>
 
@@ -844,29 +371,7 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.camera:camera-video than 1.4.0 is available: 1.6.1"
-        errorLine1="camerax = &quot;1.4.0&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.camera:camera-video than 1.4.0 is available: 1.6.1"
-        errorLine1="camerax = &quot;1.4.0&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
+            line="41"
             column="11"/>
     </issue>
 
@@ -877,96 +382,8 @@
         errorLine2="          ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
+            line="41"
             column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.camera:camera-view than 1.4.0 is available: 1.6.1"
-        errorLine1="camerax = &quot;1.4.0&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.camera:camera-view than 1.4.0 is available: 1.6.1"
-        errorLine1="camerax = &quot;1.4.0&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="39"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-android than 1.7.3 is available: 1.10.2"
-        errorLine1="coroutines = &quot;1.7.3&quot;"
-        errorLine2="             ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="42"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-android than 1.7.3 is available: 1.10.2"
-        errorLine1="coroutines = &quot;1.7.3&quot;"
-        errorLine2="             ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="42"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-android than 1.7.3 is available: 1.10.2"
-        errorLine1="coroutines = &quot;1.7.3&quot;"
-        errorLine2="             ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="42"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.7.3 is available: 1.10.2"
-        errorLine1="coroutines = &quot;1.7.3&quot;"
-        errorLine2="             ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="42"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.7.3 is available: 1.10.2"
-        errorLine1="coroutines = &quot;1.7.3&quot;"
-        errorLine2="             ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="42"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.7.3 is available: 1.10.2"
-        errorLine1="coroutines = &quot;1.7.3&quot;"
-        errorLine2="             ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="42"
-            column="14"/>
     </issue>
 
     <issue
@@ -976,29 +393,7 @@
         errorLine2="                    ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="48"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.test.ext:junit than 1.1.5 is available: 1.3.0"
-        errorLine1="androidxTestJunit = &quot;1.1.5&quot;"
-        errorLine2="                    ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="48"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.test.ext:junit than 1.1.5 is available: 1.3.0"
-        errorLine1="androidxTestJunit = &quot;1.1.5&quot;"
-        errorLine2="                    ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="48"
+            line="50"
             column="21"/>
     </issue>
 
@@ -1009,29 +404,7 @@
         errorLine2="                   ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="49"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.test:core than 1.5.0 is available: 1.7.0"
-        errorLine1="androidxTestCore = &quot;1.5.0&quot;"
-        errorLine2="                   ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="49"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.test:core than 1.5.0 is available: 1.7.0"
-        errorLine1="androidxTestCore = &quot;1.5.0&quot;"
-        errorLine2="                   ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="49"
+            line="51"
             column="20"/>
     </issue>
 
@@ -1042,29 +415,7 @@
         errorLine2="           ~~~~~~~">
         <location
             file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="50"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.test.espresso:espresso-core than 3.5.1 is available: 3.7.0"
-        errorLine1="espresso = &quot;3.5.1&quot;"
-        errorLine2="           ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="50"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.test.espresso:espresso-core than 3.5.1 is available: 3.7.0"
-        errorLine1="espresso = &quot;3.5.1&quot;"
-        errorLine2="           ~~~~~~~">
-        <location
-            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
-            line="50"
+            line="52"
             column="12"/>
     </issue>
 
@@ -1075,8 +426,107 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="30"
+            line="51"
             column="13"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlin.android than 1.9.25 is available: 2.4.10"
+        errorLine1="kotlin = &quot;1.9.25&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
+            line="26"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-android than 1.7.3 is available: 1.11.0"
+        errorLine1="coroutines = &quot;1.7.3&quot;"
+        errorLine2="             ~~~~~~~">
+        <location
+            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
+            line="44"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.7.3 is available: 1.11.0"
+        errorLine1="coroutines = &quot;1.7.3&quot;"
+        errorLine2="             ~~~~~~~">
+        <location
+            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
+            line="44"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-test than 1.7.3 is available: 1.11.0"
+        errorLine1="coroutines = &quot;1.7.3&quot;"
+        errorLine2="             ~~~~~~~">
+        <location
+            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
+            line="44"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.google.accompanist:accompanist-permissions than 0.32.0 is available: 0.37.3"
+        errorLine1="accompanist = &quot;0.32.0&quot;"
+        errorLine2="              ~~~~~~~~">
+        <location
+            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
+            line="45"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.robolectric:robolectric than 4.13 is available: 4.16.1"
+        errorLine1="robolectric = &quot;4.13&quot;   # 4.11 não roda no JDK 21"
+        errorLine2="              ~~~~~~">
+        <location
+            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
+            line="53"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of io.mockk:mockk than 1.13.8 is available: 1.14.11"
+        errorLine1="mockk = &quot;1.13.8&quot;"
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
+            line="54"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of app.cash.turbine:turbine than 1.0.0 is available: 1.2.1"
+        errorLine1="turbine = &quot;1.0.0&quot;"
+        errorLine2="          ~~~~~~~">
+        <location
+            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
+            line="55"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of io.gitlab.arturbosch.detekt than 1.23.7 is available: 1.23.8"
+        errorLine1="detekt = &quot;1.23.7&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="$HOME/projetos/space-camera/gradle/libs.versions.toml"
+            line="58"
+            column="10"/>
     </issue>
 
     <issue
@@ -1422,12 +872,12 @@
 
     <issue
         id="DiscouragedApi"
-        message="Should not restrict activity to fixed orientation. This may not be suitable for different form factors, causing the app to be letterboxed."
+        message="Fixed screen orientations will be ignored in most cases, starting from Android 16. Android is moving toward a model where apps are expected to adapt to various orientations, display sizes, and aspect ratios."
         errorLine1="            android:screenOrientation=&quot;portrait&quot;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="30"
+            line="51"
             column="13"/>
     </issue>
 
@@ -1482,7 +932,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt"
-            line="1283"
+            line="1293"
             column="32"/>
     </issue>
 
@@ -1493,7 +943,7 @@
         errorLine2="                                   ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt"
-            line="1285"
+            line="1295"
             column="36"/>
     </issue>
 
@@ -1504,41 +954,8 @@
         errorLine2="                                  ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt"
-            line="1914"
+            line="1924"
             column="35"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.surface` appears to be unused"
-        errorLine1="    &lt;color name=&quot;surface&quot;>#1E1E1E&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="6"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.error` appears to be unused"
-        errorLine1="    &lt;color name=&quot;error&quot;>#FFB3261E&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="7"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.white` appears to be unused"
-        errorLine1="    &lt;color name=&quot;white&quot;>#FFFFFF&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="8"
-            column="12"/>
     </issue>
 
     <issue
@@ -1701,14 +1118,168 @@
     </issue>
 
     <issue
-        id="UnnecessaryRequiredFeature"
-        message="Consider whether this feature (`android.hardware.camera.autofocus`) really is required for the app to function; you can set `android:required=&quot;false&quot;` to indicate that the feature is used but not required"
-        errorLine1="    &lt;uses-feature android:name=&quot;android.hardware.camera.autofocus&quot; />"
-        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="UseKtx"
+        message="Use the KTX extension function `Bitmap.scale` instead?"
+        errorLine1="        val sample = Bitmap.createScaledBitmap(original, sampleW, sampleH, false)"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/AndroidManifest.xml"
+            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
+            line="972"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX function `createBitmap` instead?"
+        errorLine1="        val result = Bitmap.createBitmap(original.width, original.height, Bitmap.Config.ARGB_8888)"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
+            line="1018"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putBoolean(KEY_EIS, value).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
             line="15"
-            column="33"/>
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putBoolean(KEY_NR, value).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
+            line="19"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putBoolean(KEY_GRID, value).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
+            line="23"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putBoolean(KEY_LEVEL, value).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
+            line="27"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putBoolean(KEY_MIC_MUTED, value).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
+            line="31"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putInt(KEY_BITRATE_PRESET, value.ordinal).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
+            line="37"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putBoolean(KEY_TAP_TO_FOCUS, value).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
+            line="41"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putBoolean(KEY_SAVE_LOCATION, value).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
+            line="45"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putBoolean(KEY_FRONT_MIRROR, value).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
+            line="49"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putBoolean(KEY_KEEP_SETTINGS, value).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
+            line="53"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putBoolean(KEY_HDR, value).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
+            line="57"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putInt(KEY_PHOTO_QUALITY, value.ordinal).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
+            line="63"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        set(value) = prefs.edit().putBoolean(KEY_IMAGE_ENHANCEMENT, value).apply()"
+        errorLine2="                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/spacecamera/data/storage/SettingsStorage.kt"
+            line="67"
+            column="22"/>
     </issue>
 
 </issues>
