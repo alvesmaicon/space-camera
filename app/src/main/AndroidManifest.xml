@@ -54,16 +54,18 @@
             android:theme="@style/Theme.SpaceCamera">
 
             <!--
-              android:screenOrientation="portrait" acima continua valendo em
-              telefones, mas a partir do targetSdk 36 o Android **ignora** essa
-              restrição em telas com largura mínima >= 600dp (tablets e dobráveis
-              abertos). Verificado em emulador de tablet API 36: a activity recebe
-              os limites de paisagem cheios (2560x1600) e o layout de retrato se
-              espalha.
+              A partir do targetSdk 36 o Android ignora screenOrientation, proporção
+              e resizability em telas com largura mínima >= 600dp. Verificado em
+              emulador de tablet API 36: sem esta propriedade a activity recebe os
+              limites de paisagem cheios (2560x1600) e o layout de retrato se espalha.
 
-              Não há opt-out: nenhuma PROPERTY_COMPAT_* do SDK 36 restaura a
-              restrição. A saída é a UI passar a se adaptar — ver REFACTORING.md.
+              Esta é a fuga oficial, e é temporária: o framework remove o opt-out
+              no targetSdk 37. Vale como ponte até a UI adaptativa ficar pronta —
+              ver a spec de layout adaptativo em specs/.
             -->
+            <property
+                android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+                android:value="true" />
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
