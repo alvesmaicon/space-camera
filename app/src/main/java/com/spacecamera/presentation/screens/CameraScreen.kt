@@ -62,6 +62,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -78,6 +79,9 @@ import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoOption
 import com.spacecamera.presentation.layout.AxisContainer
 import com.spacecamera.presentation.layout.AxisScope
+import com.spacecamera.presentation.layout.captureRotation
+import com.spacecamera.presentation.layout.uiRotation
+import com.spacecamera.presentation.layout.windowRelativeRoll
 import com.spacecamera.presentation.viewmodels.CameraViewModel
 import com.spacecamera.presentation.viewmodels.PhotoFlashMode
 import com.spacecamera.presentation.viewmodels.RecordingDelay
@@ -268,21 +272,27 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
     var exposureAnchor by remember { mutableStateOf<Offset?>(null) }
     var exposureInteractionTick by remember { mutableStateOf(0) }
     var rollDegrees by remember { mutableStateOf(0f) }
-    // CW rotation (top-right): atan2(x,y) = -90° → icon needs -90° (CCW) to appear upright
-    // CCW rotation (top-left): atan2(x,y) = +90° → icon needs +90° (CW) to appear upright
-    val snappedIconRotation = when {
-        rollDegrees > 45f && rollDegrees < 135f -> 90f    // CCW landscape (top-left)
-        rollDegrees < -45f && rollDegrees > -135f -> -90f  // CW landscape (top-right)
-        abs(rollDegrees) >= 135f -> 180f
-        else -> 0f
-    }
-    // Surface rotation for video encoding at recording start
-    val snappedSurfaceRotation: Int = when {
-        rollDegrees > 45f && rollDegrees < 135f -> AndroidSurface.ROTATION_90   // CCW landscape
-        rollDegrees < -45f && rollDegrees > -135f -> AndroidSurface.ROTATION_270 // CW landscape
-        abs(rollDegrees) >= 135f -> AndroidSurface.ROTATION_180
-        else -> AndroidSurface.ROTATION_0
-    }
+
+    // Rotação da janela: quanto o compositor já girou o conteúdo. Fica em ROTATION_0
+    // enquanto a janela está travada em retrato (telefone) e acompanha o aparelho
+    // quando o sistema é livre para girar (tablet a partir do targetSdk 36).
+    //
+    // Precisa ser estado, não leitura direta: `view.display` é nulo até a View ser
+    // anexada à janela, e uma leitura simples nunca seria reavaliada — o valor
+    // ficaria congelado em ROTATION_0. Quem atualiza é o listener do acelerômetro
+    // abaixo, que é o mesmo lugar onde `rollDegrees` muda; as duas grandezas
+    // precisam andar juntas, e uma rotação de 180° não muda a Configuration.
+    val view = LocalView.current
+    var displayRotation by remember { mutableStateOf(AndroidSurface.ROTATION_0) }
+
+    // Ícones: giram só o que a janela ainda não girou. Com a janela travada, o
+    // resultado é idêntico ao de antes; com a janela livre é zero, senão o ícone
+    // leva rotação dobrada e aparece deitado. Ver Q-01 na spec.
+    val snappedIconRotation = uiRotation(rollDegrees, displayRotation)
+
+    // Mídia gravada: depende só do aparelho. A rotação da janela mede a mesma
+    // grandeza física, então compor as duas torceria o arquivo.
+    val snappedSurfaceRotation: Int = captureRotation(rollDegrees)
     val iconRotation by animateFloatAsState(
         targetValue = snappedIconRotation,
         animationSpec = tween(durationMillis = 300),
@@ -409,6 +419,10 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                     val z = event.values[2]
                     val newRoll = (atan2(x.toDouble(), y.toDouble()) * 180.0 / PI).toFloat()
                     rollDegrees = rollDegrees * 0.7f + newRoll * 0.3f
+                    // Leitura local e em cache no DisplayManagerGlobal — barata o
+                    // bastante para acompanhar o sensor, e garante convergência em
+                    // um quadro após qualquer virada da janela.
+                    displayRotation = view.display?.rotation ?: AndroidSurface.ROTATION_0
                     if (!firstReading) {
                         val dx = x - prevX; val dy = y - prevY; val dz = z - prevZ
                         val shake = dx * dx + dy * dy + dz * dz
@@ -895,10 +909,14 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 val cy = size.height / 2f
                 val lineLen = size.width * 0.22f
                 val gap = 20f
+                // "Nivelado" é propriedade física do enquadramento, medida contra a
+                // gravidade — independe da janela. Já o ângulo desenhado é dentro da
+                // janela: com ela girada, rollDegrees cru deixaria a linha 90° fora.
                 val isLevel = abs(rollDegrees) < 2f || abs(abs(rollDegrees) - 90f) < 2f
                 val levelColor = if (isLevel) Color(0xFF30D158) else Color.White.copy(alpha = 0.55f)
                 val strokeW = 1.dp.toPx()
-                val angleRad = (rollDegrees * PI / 180.0).toFloat()
+                val angleRad =
+                    (windowRelativeRoll(rollDegrees, displayRotation) * PI / 180.0).toFloat()
                 val cosA = cos(angleRad)
                 val sinA = sin(angleRad)
                 drawLine(levelColor,

@@ -92,24 +92,56 @@ presets de zoom e os seletores horizontais de resolução e fps.
 
 ### FR-6: Orientação da mídia gravada
 **Prioridade:** Critical
+**Revisado:** 2026-08-04 — ver Q-01 em [decisions.md](decisions.md)
 
 **Quando** uma gravação de vídeo ou captura de foto for iniciada, o sistema **deve**
-calcular a rotação alvo do CameraX combinando a rotação física do aparelho com a
-rotação atual da janela, de modo que o arquivo salvo fique na orientação em que a
-cena foi enquadrada.
+derivar a rotação alvo do CameraX da rotação física do aparelho medida pelo
+acelerômetro, e **não deve** compô-la com a rotação da janela.
 
-> Hoje a rotação vem **apenas** do acelerômetro, o que era correto enquanto a janela
-> era sempre retrato. Numa janela que pode girar, as duas se somam e o arquivo sai
-> torto. A documentação do CameraX trata as duas fontes como complementares.
+> **A redação anterior deste requisito estava errada.** Ela mandava somar a rotação
+> física com a rotação da janela, partindo de que as duas eram informações
+> complementares. A medição em AVD Tablet_API36 refutou isso: enquanto a janela
+> acompanha o aparelho, `Display.getRotation()` **é** a rotação física — bate 1:1 com
+> o `atan2(x, y)` do acelerômetro nos quatro estados de rotação. Somar produziria
+> rotação dobrada, ou seja, exatamente o arquivo torto que o requisito queria evitar.
+>
+> A inspeção do conteúdo do MP4 e do JPEG salvos confirmou que a derivação só pelo
+> sensor já entrega a cena de pé nas duas pontas. O requisito passa a **proteger** o
+> comportamento atual contra a composição, em vez de pedi-la.
+>
+> **Pendência conhecida, aceita:** com a rotação automática **desligada** pelo
+> usuário, a janela fica presa e o arquivo deixa de acompanhar o enquadramento. É o
+> espelho do AC-6.3, que escolheu deliberadamente seguir o aparelho — atender um
+> contradiz o outro. Fica como decisão de produto para outra spec.
 >
 > **Critical** apesar da estratégia de ponte: é o único requisito cujo defeito não
 > aparece na tela — só olhando o arquivo salvo.
 
+### FR-9: Compensação de rotação da interface
+**Prioridade:** High
+**Origem:** Q-01, 2026-08-04
+
+**Enquanto** a janela puder girar junto com o aparelho, o sistema **deve** descontar
+a rotação já aplicada pelo compositor ao girar ícones e o indicador de nível, de modo
+que não recebam rotação em dobro.
+
+**Enquanto** a janela estiver travada, o sistema **deve** girar os ícones pela
+rotação física do aparelho — o comportamento atual, sem alteração.
+
+> Esta é a metade do antigo FR-6 que a medição sustenta. O defeito é visível: com a
+> janela em retrato no tablet, o compositor já deixou a UI de pé e o app girava cada
+> ícone outra vez — `HD 30`, `EIS`, flash e temporizador apareciam deitados, enquanto
+> `Vídeo`/`Foto` e `1x 2x 5x`, que não recebem rotação, ficavam retos.
+>
+> O indicador de nível precisa do ângulo **contínuo**, não travado em quadrante: numa
+> janela girada, o ângulo cru deixaria a linha 90° fora. Já a decisão de acender
+> verde ("nivelado") continua física — é propriedade do enquadramento, não da janela.
+
 ### FR-7: Remoção da ponte de compatibilidade
 **Prioridade:** Medium
 
-**Quando** os FR-1 a FR-6 estiverem implementados e verificados em tablet, o sistema
-**deve** deixar de declarar
+**Quando** os FR-1 a FR-6 e o FR-9 estiverem implementados e verificados em tablet, o
+sistema **deve** deixar de declarar
 `android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY` no manifesto.
 
 > Sem isso o app continua pillarboxed e o trabalho fica inerte — a adaptação nunca é
@@ -166,11 +198,16 @@ telas de Configurações e Sobre e centralizá-lo.
 - **Prioridade:** High
 - **Fonte:** suíte de testes
 - **Estímulo:** execução de `./gradlew testDebugUnitTest`
-- **Artefato:** predicado de janela larga e cálculo de rotação combinada
+- **Artefato:** predicado de janela larga, rotação de captura e compensação da UI
 - **Ambiente:** JVM, sem emulador
 - **Resposta:** a lógica de decisão de layout é exercitada
-- **Medida:** ≥ **6 testes novos** cobrindo o predicado (FR-1) e a rotação combinada
-  (FR-6), rodando na JVM
+- **Medida:** ≥ **6 testes novos** cobrindo o predicado (FR-1), a rotação de captura
+  (FR-6) e a compensação da UI (FR-9), rodando na JVM
+
+> A cobertura na JVM tem limite conhecido, medido em 2026-08-04: a primeira ligação
+> do FR-9 passava nos 12 testes e não funcionava no aparelho, porque `view.display` é
+> nulo até a View ser anexada. Função pura correta não garante ligação correta — daí
+> a verificação em aparelho continuar obrigatória para FR-6 e FR-9.
 
 ### NFR-5: Não crescer a dívida de tamanho
 - **Atributo:** Manutenibilidade
@@ -233,10 +270,15 @@ telas de Configurações e Sobre e centralizá-lo.
 - **QUANDO** os controles estão sobrepostos à pré-visualização
 - **ENTÃO** o contraste entre ícone e fundo composto é ≥ 4,5:1
 
-### AC-6.1: Vídeo em tablet paisagem
-- **DADO** um tablet com janela em paisagem e o aparelho fisicamente em pé
+### AC-6.1: Vídeo em tablet com janela livre
+- **DADO** um tablet com a janela livre para girar
 - **QUANDO** um vídeo é gravado e salvo
-- **ENTÃO** o arquivo abre na galeria em paisagem, na mesma orientação do enquadramento
+- **ENTÃO** o arquivo abre de pé — o horizonte na horizontal
+
+> Reescrito em 2026-08-04. A versão anterior exigia "arquivo em paisagem", o que
+> confundia orientação com proporção: num aparelho de orientação natural paisagem e
+> `SENSOR_ORIENTATION` de 90°, o campo de visão físico é mais alto que largo, e o
+> arquivo sair retrato é correto. O que precisa ser verificado é a cena estar de pé.
 
 ### AC-6.2: Verificação no arquivo, não na tela
 - **DADO** qualquer combinação de rotação de janela e rotação física
@@ -251,8 +293,13 @@ telas de Configurações e Sobre e centralizá-lo.
 - **QUANDO** o aparelho é girado 90° e um vídeo é gravado
 - **ENTÃO** o arquivo sai em paisagem — o comportamento atual, preservado
 
+### AC-6.4: A rotação da janela não entra na captura
+- **DADO** o aparelho parado numa mesma inclinação física
+- **QUANDO** só a rotação da janela muda
+- **ENTÃO** a rotação alvo do CameraX não muda
+
 ### AC-7.1: Ponte removida
-- **DADO** os FR-1 a FR-6 verificados em tablet
+- **DADO** os FR-1 a FR-6 e o FR-9 verificados em tablet
 - **QUANDO** o manifesto é inspecionado
 - **ENTÃO** `PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY` não está mais declarada, e
   o `dumpsys` mostra a activity ocupando a janela inteira
@@ -261,6 +308,22 @@ telas de Configurações e Sobre e centralizá-lo.
 - **DADO** a tela de Configurações numa janela larga
 - **QUANDO** a lista é exibida
 - **ENTÃO** o conteúdo tem largura limitada e está centralizado
+
+### AC-9.1: Janela livre não gira o ícone de novo
+- **DADO** uma janela que acompanhou o aparelho ao girar
+- **QUANDO** os ícones da barra são compostos
+- **ENTÃO** não recebem rotação adicional — aparecem de pé
+
+### AC-9.2: Janela travada preserva o giro atual
+- **DADO** um telefone cuja janela permanece em retrato
+- **QUANDO** o aparelho é girado 90°
+- **ENTÃO** os ícones giram, como antes desta spec
+
+### AC-9.3: Ângulo do nível é relativo à janela
+- **DADO** uma janela girada em relação ao aparelho
+- **QUANDO** o indicador de nível é desenhado
+- **ENTÃO** a linha usa a inclinação residual dentro da janela, e o verde de
+  "nivelado" continua decidido pela inclinação física
 
 ---
 

@@ -29,9 +29,12 @@ flowchart TB
 ```
 
 O acelerômetro e o sistema de janelas aparecem como **fontes distintas** de
-propósito: somar as duas indevidamente é exatamente o defeito que o FR-6 corrige.
+propósito, mas o motivo é o inverso do que se supôs no Gate 2: enquanto a janela é
+livre, as duas **medem a mesma grandeza**. Somá-las é o defeito que a Q-01 achou. O
+acelerômetro sozinho serve a captura (FR-6); a diferença entre os dois serve a UI
+(FR-9).
 
-**Requisitos:** FR-1, FR-6
+**Requisitos:** FR-1, FR-6, FR-9
 
 ---
 
@@ -61,8 +64,8 @@ flowchart TB
     MA --> SS
     Cfg -->|FR-1| CS
     Cfg -->|FR-8| SS
-    Acc --> CS
-    Disp -->|FR-6| CS
+    Acc -->|FR-6, FR-9| CS
+    Disp -->|FR-9| CS
     CS --> VM
     VM --> CC
     CC -.implementa.-> CM
@@ -83,7 +86,8 @@ flowchart TB
     subgraph novo ["Novo (Task 1 e 2)"]
         WIDE["rememberIsWideWindow()<br/>FR-1"]
         AXIS["AxisContainer + AxisScope<br/>ADR-003"]
-        ROT["rememberCaptureRotation()<br/>FR-6"]
+        ROT["captureRotation()<br/>FR-6"]
+        UIR["uiRotation() + windowRelativeRoll()<br/>FR-9"]
     end
 
     subgraph existente ["Existente — invertido"]
@@ -96,8 +100,11 @@ flowchart TB
     end
 
     subgraph intocado ["Intocado — posicionado por coordenada"]
-        OVL["Anel de foco, slider de exposição,<br/>contagem, nível, revisão de foto"]
+        OVL["Anel de foco, slider de exposição,<br/>contagem, revisão de foto"]
+        NIV["Nível de horizonte<br/>só o ângulo muda — FR-9"]
     end
+
+    CAP[(CameraManager<br/>targetRotation)]
 
     WIDE --> TOP
     WIDE --> PREV
@@ -108,16 +115,23 @@ flowchart TB
     AXIS --> EXP
     AXIS --> ZOOM
     AXIS --> PICK
-    ROT --> PREV
+    ROT --> CAP
+    UIR --> TOP
+    UIR --> BOT
+    UIR --> NIV
 
     style novo fill:#1e3a5f,color:#fff
     style intocado fill:#3a3a3a,color:#fff
 ```
 
-O bloco "intocado" é a razão de a spec ser pequena: cinco overlays não precisam de
-nenhuma mudança porque já se posicionam por coordenada absoluta.
+O bloco "intocado" é a razão de a spec ser pequena: os overlays não precisam de
+mudança porque já se posicionam por coordenada absoluta. O nível é a única exceção, e
+só no ângulo da linha — a posição continua por coordenada.
 
-**Requisitos:** FR-1, FR-2, FR-3, FR-4, FR-5, FR-6
+Note que [ROT] e [UIR] apontam para lugares diferentes: a rotação de captura vai para
+o `CameraManager`, a compensação vai para a UI. Confundi-las é o defeito da Q-01.
+
+**Requisitos:** FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, FR-9
 
 ---
 
@@ -185,30 +199,46 @@ sequenceDiagram
     Note over CS,T: NFR-3 exige elapsed_ms <= 800
 ```
 
-### 5.2 Gravação com janela e aparelho desalinhados
+### 5.2 As duas grandezas que saem do mesmo sensor
 
-O caso que o FR-6 corrige.
+**Revisado em 2026-08-04 (Q-01).** A versão anterior deste diagrama mostrava a rotação
+de captura como soma do sensor e da janela. A medição refutou: enquanto a janela
+acompanha o aparelho, as duas fontes são a mesma grandeza. Quem precisa da rotação da
+janela é a UI.
 
 ```mermaid
 sequenceDiagram
     actor U as Usuário
+    participant A as Acelerômetro
     participant CS as CameraScreen
     participant D as Display
-    participant A as Acelerômetro
     participant CM as CameraManager
     participant MS as MediaStore
 
-    U->>CS: toca em gravar (tablet em pé, janela em paisagem)
-    CS->>A: rollDegrees ~ 0 (aparelho em pé)
-    CS->>D: getRotation() = ROTATION_90 (janela girada)
-    Note over CS: ANTES — só o sensor:<br/>ROTATION_0 → arquivo em retrato (errado)
-    CS->>CS: rotação combinada = sensor + janela
-    Note over CS: DEPOIS — ROTATION_90 → paisagem (certo)
-    CS->>CM: startRecording(targetRotation = combinada)
+    A->>CS: rollDegrees (inclinação física)
+    CS->>D: getRotation() — quanto o compositor já girou
+    Note over CS,D: janela livre: getRotation() == inclinação física<br/>janela travada: getRotation() fica em ROTATION_0
+
+    rect rgb(30, 58, 95)
+        Note over CS: FR-9 — compensação da UI
+        CS->>CS: uiRotation = snap(roll − janela)
+        CS->>CS: windowRelativeRoll = roll − janela (contínuo, nível)
+    end
+
+    rect rgb(58, 58, 58)
+        Note over CS: FR-6 — captura, só o sensor
+        CS->>CS: captureRotation = snap(roll)
+    end
+
+    U->>CS: toca em gravar
+    CS->>CM: startRecording(targetRotation = captureRotation)
     CM->>MS: grava MP4 com metadado de rotação
-    MS-->>U: arquivo abre em paisagem na galeria
+    MS-->>U: cena de pé — horizonte na horizontal
     Note over MS: AC-6.2 confere no arquivo, não na tela
 ```
+
+Fórmula do CameraX confirmada por dois pontos medidos:
+`rotação de saída = (SENSOR_ORIENTATION − targetRotation) mod 360`.
 
 ### 5.3 Falha — janela larga sem altura suficiente
 
@@ -264,7 +294,8 @@ permite dispensar para casos sem infraestrutura.
 | Requisito | Como se verifica | Onde |
 |---|---|---|
 | FR-1 | Testes de tabela do predicado com pares largura/altura | JVM |
-| FR-6 | Testes de tabela da rotação combinada, 16 combinações | JVM |
+| FR-6 | Testes de quadrante + fronteira, e inspeção do arquivo salvo | JVM + aparelho |
+| FR-9 | Testes de tabela das 16 combinações + captura de tela nos dois AVDs | JVM + aparelho |
 | FR-2, FR-4 | Inspeção visual comparada, retrato e paisagem | Emulador |
 | FR-3 | `evt=bind` mostra `aspect` correto | `scripts/logcat.sh 'evt=bind'` |
 | FR-5, NFR-2 | Cálculo de contraste sobre captura com cena branca | Emulador + medição |
@@ -273,5 +304,10 @@ permite dispensar para casos sem infraestrutura.
 | NFR-3 | `elapsed_ms` do `evt=bind` após girar | `scripts/logcat.sh` |
 | NFR-5 | `wc -l CameraScreen.kt` ≤ 2.240 | Comando |
 
-FR-1 e FR-6 são deliberadamente funções puras justamente para caírem na JVM — é o
-que o NFR-4 cobra. O resto exige olho ou aparelho, e está reconhecido como tal.
+FR-1, FR-6 e FR-9 são deliberadamente funções puras justamente para caírem na JVM — é
+o que o NFR-4 cobra. O resto exige olho ou aparelho, e está reconhecido como tal.
+
+Limite conhecido dessa cobertura, medido em 2026-08-04: a primeira ligação do FR-9
+passou nos 12 testes de tabela e não funcionou no aparelho, porque `view.display` é
+nulo até a View ser anexada e a leitura ficava congelada. Função pura correta não
+garante ligação correta — por isso FR-6 e FR-9 aparecem como `JVM + aparelho`.

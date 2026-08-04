@@ -69,19 +69,47 @@ Entregue em `presentation/layout/WindowAxis.kt`, arquivo novo em vez de dentro d
 Nada consome o predicado ainda — o app se comporta como antes, que é o critério do
 checkpoint da Wave 0.
 
-**Task 5 — bloqueada.** Ver Q-01 em `decisions.md`. Três medições em AVD Tablet_API36
-(correspondência 1:1 entre `Display.getRotation()` e o acelerômetro nos quatro
-estados; inspeção do conteúdo do MP4 e do JPEG salvos; captura de tela com os ícones
-em dupla rotação) não reproduzem a premissa do FR-6. A composição especificada
-tornaria a mídia torta na janela livre. A ponte foi removida **só localmente** para o
-experimento e já está restaurada no manifesto.
+**Task 5 — concluída, redefinida pela Q-01.**
+
+Três medições em AVD Tablet_API36 (correspondência 1:1 entre `Display.getRotation()`
+e o acelerômetro nos quatro estados; inspeção do conteúdo do MP4 e do JPEG salvos;
+captura de tela com os ícones em dupla rotação) não reproduzem a premissa do FR-6. A
+composição especificada tornaria a mídia torta na janela livre. Decisão do usuário:
+dividir em duas grandezas.
+
+Entregue em `presentation/layout/DeviceRotation.kt`, 12 testes novos:
+
+- `captureRotation(rollDegrees)` — só o sensor, comportamento idêntico ao anterior.
+  Teste de fronteira garante que os limiares de 45°/135° não se deslocaram.
+- `uiRotation(rollDegrees, displayRotation)` — travada em quadrante, para os ícones.
+- `windowRelativeRoll(...)` — contínua, para o ângulo do nível de horizonte.
+- `isLevel` permanece em `rollDegrees`: nivelamento é físico, e usar o valor relativo
+  perderia o caso de retrato travado em paisagem, que hoje acende verde.
+
+**Armadilha que só o aparelho pegou.** A primeira ligação lia
+`LocalView.current.display?.rotation` direto na composição. Compila, passa nos
+testes, e **não funciona**: `view.display` é nulo até a View ser anexada, então o
+fallback `ROTATION_0` congela e nada dispara reavaliação — os ícones continuaram
+tortos no tablet. A correção é `displayRotation` como estado, atualizado no listener
+do acelerômetro, que é o mesmo lugar onde `rollDegrees` muda e cobre também a virada
+de 180°, que não altera a `Configuration`.
+
+**Verificação em dois aparelhos:**
+
+| Aparelho | Janela | `mCurrentRotation` | Ícones |
+|---|---|---|---|
+| Tablet_API36, ponte removida | livre, retrato 1600×2560 | ROTATION_90 | de pé ✓ |
+| Pixel_9_Pro, ponte ativa | travada em retrato | ROTATION_0 | giram ✓ (NFR-1) |
+
+A ponte foi removida **só localmente** para o experimento e está restaurada no
+manifesto.
 
 ## Status das tarefas
 
 | Tarefa | Onda | Status | Observação |
 |---|---|---|---|
 | 1. Predicado + helper de eixo | 0 | **Concluída** | 7 testes; contrato pronto, Wave 1 destravada |
-| 5. Rotação combinada da mídia | 0 | **Bloqueada** | Q-01 — premissa do FR-6 não se reproduz |
+| 5. Captura vs compensação da UI | 0 | **Concluída** | 12 testes; redefinida pela Q-01, verificada nos dois AVDs |
 | 2. Barra superior | 1 | Pendente | |
 | 3. Controles inferiores + proporção | 1 | Pendente | Caminho crítico |
 | 4. Barras auxiliares + contraste | 1 | Pendente | |
@@ -90,14 +118,19 @@ experimento e já está restaurada no manifesto.
 ## Pendências
 
 - [x] Iniciar a Wave 0
-- [ ] Decidir Q-01 (redefinição do FR-6) para desbloquear a Task 5
-- [ ] Commit da Task 1 (Gate E — aguarda autorização)
+- [x] Decidir Q-01 — usuário escolheu dividir em duas grandezas
+- [x] Commit da Task 1 (`8caf152`)
+- [ ] Commit da Task 5 (Gate E — aguarda autorização)
+- [ ] Pedir à skill `spec` para reescrever o FR-6 em `requirements.md` conforme a
+      Q-01. A skill `dev` não altera `requirements.md`; hoje o texto do FR-6 ainda
+      descreve a composição que a medição refutou.
+- [ ] Iniciar a Wave 1 (Tasks 2, 3, 4 — dependem só do contrato da Task 1)
 
 ## Bloqueadores
 
-**Q-01** — a premissa do FR-6 não se reproduz em aparelho. Bloqueia a Task 5 e
-recomenda-se resolver antes da Wave 1: a dupla rotação dos ícones confunde a
-verificação visual das barras laterais.
+Nenhum. Wave 0 fechada: `./gradlew assembleDebug testDebugUnitTest detekt lint` verde
+com 57 testes, e o app se comporta como antes em telefone — nada consome ainda o
+predicado de janela larga.
 
 ## Notas para quem implementar
 

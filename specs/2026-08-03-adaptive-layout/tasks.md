@@ -3,10 +3,9 @@
 ## Visão geral
 
 - **Total:** 6
-- **Concluídas:** 1 (Task 1)
+- **Concluídas:** 2 (Task 1, Task 5) — **Wave 0 fechada**
 - **Em andamento:** 0
-- **Bloqueadas:** 1 (Task 5 — ver "Questão aberta" em decisions.md)
-- **Pendentes:** 4
+- **Pendentes:** 4 (Wave 1: Tasks 2, 3, 4 · Wave 2: Task 6)
 - **Estratégia de decomposição:** fatias verticais por grupo de controle. A Task 1 é
   contrato de Wave 0 (predicado + helper de eixo), do qual quatro tarefas dependem —
   extraí-lo evita que virem uma corrente serial. A Task 5 (orientação da mídia) é
@@ -135,37 +134,46 @@ Contrato de Wave 0. Existe separado porque quatro tarefas dependem dele.
 
 ---
 
-### [ ] 5. Rotação combinada para a mídia gravada
+### [x] 5. Separar rotação de captura e compensação da UI
 
-Independente das tarefas de layout — pode correr desde o começo.
+Independente das tarefas de layout. **Redefinida em 2026-08-04** pela Q-01: a medição
+em aparelho mostrou que compor as duas rotações na captura dobraria a rotação. A
+grandeza que precisa da rotação da janela é a compensação da UI.
 
 - **Size:** S
 - **Complexity:** high
 - **Risk:** high
 - **Dependencies:** nenhuma
 - **Steps:**
-  1. Extrair a função pura
-     `captureRotation(rollDegrees: Float, displayRotation: Int): Int`, devolvendo a
-     constante `Surface.ROTATION_*` combinada.
-  2. Substituir o `snappedSurfaceRotation` atual, que usa só `rollDegrees`, por uma
-     chamada a essa função com `LocalView.display.rotation`.
-  3. Cobrir as 16 combinações (4 rotações físicas × 4 de janela) em teste de tabela.
+  1. Extrair `captureRotation(rollDegrees: Float): Int` — pura, só o sensor,
+     comportamento idêntico ao anterior; o ganho é testabilidade na JVM.
+  2. Criar `uiRotation(rollDegrees, displayRotation): Float` — quanto girar ícones
+     descontando o que o compositor já girou; e `windowRelativeRoll(...)` contínua,
+     para o ângulo do nível de horizonte.
+  3. Ligar na `CameraScreen`: `displayRotation` precisa ser **estado** atualizado no
+     listener do acelerômetro, não leitura direta — `view.display` é nulo até a View
+     ser anexada, e leitura simples nunca é reavaliada.
+  4. Cobrir as 16 combinações (4 rotações físicas × 4 de janela) em teste de tabela.
 - **Acceptance Criteria:**
-  - **DADO** tablet em pé com janela em paisagem **QUANDO** grava **ENTÃO** o arquivo
-    sai em paisagem
+  - **DADO** janela que acompanha o aparelho **QUANDO** a UI compõe **ENTÃO** os
+    ícones não recebem rotação adicional
   - **DADO** telefone travado em retrato girado 90° na mão **QUANDO** grava **ENTÃO** o
-    arquivo sai em paisagem — comportamento atual preservado
+    arquivo sai em paisagem e os ícones giram — comportamento atual preservado
   - **DADO** qualquer combinação **QUANDO** a mídia é salva **ENTÃO** a orientação é
     conferida no arquivo (metadado do MP4 ou EXIF do JPEG), não na pré-visualização
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest --tests '*CaptureRotation*'`
-  - [ ] Manual: gravar em tablet, `adb pull` do arquivo e inspecionar a rotação com
-        `ffprobe` ou abrindo na galeria do desktop
-  - [ ] Manual: repetir em telefone girado na mão, confirmar que não regrediu
-- **_Requirements: FR-6, NFR-4_**
+  - [x] Testes passam: `./gradlew testDebugUnitTest --tests '*DeviceRotation*'` (12)
+  - [x] Manual: MP4 e JPEG puxados do tablet e inspecionados com `ffprobe` — cena de
+        pé nas duas pontas
+  - [x] Manual: captura de tela do tablet com janela livre — ícones de pé
+  - [x] Manual: captura de tela do telefone travado girado na mão — ícones giram,
+        `mCurrentRotation` permanece ROTATION_0 (NFR-1)
+- **_Requirements: FR-6, FR-9, NFR-1, NFR-4_**
+- **_Decisions: Q-01_**
 
-> `Size: S` com `Complexity: high` e `Risk: high` de propósito: mexe em poucas linhas,
-> mas o raciocínio de composição de rotações é sutil e o defeito é invisível na tela.
+> `Size: S` com `Complexity: high` e `Risk: high` se confirmou: são poucas linhas, mas
+> a primeira ligação parecia certa e não funcionava — `view.display` nulo na primeira
+> composição congelava a compensação em zero. Só a verificação em aparelho pegou.
 
 ---
 
@@ -267,6 +275,7 @@ graph TD
 | FR-6 | Task 5 |
 | FR-7 | Task 6 |
 | FR-8 | Task 6 |
+| FR-9 | Task 5 |
 | NFR-1 | Task 2, Task 3, Task 6 |
 | NFR-2 | Task 4 |
 | NFR-3 | Task 3 |

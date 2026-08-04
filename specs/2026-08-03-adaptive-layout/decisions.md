@@ -199,7 +199,17 @@ invertidas em aparelho, que só se sabe rodando.
 
 ## Gate 1 — Requisitos
 
-Ver [requirements.md](requirements.md): 7 FR e 5 NFR.
+Ver [requirements.md](requirements.md): 9 FR e 5 NFR.
+
+> **Emenda de 2026-08-04 (Q-01).** O FR-6 foi reescrito e o FR-9 criado depois da
+> medição em aparelho. A contagem original registrada aqui era "7 FR", o que já
+> divergia do arquivo — `requirements.md` sempre definiu FR-1 a FR-8. Corrigido.
+>
+> A emenda não passou por nova validação de consenso: as três personas do Gate 1
+> avaliaram a *formulação* do requisito, e o que mudou foi um **fato medido** sobre o
+> comportamento do aparelho. Consenso não decide fato. As três recomendações
+> originais seguem valendo — em particular a do Pragmático, "exigir verificação do
+> arquivo salvo, não da tela" (AC-6.2), que é justamente o que expôs o erro.
 
 ### Validação por consenso — requirements.md
 
@@ -515,8 +525,11 @@ Consistência entre artefatos conferida:
 ### Q-01: a premissa do FR-6 não se reproduz — a Task 5 está bloqueada
 
 **Levantada por:** skill `dev`, durante a Wave 0
-**Status:** aguardando decisão do usuário
-**Afeta:** FR-6, AC-6.1, AC-6.2, AC-6.3, Task 5, design.md §5.2
+**Status:** **Resolvida** em 2026-08-04 — decisão do usuário: dividir em duas
+grandezas. FR-6 reescrito para *proibir* a composição; FR-9 criado para a compensação
+da UI; AC-6.1 reescrito, AC-6.4 e AC-9.1 a AC-9.3 acrescentados; `design.md` §1, §2,
+§3, §5.2 e §7 corrigidos. Implementado e verificado nos dois AVDs.
+**Afeta:** FR-6, FR-9, AC-6.1, AC-6.4, AC-9.x, NFR-4, Task 5, design.md §1/§2/§3/§5.2/§7
 
 O FR-6 afirma que a rotação física e a rotação da janela "se somam e o arquivo sai
 torto". Ao implementar a Task 5, a medição em aparelho **não reproduz** isso, e a
