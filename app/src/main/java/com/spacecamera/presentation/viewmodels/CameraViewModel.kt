@@ -286,6 +286,17 @@ class CameraViewModel(
             }
             boundLifecycleOwner = WeakReference(lifecycleOwner)
             videoRepository = VideoRepositoryImpl(cameraManager!!)
+            cameraManager!!.initializeCamera(surfaceProvider)
+            _cameraInitialized.value = true
+            // O bind vem **antes** dos coletores, e a ordem é o defeito medido em
+            // aparelho real (Q-03): as capacidades só são sondadas dentro de
+            // `initializeCamera`, e os fluxos do controller começam em `false` — valor
+            // que significa "ainda não sondado" e é indistinguível de "não suportado".
+            // Com os coletores antes, o de `isEisSupported` recebia esse `false`,
+            // concluía "sem suporte" e desligava o EIS de forma persistente num
+            // aparelho que o suporta. `viewModelScope` usa `Dispatchers.Main.immediate`,
+            // que roda o `launch` de forma eager até a primeira suspensão, então não há
+            // janela de sorte aqui.
             controllerCollectors = viewModelScope.launch {
                 launch {
                     cameraManager!!.recordingState.collect { state ->
@@ -387,8 +398,6 @@ class CameraViewModel(
                     cameraManager!!.isCameraReady.collect { _isCameraReady.value = it }
                 }
             }
-            cameraManager!!.initializeCamera(surfaceProvider)
-            _cameraInitialized.value = true
         } catch (e: Exception) {
             Timber.e(e, "evt=camera_init_failed")
             _cameraInitialized.value = false

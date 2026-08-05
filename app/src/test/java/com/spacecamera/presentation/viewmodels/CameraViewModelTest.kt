@@ -18,6 +18,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -444,6 +445,59 @@ class CameraViewModelTest {
         assertTrue(viewModel.isFrontCamera.value)
         assertFalse(viewModel.isFlashOn.value, "não há flash na câmera frontal")
         assertEquals(1, controller.flipCount)
+    }
+
+    /**
+     * Requirements: NFR-1
+     * Decisions: Q-03
+     *
+     * Regressão medida em aparelho real (Motorola edge 60 neo, Android 16): com EIS
+     * suportado pelo hardware, o app subia com EIS **desligado** e gravava isso no
+     * storage. O `evt=caps` dizia `eis_supported=true` e o `evt=bind` seguinte,
+     * `eis=false`.
+     *
+     * A causa é ordem de inicialização. `_isEisSupported` do `CameraManager` começa
+     * `false`, e esse valor significa "ainda não sondado" — indistinguível de "não
+     * suportado". A sondagem só acontece dentro de `initializeCamera`, que é o bind.
+     * Se o coletor de `isEisSupported` sobe **antes** disso, ele recebe o `false`
+     * inicial, conclui "sem suporte" e desliga o EIS de forma persistente.
+     *
+     * Nenhum emulador pega: lá o EIS realmente não é suportado, então
+     * `eis_supported=false` nos dois casos. E nenhum teste pegava porque o
+     * `FakeCameraController` começa com os `*Flow` em `true`, mais otimista que a
+     * produção — daí o gancho [FakeCameraController.aoInicializar], que reproduz a
+     * transição false → true no momento do bind.
+     */
+    @Test
+    fun `EIS suportado permanece ligado quando a sondagem ocorre no bind`() = runTest {
+        // `viewModelScope` usa `Dispatchers.Main.immediate`, que roda o `launch` de
+        // forma **eager** até a primeira suspensão — é isso que faz o coletor receber o
+        // valor inicial antes de o bind sondar. O `StandardTestDispatcher` do resto da
+        // suíte enfileira o `launch` e esconde o defeito: a primeira versão deste teste
+        // passou com o bug presente. `Unconfined` reproduz a execução eager.
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        val vm = CameraViewModel(
+            controllerFactory = CameraControllerFactory { _, _ -> controller },
+            settingsStorageFactory = { storage }
+        )
+        controller.isEisSupportedFlow.value = false          // como o CameraManager real
+        controller.aoInicializar = { controller.isEisSupportedFlow.value = true }
+
+        vm.initializeCamera(context, mockk<LifecycleOwner>(relaxed = true), null)
+        advanceUntilIdle()
+
+        assertTrue(
+            vm.isEisSupported.value,
+            "a sondagem no bind precisa chegar ao ViewModel"
+        )
+        assertTrue(
+            vm.isStabilizationEnabled.value,
+            "EIS suportado não pode ser desligado pelo valor inicial de 'ainda não sondado'"
+        )
+        assertTrue(
+            storage.isStabilizationEnabled,
+            "e o desligamento indevido não pode ser persistido"
+        )
     }
 
     // ── Recriação da Activity (Q-02) ────────────────────────────────────────

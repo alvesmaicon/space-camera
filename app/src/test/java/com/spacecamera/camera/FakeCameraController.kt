@@ -105,8 +105,19 @@ class FakeCameraController : CameraController {
 
     // ── Implementação ───────────────────────────────────────────────────────
 
+    /**
+     * Gancho para simular a **sondagem de capacidades**, que no `CameraManager` real
+     * só acontece dentro de `initializeCamera` (é o bind que consulta o HAL).
+     *
+     * Importa porque os `*Flow` deste dublê começam em `true` e os do real começam em
+     * `false` — "ainda não sondado". Sem reproduzir essa transição, o dublê é mais
+     * otimista que a produção e esconde defeito de ordem de inicialização.
+     */
+    var aoInicializar: (() -> Unit)? = null
+
     override suspend fun initializeCamera(surfaceProvider: Preview.SurfaceProvider?) {
         initializeCount++
+        aoInicializar?.invoke()
     }
 
     override fun updateSurfaceProvider(newSurfaceProvider: Preview.SurfaceProvider) {
