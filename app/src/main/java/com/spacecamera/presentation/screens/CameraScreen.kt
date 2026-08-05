@@ -114,7 +114,32 @@ import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.roundToInt
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
+/**
+ * Requirements: NFR-2
+ *
+ * Opacidade do branco num controle **desligado** (ou não selecionado).
+ *
+ * Era 0,38 — o valor que o app usava desde antes do layout adaptativo — e não
+ * alcançava o limiar de 4,5:1 do NFR-2 em nenhum dos dois fundos. Medido e
+ * recalculado em 2026-08-04, pela fórmula de luminância relativa da WCAG 2.1:
+ *
+ * | Alfa | Sobre o scrim (`#232325`) | Sobre a faixa preta |
+ * |---|---|---|
+ * | 0,38 | 3,51:1 | 3,39:1 |
+ * | 0,48 | **4,73:1** | **4,89:1** |
+ *
+ * O `#232325` é o pior caso do fundo composto em janela larga: scrim `0xFF1C1C1E`
+ * com alfa 0,97 sobre pré-visualização toda branca.
+ *
+ * Não confundir com o alfa 0,2 dos controles **não suportados** pelo aparelho, que
+ * fica como está: ali o cinza fraco é a própria informação ("indisponível"), a WCAG
+ * isenta componentes inativos do contraste mínimo, e igualar os dois faria
+ * "não suportado" parecer apenas "desligado".
+ */
+private const val OFF_CONTROL_ALPHA = 0.48f
 
 @Composable
 fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () -> Unit = {}) {
@@ -556,6 +581,9 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                     AxisContainer(
                         vertical = isWide,
                         arrangement = if (isWide) Arrangement.spacedBy(2.dp) else null,
+                        // AC-4.3: em janela larga e baixa a coluna rola em vez de
+                        // transbordar. Em retrato é `Row` e o parâmetro não age.
+                        scrollable = isWide,
                         modifier = Modifier
                             .then(if (isWide) Modifier else Modifier.fillMaxWidth())
                             .background(controlScrimColor, RoundedCornerShape(28.dp))
@@ -617,6 +645,9 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                     AxisContainer(
                         vertical = isWide,
                         arrangement = if (isWide) Arrangement.spacedBy(2.dp) else null,
+                        // AC-4.3: em janela larga e baixa a coluna rola em vez de
+                        // transbordar. Em retrato é `Row` e o parâmetro não age.
+                        scrollable = isWide,
                         modifier = Modifier
                             .then(if (isWide) Modifier else Modifier.fillMaxWidth())
                             .background(controlScrimColor, RoundedCornerShape(28.dp))
@@ -661,7 +692,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                                     tint = when {
                                         isFrontCamera || countdownSeconds > 0 -> Color.White.copy(alpha = 0.2f)
                                         photoFlashMode != PhotoFlashMode.OFF -> Color.White
-                                        else -> Color.White.copy(alpha = 0.38f)
+                                        else -> Color.White.copy(alpha = OFF_CONTROL_ALPHA)
                                     },
                                     modifier = Modifier.size(26.dp).rotate(iconRotation)
                                 )
@@ -701,6 +732,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 AxisContainer(
                     vertical = isWide,
                     arrangement = Arrangement.SpaceAround,
+                    scrollable = isWide,
                     modifier = Modifier
                         .then(if (isWide) Modifier else Modifier.fillMaxWidth())
                         // Em paisagem a linha abre ao lado da barra, não abaixo dela.
@@ -1082,7 +1114,15 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                         if (isWide) WindowInsetsSides.End else WindowInsetsSides.Bottom
                     )
                 )
-                .padding(if (isWide) PaddingValues(end = 12.dp) else PaddingValues(bottom = 12.dp)),
+                .padding(if (isWide) PaddingValues(end = 12.dp) else PaddingValues(bottom = 12.dp))
+                // AC-4.3: este é o grupo mais alto — zoom, seletor de modo, obturador
+                // e miniatura, com 16dp entre eles. Numa janela larga e baixa é o
+                // primeiro a não caber, e sem rolagem os controles se sobrepõem.
+                // Só em janela larga: em retrato a altura é sobrando, e mexer no
+                // caminho de retrato é o que o NFR-1 proíbe.
+                .then(
+                    if (isWide) Modifier.verticalScroll(rememberScrollState()) else Modifier
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -1781,7 +1821,7 @@ private fun ModeSelector(
             ) {
                 Text(
                     text = mode.label,
-                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.38f),
+                    color = if (isSelected) Color.White else Color.White.copy(alpha = OFF_CONTROL_ALPHA),
                     fontSize = if (isSelected) 15.sp else 14.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                     modifier = Modifier
@@ -1970,7 +2010,7 @@ private fun TopBarTextToggle(
             color = when {
                 !enabled -> Color.White.copy(alpha = 0.2f)
                 isOn -> Color.White
-                else -> Color.White.copy(alpha = 0.38f)
+                else -> Color.White.copy(alpha = OFF_CONTROL_ALPHA)
             },
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,
@@ -2001,7 +2041,7 @@ private fun TopBarIconToggle(
             tint = when {
                 !enabled -> Color.White.copy(alpha = 0.2f)
                 isOn -> Color.White
-                else -> Color.White.copy(alpha = 0.38f)
+                else -> Color.White.copy(alpha = OFF_CONTROL_ALPHA)
             },
             modifier = Modifier.size(iconSize).rotate(rotationDeg)
         )
@@ -2018,7 +2058,7 @@ private fun TopBarTimerButton(
     val iconTint = when {
         !enabled -> Color.White.copy(alpha = 0.2f)
         delay != RecordingDelay.OFF -> Color.White
-        else -> Color.White.copy(alpha = 0.38f)
+        else -> Color.White.copy(alpha = OFF_CONTROL_ALPHA)
     }
     IconButton(
         onClick = onClick,
@@ -2090,7 +2130,7 @@ private fun <T> PickerBar(
             ) {
                 Text(
                     text = label,
-                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.38f),
+                    color = if (isSelected) Color.White else Color.White.copy(alpha = OFF_CONTROL_ALPHA),
                     fontSize = 13.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                 )

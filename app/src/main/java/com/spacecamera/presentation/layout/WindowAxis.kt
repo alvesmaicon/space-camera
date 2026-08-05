@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -121,17 +123,28 @@ private class ColumnAxisScope(private val scope: ColumnScope) : AxisScope {
  * Com `vertical = false` e `arrangement` nulo, produz exatamente o `Row` que
  * substitui — alinhamento centralizado no eixo cruzado, que é o que todos os call
  * sites já pediam.
+ *
+ * @param scrollable habilita rolagem quando o conteúdo empilhado não cabe na altura
+ *   disponível (AC-4.3). Só tem efeito no eixo vertical: no horizontal a barra
+ *   sempre caberia, porque em janela larga sobra largura. É **opt-in** e não
+ *   default de propósito — ligado em toda parte, valeria também para o retrato, e o
+ *   NFR-1 é Critical. Cada grupo ancorado liga o seu, e só um por grupo: rolagem
+ *   dentro de rolagem no mesmo eixo torna o arraste ambíguo.
  */
 @Composable
 internal fun AxisContainer(
     vertical: Boolean,
     modifier: Modifier = Modifier,
     arrangement: Arrangement.HorizontalOrVertical? = null,
+    scrollable: Boolean = false,
     content: @Composable AxisScope.() -> Unit
 ) {
     if (vertical) {
+        // A rolagem entra **depois** do modifier do call site, para que fundo e
+        // padding do grupo fiquem parados e só o conteúdo corra por dentro.
+        val scrollState = rememberScrollState()
         Column(
-            modifier = modifier,
+            modifier = if (scrollable) modifier.verticalScroll(scrollState) else modifier,
             verticalArrangement = arrangement ?: Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

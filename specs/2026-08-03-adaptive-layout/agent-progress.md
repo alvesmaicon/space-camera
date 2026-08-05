@@ -2,10 +2,11 @@
 
 ## Estado atual
 
-- **Fase:** Implementação concluída — 6 de 6 tarefas
-- **Gate atual:** E (aguarda autorização de commit da Task 6)
-- **Status:** spec implementada; ponte removida; duas ressalvas em aberto
-- **Confiança:** 93%
+- **Fase:** 9 de 9 tarefas concluídas — Wave 3 fechou as pendências da verificação
+- **Gate atual:** E (aguarda autorização de commit da Wave 3)
+- **Status:** NFR-1, NFR-2 e NFR-3 assinados com medição; Q-01 e Q-02 resolvidas;
+  Ressalva 3 segue aberta por escolha, e o AC-4.3 segue inalcançável neste hardware
+- **Confiança:** 95%
 - **Última atualização:** 2026-08-04
 
 ## Log de sessões
@@ -167,6 +168,9 @@ KDoc de parâmetro ali torna a entrada frágil.
 | 3. Controles inferiores + proporção | 1 | **Concluída** | `aspect=16:9`, caixa 1280×720dp, bind em 263–317ms |
 | 4. Barras auxiliares + contraste | 1 | **Concluída** | Duas ressalvas em tasks.md: contraste do estado desligado e transbordo |
 | 6. Leitura, ponte, integração | 2 | **Concluída** | Ponte removida; largura de leitura em 640dp |
+| 7. Controller na recriação | 3 | **Concluída** | Q-02; 2 testes; 4 orientações com imagem, câmera reabre |
+| 8. Contraste do desligado | 3 | **Concluída** | Alfa 0,48; medido 4,86:1 no tablet e 4,89:1 no telefone |
+| 9. Rolagem de fallback | 3 | **Concluída** | Implementada; AC-4.3 inalcançável neste hardware |
 
 ### Sessão 2026-08-04 (continuação) — skill `dev`, Wave 2
 
@@ -190,6 +194,106 @@ KDoc de parâmetro ali torna a entrada frágil.
 recuo é zero em 411dp (com teste) e a remoção da ponte não afeta tela < 600dp, mas
 não foi remedido depois da Task 6.
 
+### Sessão 2026-08-04 (continuação) — skill `dev`, verificação final
+
+- **Gates:** A, D · **Nenhum código de produção mudou** — esta sessão só verificou
+- **Emuladores:** Pixel_9_Pro (427×952dp) e Tablet_API36 (1280×800dp)
+
+**Três pendências de verificação fechadas, uma delas virando defeito.**
+
+**1. NFR-1 no telefone — assinado.** A comparação foi feita contra o APK **pré-spec**
+(`f5614cd`), construído num `git worktree` separado em vez de `git stash`: o stash é
+exatamente o que confundiu o cálculo de atualidade do Gradle duas vezes nesta base, e o
+worktree tem diretório de build próprio. Os dois APKs foram conferidos no dex antes de
+instalar — o baseline **não** tem `readingGutterDp`, `isWideWindow` nem
+`captureRotation`; o HEAD tem os três. A tela Sobre de cada um mostrou o `GIT_SHA`
+esperado, o que confirma qual estava instalado em cada rodada.
+
+223 caixas comparadas em cinco estados, todas com bounds idênticos. A única diferença em
+todo o conjunto é a largura do glifo do próprio `GIT_SHA`.
+
+**2. AC-9.3 — fechado.** O nível de horizonte foi ligado em tablet e medido em três
+estados de sensor. Os dois primeiros (0° e +90°) não discriminam nada: dão linha
+horizontal de qualquer forma. O terceiro (+100°, ou seja 90° de janela mais 10°
+residuais) é o que separa as hipóteses — linha a 8,68° medidos no pixel, branca. Detalhe
+em `tasks.md`, Ressalva 4.
+
+**3. NFR-3 — reprovado. Ver Q-02.** Girar o tablet deixa a pré-visualização preta para
+sempre. Três medições: não é o retrato (retrato aberto do zero tem luminância 149,5,
+contra 0,1 depois de girar); não é regressão desta spec (reproduz idêntico no APK
+pré-spec); e a causa é a câmera fechar no destroy da Activity e **não reabrir**, porque
+o `CameraViewModel` sobrevive à recriação carregando um `CameraManager` que ainda aponta
+para a Activity destruída.
+
+**A lição de método vale mais que o bug.** A Task 3 assinou o NFR-3 medindo
+`elapsed_ms` no `evt=bind` — 263, 264 e 317ms, confortavelmente dentro do teto de 800. O
+número estava certo e a conclusão errada: `evt=bind` mede o tempo de configurar os use
+cases, não que tenha chegado quadro na superfície. No caminho defeituoso ele reporta
+sucesso em 7ms. Telemetria de bind não é evidência de imagem na tela; para isso serve
+medir luminância da captura de tela, que é o que fechou o caso.
+
+### Sessão 2026-08-04 (continuação) — skill `dev`, Wave 3
+
+- **Gates:** A, B, C, D · **Testes:** 66 (2 novos) · **Detekt e Lint:** limpos
+- **`CameraScreen.kt`:** 2.181 linhas, teto do NFR-5 = 2.240
+
+As três decisões da verificação final voltaram do usuário e viraram tarefas.
+
+**Task 7 — Q-02, a tela preta na rotação.** Decisão: corrigir aqui, não empurrar para
+outra spec. TDD de verdade: dois testes primeiro, RED com `AssertionError` nas duas
+asserções que discriminam (quantos controllers foram construídos, e se o antigo foi
+liberado). O segundo teste é o que impede a correção preguiçosa de "recriar sempre" —
+voltar de Configurações tem de reaproveitar, senão a câmera pisca a cada volta.
+
+Além do `WeakReference` para o owner, dois cuidados que o teste não pegaria e a leitura
+do código sim:
+
+1. Os 16 coletores viraram filhos de um job único. Sem isso os coletores do controller
+   antigo continuariam vivos — `collect` em `StateFlow` nunca termina — segurando a
+   instância velha e escrevendo nos mesmos `_flows` que a nova.
+2. A carga do storage ficou restrita à primeira criação. Deixá-la no caminho da
+   recriação faria o ramo de "manter configurações desligado" **resetar os padrões a
+   cada virada de tela** — um bug novo, introduzido pela correção de outro.
+
+**Task 8 — contraste.** Decisão do usuário: subir o alfa **nos dois** layouts, não só
+em janela larga. O valor saiu de cálculo, não de tentativa: o modelo de luminância da
+WCAG reproduziu primeiro os números já registrados na Ressalva 1 (3,51 e 3,39 contra
+3,5 e 3,4), e só então foi usado para escolher 0,48.
+
+Medido no pixel depois, nos dois aparelhos:
+
+| Aparelho | Fundo | Contraste | Alfa efetivo |
+|---|---|---|---|
+| Tablet, janela larga | `#1B1B1D` (scrim) | **4,86:1** | 0,478 |
+| Telefone, retrato | `#000000` (faixa) | **4,89:1** | 0,478 |
+
+O alfa efetivo de 0,478 contra 0,480 pretendido é amostragem de p99 em glifo
+antisserrilhado, não erro de implementação.
+
+**Task 9 — rolagem de fallback.** Opt-in, uma por grupo ancorado — aninhar duas no
+mesmo eixo tornaria o arraste ambíguo, e o disco de zoom já usa arraste. Segue **não
+exercitável**: `wm size 2560x700` devolve `sw263dp`, o Android volta a honrar
+`portrait` e a janela sai pillarboxed — o layout largo nem ativa. O ganho é garantia,
+não comportamento novo.
+
+**NFR-1 reconferido depois de tudo:** os mesmos cinco estados contra o mesmo baseline
+`f5614cd`, 233 caixas, só o `GIT_SHA` divergindo. Confirma que alfa não move bounds e
+que a rolagem não entra em retrato.
+
+**Correção de registro.** A sessão anterior anotou "223 caixas" com Sobre em 39. A
+contagem certa é **233**, com Sobre em 49 — erro de transcrição meu, não de medição; os
+dumps sempre tiveram 49. Corrigido em `tasks.md`.
+
+**Duas armadilhas de método desta sessão**, ambas de verificação, não de código:
+
+1. `am start` depois de `am force-stop` **retoma a task preservada em recentes**, não
+   abre na tela inicial. A primeira rodada de captura pegou a tela Sobre acreditando ser
+   a câmera, e os toques seguintes caíram fora. Só a conferência da contagem de caixas
+   (49 onde deviam ser 29) expôs. Agora o roteiro usa `-S --activity-clear-task` e
+   **verifica** a tela por `content-desc` antes de cada captura.
+2. O emulador em boot frio abre "System UI isn't responding" e o diálogo engole os
+   toques. O roteiro passou a dispensá-lo antes de começar.
+
 ## Pendências
 
 - [x] Iniciar a Wave 0
@@ -198,19 +302,31 @@ não foi remedido depois da Task 6.
 - [x] Commit da Task 5 (`2e2039c`)
 - [x] Emenda do FR-6 / criação do FR-9 em `requirements.md`
 - [x] Commit da Wave 1 (`892d131`)
-- [ ] Commit da Task 6 (Gate E — aguarda autorização)
+- [x] Commit da Task 6 (`34783d9`)
 - [x] Iniciar a Wave 1 (Tasks 2, 3, 4)
-- [ ] Decidir as duas ressalvas da Task 4 (contraste do estado desligado, transbordo)
+- [x] Decidir as duas ressalvas da Task 4 — viraram Task 8 e Task 9
 - [x] Wave 2 — Task 6
-- [ ] Reconferir o telefone depois da Task 6 (NFR-1)
+- [x] Reconferir o telefone depois da Task 6 (NFR-1) — 233 caixas, sem diferença
+- [x] Exercitar o AC-9.3 (Ressalva 4)
+- [x] Decidir a Q-02 — corrigir nesta spec (Task 7); NFR-3 passa a atendido
+- [x] Wave 3 — Tasks 7, 8 e 9
+- [ ] Commit da Wave 3 (Gate E — aguarda autorização)
+- [ ] Ressalva 3 (texto `Vídeo`/`Foto` sem fundo em retrato) — segue aberta por escolha
 
 ## Bloqueadores
 
-Nenhum. `./gradlew assembleDebug testDebugUnitTest detekt lint` verde com 59 testes.
+Nenhum. `./gradlew assembleDebug testDebugUnitTest detekt lint` verde com 66 testes.
 
-`CameraScreen.kt` está em **2.141 linhas** contra o teto de 2.240 do NFR-5 — 99 linhas
-de folga. A Task 6 ainda precisa mexer nele e vai conferir isso; se apertar, a saída é
-extrair a barra superior, o que antecipa parte do item 1 do `REFACTORING.md`.
+`CameraScreen.kt` está em **2.181 linhas** contra o teto de 2.240 do NFR-5 — 59 linhas
+de folga.
+
+Duas pendências assumidas, nenhuma bloqueante:
+
+- **AC-4.3 (transbordo)** tem fallback implementado mas não exercitável: janela larga
+  exige `sw ≥ 600dp` neste hardware, e nessa altura os controles cabem.
+- **Ressalva 3** — em retrato o texto `Vídeo`/`Foto` não tem fundo de contraste próprio
+  e desaparece sobre cena clara. Já acontecia antes desta spec, e a Task 8 não resolve:
+  ali subir o alfa do branco piora. Exigiria scrim em retrato.
 
 ## Notas para quem implementar
 

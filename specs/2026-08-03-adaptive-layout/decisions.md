@@ -614,3 +614,142 @@ especificada tornaria a mídia torta na janela livre — o oposto do objetivo do
 arquivo saía torto; a segunda concluiu o contrário, também por raciocínio. As duas
 foram descartadas. O que sustenta o registro acima são as três medições, incluindo
 inspeção do conteúdo dos arquivos — o AC-6.2 existe exatamente por isso.
+
+---
+
+### Q-02: girar o tablet deixa a pré-visualização preta para sempre
+
+**Levantada por:** skill `dev`, verificação final da Task 6, 2026-08-04
+**Status:** **Resolvida** em 2026-08-04 — decisão do usuário: corrigir dentro desta
+spec, como Task 7. Implementada e verificada em aparelho; NFR-3 passa a atendido nas
+duas medidas.
+**Afeta:** NFR-3, Task 3, Task 7, `CameraViewModel.initializeCamera`, `CameraManager`
+
+Em Tablet_API36, com a ponte já removida, girar o aparelho deixa a pré-visualização
+**permanentemente preta** — não é o piscar de um rebind, não recupera sozinha, e só
+volta reabrindo o app. Isso reprova a segunda medida do NFR-3 ("sem tela preta visível
+por mais de 1 segundo"), que nunca havia sido exercitada: a assinatura da Task 3 mediu
+só o `elapsed_ms`.
+
+#### Medição 1 — não é o retrato, é a transição
+
+Luminância média do centro da tela (0 = preto):
+
+| Situação | Janela | Luminância |
+|---|---|---|
+| Paisagem, aberto do zero | 2560×1600 | 189,8 |
+| **Retrato, aberto do zero** | 1600×2560 | **149,5 — com imagem** |
+| Retrato, depois de girar | 1600×2560 | **0,1 — preto** |
+| Paisagem, depois de girar de volta | 2560×1600 | **0,2 — preto** |
+
+Retrato em tablet funciona quando é o estado inicial. O defeito é a mudança de
+configuração.
+
+#### Medição 2 — não é regressão desta spec
+
+O mesmo roteiro no APK **pré-spec** (`f5614cd`, sem nenhum código desta spec e sem a
+ponte no manifesto): 189,9 → **0,2** → **0,1**. Reproduz idêntico. O bug é
+pré-existente; o que esta spec faz é torná-lo **alcançável**, porque a remoção da ponte
+(FR-7) é o que permite o tablet girar.
+
+#### Medição 3 — a câmera fecha e não reabre
+
+Eventos do `Camera2ClientBase` do servidor de câmera, contrastando os dois caminhos:
+
+| | ao girar (PID 5220) | ao abrir do zero (PID 5318) |
+|---|---|---|
+| abre | 20.255 `Camera 1: Opened` | 57.782 `Camera 1: Opened` |
+| fecha | 20.344 disconnect · 20.867 dtor | 58.225 disconnect |
+| **reabre** | **nunca** | **58.424 `Camera 1: Opened`** |
+
+Nos dois casos há dois binds seguidos (o `scheduleBind` dispara duas vezes). No início
+limpo o segundo bind **reabre** a câmera; depois de girar, não reabre — e ainda assim
+`evt=bind` reporta sucesso com `elapsed_ms` de 7 e 16ms. **A telemetria de bind não
+prova que chegou quadro na superfície**, e foi exatamente essa leitura que fez a Task 3
+assinar o NFR-3.
+
+#### Causa
+
+`CameraManager` recebe o `lifecycleOwner` no construtor e o guarda
+(`CameraManager.kt:101`); `bindToLifecycle(lifecycleOwner, …)` em `:485` usa esse campo.
+O `CameraViewModel` é obtido com `viewModel()` na `MainActivity`, então sobrevive à
+recriação por mudança de configuração — e com ele o `CameraManager` **e a referência à
+Activity destruída**. Ao girar, a `CameraScreen` recompõe com um `previewView` novo, cai
+no ramo `else` do `LaunchedEffect(permissionGranted, previewView)`
+(`CameraScreen.kt:359-366`) e chama `updateSurfaceProvider` + `rebindCamera` — que
+rebinda contra um ciclo de vida já DESTROYED. O CameraX registra o binding e nunca o
+ativa, sem lançar exceção.
+
+Isso também explica por que o mesmo caminho **funciona** ao voltar de Configurações: lá
+a navegação é do Compose, dentro da mesma Activity, e o `lifecycleOwner` continua vivo.
+
+#### Recomendação
+
+Fazer o `CameraViewModel` detectar `lifecycleOwner` diferente do que criou o
+`CameraManager` e reconstruir o controller nesse caso, em vez de reaproveitar. É
+decidível na JVM com o `FakeCameraController` (NFR-4), então dá para escrever o teste
+antes (Gate B). O contra-argumento é de escopo: o defeito mora em `camera/`, não no
+layout, e não é regressão desta spec.
+
+#### Decisão e resultado
+
+**Corrigir dentro desta spec, como Task 7** (usuário, 2026-08-04). O argumento que
+pesou: a remoção da ponte é a Task 6 **desta** spec, então é esta spec que coloca o
+defeito no caminho do usuário — fechar com NFR-3 reprovado seria entregar o tablet com
+a câmera morta depois da primeira virada.
+
+O `CameraViewModel` passou a guardar em `WeakReference` qual `LifecycleOwner` criou o
+controller, e `initializeCamera` decide entre religar a surface (mesmo owner) e
+reconstruir (owner diferente). Depois: quatro orientações com imagem, `Camera 1: Opened`
+707ms e 624ms após cada `disconnect`, e amostras a 1,2s / 2,0s / 3,0s da virada já com
+imagem. Detalhes em `tasks.md`, Task 7.
+
+Efeito colateral bom: o vazamento da Activity destruída, que existia por acidente
+através do controller retido, deixou de existir.
+
+#### O que fica como aprendizado
+
+`evt=bind` mede o tempo de configurar os use cases, **não** que tenha chegado quadro na
+superfície — no caminho defeituoso ele reportava sucesso em 7ms. A assinatura original
+do NFR-3 (Task 3) leu 263–317ms e concluiu "atendido", quando metade da medida do
+requisito nunca havia sido exercitada. Para "tem imagem na tela" o instrumento é
+luminância de captura de tela, não telemetria de bind.
+
+---
+
+## Decisões de produto — ressalvas da Task 4
+
+**Data:** 2026-08-04 · **Decisor:** Maicon Alves
+
+Levadas ao usuário depois da verificação final, com as três opções de cada uma.
+
+### Ressalva 1 (contraste do estado desligado) → subir o alfa nos dois layouts
+
+Escolhido `OFF_CONTROL_ALPHA = 0,48` em retrato **e** em janela larga, em vez de
+condicionar ao layout ou aceitar 3,5:1 como dívida. Vira a Task 8.
+
+A alternativa "só em janela larga" preservaria o retrato pixel-idêntico; a escolhida
+aceita a mudança visível em retrato em troca de um valor só, sem condicional, e de o
+pior caso do retrato (3,39:1 sobre a faixa preta, que já existia antes desta spec) subir
+para 4,89:1.
+
+Isso **não** conflita com o NFR-1, e a Ressalva 1 errava nesse ponto: o NFR-1 mede
+âncoras e posicionamento, não cor. A comparação de 223 caixas continua valendo porque
+alfa não altera bounds.
+
+### Ressalva 2 (transbordo) → rolagem simples no eixo vertical
+
+Escolhido `verticalScroll` opt-in nos grupos ancorados, em vez de aceitar o transbordo
+como inalcançável ou construir um container que meça e escolha entre peso e rolagem.
+Vira a Task 9.
+
+O que se ganha é garantia, não comportamento observável: o transbordo segue inalcançável
+neste hardware — janela larga exige `sw ≥ 600dp`, logo ≥ 600dp de altura, e nessa altura
+os grupos cabem. O que muda é que numa janela livre curta os controles passam a rolar em
+vez de se sobrepor. Custo de 3 linhas úteis, dentro da folga do NFR-5.
+
+### Ressalva 3 permanece aberta
+
+Não foi objeto de decisão nesta rodada. Em retrato o texto `Vídeo`/`Foto` não tem fundo
+de contraste próprio e desaparece sobre cena clara — e a Task 8 **não** resolve isso:
+subir o alfa do branco sobre fundo claro piora. Fechar exigiria scrim em retrato.
