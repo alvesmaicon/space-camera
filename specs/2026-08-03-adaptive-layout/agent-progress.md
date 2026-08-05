@@ -341,6 +341,34 @@ neste aparelho, porque `Timber.i(fmt, args)` usa `String.format` com o locale pa
 A telemetria é canal de diagnóstico feito para `grep` e comparação entre aparelhos, então
 depender de locale é frágil. Falta `Locale.ROOT`.
 
+### Sessão 2026-08-05 (continuação) — Q-04, CPU e suavização do nível
+
+- **Testes:** 73 (6 novos) · **Detekt e Lint:** limpos
+- Levantada pelo usuário a partir de dois sintomas: o aparelho aquecendo com a câmera
+  aberta, e o nível tremendo com o telefone parado na mesa. Os dois têm a mesma origem
+  parcial, e o diagnóstico está em Q-04.
+
+Entregue: suavização do **vetor** de gravidade em vez do ângulo (que corrige um defeito
+de ±180° achado ao escrever o teste), zona morta antes de publicar, `derivedStateOf` nos
+valores travados em quadrante, e `LEVEL_TOLERANCE` extraída para a invariante ter o que
+guardar.
+
+**Três conclusões erradas sobre CPU antes da certa**, e é o registro mais útil desta
+sessão. Comparei cenas diferentes (deu "queda de 53% para 25%"), depois uma amostra de
+cada (deu "sem efeito nenhum"), e só a terceira — ordem alternada A,B,A,B com mediana de
+6 amostras — sustenta conclusão: redução de ~20 pontos, real mas não dominante. O sinal
+de que as duas primeiras não valiam estava à vista e eu não olhei: os valores absolutos
+eram incompatíveis entre si (78% e 117%) para o **mesmo** código. Neste ambiente, `top`
+varia mais que o efeito sob teste; comparação de amostra única é sorteio, não medição.
+
+A causa dominante da CPU **não** foi atacada: é o `TextureView` da pré-visualização
+(`ImplementationMode.COMPATIBLE`), e trocar para `PERFORMANCE` exige tirar o espelho da
+câmera frontal do `graphicsLayer`. Fica registrado em Q-04.
+
+**Não verificado:** a sensação. Os 0,8° de zona morta saíram de observação do usuário
+("estou digitando no teclado sobre a mesa"), mas o resultado foi comitado sem ele
+confirmar se parou de tremer e se a linha não ficou lenta ao inclinar de propósito.
+
 ## Pendências
 
 - [x] Iniciar a Wave 0

@@ -79,8 +79,12 @@ import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoOption
 import com.spacecamera.presentation.layout.AxisContainer
 import com.spacecamera.presentation.layout.AxisScope
+import com.spacecamera.presentation.layout.LEVEL_TOLERANCE
 import com.spacecamera.presentation.layout.captureRotation
 import com.spacecamera.presentation.layout.rememberIsWideWindow
+import com.spacecamera.presentation.layout.rollFromGravity
+import com.spacecamera.presentation.layout.shouldPublishRoll
+import com.spacecamera.presentation.layout.smoothGravity
 import com.spacecamera.presentation.layout.uiRotation
 import com.spacecamera.presentation.layout.windowRelativeRoll
 import com.spacecamera.presentation.viewmodels.CameraViewModel
@@ -311,14 +315,26 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
     val view = LocalView.current
     var displayRotation by remember { mutableStateOf(AndroidSurface.ROTATION_0) }
 
+    // As duas grandezas abaixo são **travadas em quadrante**, então mudam raramente —
+    // mas `rollDegrees` muda a cada amostra do acelerômetro. Lidas direto no corpo
+    // deste composable, é a leitura (não o resultado) que o invalida, e ele tem
+    // ~1.100 linhas. `derivedStateOf` faz o corpo recompor só quando o valor
+    // **quantizado** muda, ou seja quando o aparelho vira de quadrante.
+    //
+    // Isto é higiene de escopo, não otimização medida: o A/B em aparelho não mostrou
+    // diferença de CPU (78,5% contra 82,0%), porque o custo de desenho está no
+    // caminho da pré-visualização e não aqui. Ver Q-04 na spec.
+
     // Ícones: giram só o que a janela ainda não girou. Com a janela travada, o
     // resultado é idêntico ao de antes; com a janela livre é zero, senão o ícone
     // leva rotação dobrada e aparece deitado. Ver Q-01 na spec.
-    val snappedIconRotation = uiRotation(rollDegrees, displayRotation)
+    val snappedIconRotation by remember {
+        derivedStateOf { uiRotation(rollDegrees, displayRotation) }
+    }
 
     // Mídia gravada: depende só do aparelho. A rotação da janela mede a mesma
     // grandeza física, então compor as duas torceria o arquivo.
-    val snappedSurfaceRotation: Int = captureRotation(rollDegrees)
+    val snappedSurfaceRotation by remember { derivedStateOf { captureRotation(rollDegrees) } }
     val iconRotation by animateFloatAsState(
         targetValue = snappedIconRotation,
         animationSpec = tween(durationMillis = 300),
@@ -437,14 +453,32 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
         val sensorManager = context.getSystemService(SensorManager::class.java)
         val accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         var prevX = 0f; var prevY = 0f; var prevZ = 0f; var firstReading = true
+        // Vetor de gravidade suavizado. Fica aqui, e não em `mutableStateOf`, porque é
+        // trabalho interno do filtro — o que interessa publicar é o resultado.
+        var gravityX = 0f; var gravityY = 0f
         val sensorListener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
                     val x = event.values[0]
                     val y = event.values[1]
                     val z = event.values[2]
-                    val newRoll = (atan2(x.toDouble(), y.toDouble()) * 180.0 / PI).toFloat()
-                    rollDegrees = rollDegrees * 0.7f + newRoll * 0.3f
+                    if (firstReading) {
+                        // Semear com a primeira leitura, senão o filtro sobe de zero e o
+                        // nível chega inclinado por ~1s ao abrir.
+                        gravityX = x; gravityY = y
+                    } else {
+                        gravityX = smoothGravity(gravityX, x)
+                        gravityY = smoothGravity(gravityY, y)
+                    }
+                    // Suaviza o **vetor** e só depois tira o ângulo: média de ângulo
+                    // atravessa a descontinuidade de ±180° pelo lado errado.
+                    val newRoll = rollFromGravity(gravityX, gravityY)
+                    // Zona morta: ruído abaixo do limiar não vira escrita de estado,
+                    // então o nível para de tremer com o aparelho na mesa. Não reduz
+                    // CPU de forma mensurável — ver Q-04.
+                    if (firstReading || shouldPublishRoll(rollDegrees, newRoll)) {
+                        rollDegrees = newRoll
+                    }
                     // Leitura local e em cache no DisplayManagerGlobal — barata o
                     // bastante para acompanhar o sensor, e garante convergência em
                     // um quadro após qualquer virada da janela.
@@ -994,7 +1028,8 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 // "Nivelado" é propriedade física do enquadramento, medida contra a
                 // gravidade — independe da janela. Já o ângulo desenhado é dentro da
                 // janela: com ela girada, rollDegrees cru deixaria a linha 90° fora.
-                val isLevel = abs(rollDegrees) < 2f || abs(abs(rollDegrees) - 90f) < 2f
+                val isLevel = abs(rollDegrees) < LEVEL_TOLERANCE ||
+                    abs(abs(rollDegrees) - 90f) < LEVEL_TOLERANCE
                 val levelColor = if (isLevel) Color(0xFF30D158) else Color.White.copy(alpha = 0.55f)
                 val strokeW = 1.dp.toPx()
                 val angleRad =

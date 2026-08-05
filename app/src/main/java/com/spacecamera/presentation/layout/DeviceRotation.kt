@@ -66,6 +66,78 @@ private fun windowRotationDegrees(displayRotation: Int): Float = when (displayRo
     else -> 0f
 }
 
+/** Peso da amostra nova na suavização do vetor de gravidade. Ver [smoothGravity]. */
+internal const val GRAVITY_SMOOTHING = 0.15f
+
+/**
+ * Menor variação de inclinação que vale publicar, em graus. Ver [shouldPublishRoll].
+ *
+ * Começou em 0,25°, calculado para ser imperceptível (sobre a meia-linha de ~110px do
+ * nível, desloca a ponta menos de meio pixel). **Insuficiente na prática:** com o
+ * telefone na mesa e alguém digitando no teclado ao lado, a vibração ainda passava e a
+ * linha tremia. 0,8° é o valor ajustado a partir dessa observação.
+ *
+ * Fica deliberadamente abaixo do limiar de ±2° que acende o verde de "nivelado"
+ * ([LEVEL_TOLERANCE]) — senão a zona morta poderia esconder um desnivelamento real,
+ * que é justamente o que o indicador existe para mostrar.
+ */
+internal const val ROLL_MIN_DELTA = 0.8f
+
+/**
+ * Tolerância em graus para considerar o enquadramento nivelado.
+ *
+ * Existe como constante para amarrar a invariante do teste: [ROLL_MIN_DELTA] tem de
+ * ser bem menor que isto.
+ */
+internal const val LEVEL_TOLERANCE = 2f
+
+/**
+ * Suavização exponencial de **uma componente** do vetor de gravidade.
+ *
+ * Suaviza-se o vetor e só depois se tira o ângulo, e não o contrário: média de ângulo
+ * atravessa a descontinuidade de ±180° pelo lado errado, fazendo o valor girar em vez
+ * de convergir. Suavizar x e y é livre desse artefato porque são grandezas contínuas.
+ */
+internal fun smoothGravity(previous: Float, sample: Float, alpha: Float = GRAVITY_SMOOTHING): Float =
+    previous * (1f - alpha) + sample * alpha
+
+/** Inclinação em graus a partir do vetor de gravidade já suavizado. */
+internal fun rollFromGravity(x: Float, y: Float): Float =
+    Math.toDegrees(kotlin.math.atan2(x.toDouble(), y.toDouble())).toFloat()
+
+/** Diferença entre dois ângulos pelo arco curto, sempre positiva. */
+internal fun rollDelta(a: Float, b: Float): Float = abs(normalizeDegrees(a - b))
+
+/**
+ * Requirements: NFR-1
+ *
+ * Se vale publicar [candidate] como nova inclinação, dado o último valor publicado.
+ *
+ * Serve para **estabilidade visual** e, em segundo lugar, para CPU: o acelerômetro
+ * entrega ~17 amostras/s e nunca repete valor, nem com o aparelho imóvel na mesa,
+ * então sem a zona morta o nível de horizonte tremia continuamente e cada amostra
+ * invalidava o composable de ~1.100 linhas da câmera.
+ *
+ * Medido em aparelho com A/B alternado (duas rodadas, mediana de 6 amostras cada):
+ * 117% e 122% de CPU sem a zona morta, contra 96,5% e 92,8% com ela. Os valores
+ * absolutos variam muito com a cena, então o que sustenta a conclusão é a separação
+ * consistente entre as rodadas, não o número.
+ *
+ * **Não** é a causa dominante do consumo: sobram ~95%, que estão no caminho da
+ * pré-visualização (`TextureView`, por `ImplementationMode.COMPATIBLE`) e são
+ * indiferentes ao sensor. Ver Q-04.
+ *
+ * Aumentar [minDelta] é preferível a fortalecer [smoothGravity] quando o objetivo é
+ * rejeitar vibração: a zona morta não adiciona atraso nenhum a uma rotação real, que
+ * a excede de imediato, enquanto o filtro atrasa **tudo** — inclusive
+ * [captureRotation], que decide a orientação do arquivo gravado.
+ */
+internal fun shouldPublishRoll(
+    published: Float,
+    candidate: Float,
+    minDelta: Float = ROLL_MIN_DELTA
+): Boolean = rollDelta(published, candidate) >= minDelta
+
 /**
  * Rotação alvo do CameraX para a mídia gravada, como constante `Surface.ROTATION_*`.
  *

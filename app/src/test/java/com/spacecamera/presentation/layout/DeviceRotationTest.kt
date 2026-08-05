@@ -2,7 +2,10 @@ package com.spacecamera.presentation.layout
 
 import android.view.Surface
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.abs
 
 /**
  * Requirements: FR-6, NFR-4
@@ -142,5 +145,100 @@ class DeviceRotationTest {
         assertEquals(-90f, windowRelativeRoll(180f, Surface.ROTATION_270), 0.01f)
         assertEquals(90f, windowRelativeRoll(-90f, Surface.ROTATION_180), 0.01f)
         assertEquals(180f, windowRelativeRoll(0f, Surface.ROTATION_180), 0.01f)
+    }
+
+    // ── Suavização e zona morta (Q-04) ──────────────────────────────────────
+
+    /**
+     * Requirements: NFR-1
+     *
+     * A razão de suavizar o **vetor** e não o ângulo. Duas leituras vizinhas em torno
+     * da descontinuidade (+179° e −179° são 2° de diferença física) têm média de
+     * ângulo perto de **zero** — o valor daria meia-volta em vez de convergir.
+     * Passando pelo vetor, o resultado fica onde deveria: perto de ±180°.
+     */
+    @Test
+    fun `suavizar o vetor não gira na virada de 180 graus`() {
+        // y negativo = de cabeça para baixo; x troca de sinal em torno do eixo
+        val xa = 0.10f; val ya = -9.81f     // ≈ +179,4°
+        val xb = -0.10f; val yb = -9.81f    // ≈ -179,4°
+        assertTrue(abs(rollFromGravity(xa, ya)) > 179f)
+        assertTrue(abs(rollFromGravity(xb, yb)) > 179f)
+
+        val mediaDeAngulo = (rollFromGravity(xa, ya) + rollFromGravity(xb, yb)) / 2f
+        assertTrue(
+            "média de ângulo colapsa para ~0 e é justamente o artefato a evitar",
+            abs(mediaDeAngulo) < 1f
+        )
+
+        val suavizadoX = smoothGravity(xa, xb, alpha = 0.5f)
+        val suavizadoY = smoothGravity(ya, yb, alpha = 0.5f)
+        assertTrue(
+            "pelo vetor, o ângulo continua perto de ±180°",
+            abs(rollFromGravity(suavizadoX, suavizadoY)) > 179f
+        )
+    }
+
+    /** A suavização caminha na direção da amostra sem ultrapassá-la. */
+    @Test
+    fun `suavização se aproxima da amostra de forma monotônica`() {
+        var v = 0f
+        repeat(40) { v = smoothGravity(v, 10f) }
+        assertTrue("converge para a amostra, valor=$v", v > 9.5f && v <= 10f)
+        assertEquals(5f, smoothGravity(0f, 10f, alpha = 0.5f), 0.001f)
+    }
+
+    /**
+     * Requirements: NFR-1
+     *
+     * O que economiza CPU: ruído abaixo do limiar não vira escrita de estado, logo não
+     * vira recomposição. Com o aparelho na mesa é este caso que vale.
+     */
+    @Test
+    fun `variação abaixo do limiar não é publicada`() {
+        val quaseParado = ROLL_MIN_DELTA * 0.9f
+        assertFalse(shouldPublishRoll(published = 10f, candidate = 10f + quaseParado))
+        assertFalse(shouldPublishRoll(published = 10f, candidate = 10f - quaseParado))
+        assertFalse(shouldPublishRoll(published = 0f, candidate = 0f))
+    }
+
+    /** Movimento real passa, senão o nível deixaria de funcionar. */
+    @Test
+    fun `variação acima do limiar é publicada`() {
+        assertTrue(shouldPublishRoll(published = 10f, candidate = 10f + ROLL_MIN_DELTA))
+        assertTrue(shouldPublishRoll(published = 0f, candidate = 45f))
+        assertTrue(shouldPublishRoll(published = -90f, candidate = 90f))
+    }
+
+    /**
+     * Requirements: NFR-1
+     *
+     * A invariante que protege o indicador de si mesmo. A zona morta é ajustável por
+     * sensação — subiu de 0,25° para 0,8° depois de observar que vibração de teclado
+     * sobre a mesa ainda passava. Se um dia alguém a subir até perto de ±2°, a zona
+     * morta passaria a **esconder** desnivelamento real, que é o oposto da função do
+     * indicador. Este teste é o freio.
+     */
+    @Test
+    fun `zona morta fica bem abaixo da tolerância de nivelado`() {
+        assertTrue(
+            "ROLL_MIN_DELTA=$ROLL_MIN_DELTA precisa ser < metade de $LEVEL_TOLERANCE",
+            ROLL_MIN_DELTA < LEVEL_TOLERANCE / 2f
+        )
+    }
+
+    /**
+     * O limiar mede o arco curto: 179° e −179° distam 2°, não 358°. Sem isso, girar
+     * o aparelho de cabeça para baixo publicaria por um motivo errado — e pior, a
+     * comparação ficaria dependente do sinal.
+     */
+    @Test
+    fun `limiar usa o arco curto na virada de 180 graus`() {
+        assertEquals(2f, rollDelta(179f, -179f), 0.01f)
+        assertEquals(0f, rollDelta(180f, -180f), 0.01f)
+        assertFalse(
+            "0,15° de diferença física não deve publicar só por trocar de sinal",
+            shouldPublishRoll(published = 179.9f, candidate = -179.95f)
+        )
     }
 }

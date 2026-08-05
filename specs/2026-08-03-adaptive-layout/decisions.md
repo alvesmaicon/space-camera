@@ -782,6 +782,102 @@ coisas juntas deram um verde falso.
 
 ---
 
+### Q-04: CPU alta com a câmera aberta, e o nível tremendo com o aparelho na mesa
+
+**Levantada por:** usuário, 2026-08-05 — *"ele está aquecendo um pouco por estar com a
+câmera aberta"* e *"o nível fica mexendo mesmo com o telefone sobre a mesa"*
+**Status:** parcialmente resolvida — o tremor foi corrigido; a causa dominante da CPU
+está identificada e **não** foi atacada.
+**Afeta:** NFR-1, `CameraScreen`, `DeviceRotation.kt`
+**Escopo:** adjacente a esta spec. Não vem de FR nenhum, mas mexe em `rollDegrees` e em
+`DeviceRotation.kt`, que nasceram da Q-01, e foi descoberta verificando o resultado dela
+em aparelho físico.
+
+#### Onde a CPU está
+
+Motorola edge 60 neo, medido com `top` e `dumpsys gfxinfo`:
+
+| Estado | CPU do processo | Quadros/s |
+|---|---|---|
+| Tela da câmera aberta | 80–120% (varia com a cena) | ~100 |
+| Tela de Configurações | 0–1% | 0 |
+| Tela apagada | 0–0,5%, câmera liberada | — |
+
+Térmica sob uso: SoC 52°C, pele 36,8°C, `Thermal Status: 0` — sem throttling, e o
+primeiro limiar de pele é 40°C. Aquecimento real, dentro da faixa normal.
+
+Nenhum vazamento: ao apagar a tela a câmera é liberada e o consumo vai a zero.
+
+**A causa dominante é o caminho da pré-visualização, não a UI.** `PreviewView` está em
+`ImplementationMode.COMPATIBLE`, que usa `TextureView`: cada quadro da câmera atravessa a
+hierarquia de views para o app desenhar. Os ~100 quadros/s são iguais com e sem as
+mudanças abaixo, o que mostra que o redesenho não é dirigido pelo sensor.
+
+`COMPATIBLE` não é escolha gratuita, e é a razão de isto ficar em aberto: o `AndroidView`
+aplica `graphicsLayer { scaleX = -1f }` para espelhar a câmera frontal, e `SurfaceView`
+(modo `PERFORMANCE`, que compõe em overlay sem o app desenhar) não aceita bem essa
+transformação. Trocar exige mover o espelhamento para o CameraX (`setMirrorMode`).
+
+#### O tremor do nível — três defeitos somados
+
+1. **Filtro fraco.** `rollDegrees * 0.7 + newRoll * 0.3` toma 30% da amostra nova a cada
+   evento, a ~17 eventos/s. Passa ruído.
+2. **Escrita de estado em toda amostra.** `Float` filtrado nunca converge de fato, então
+   sempre difere do anterior e sempre invalida quem o lê — e `rollDegrees` era lido no
+   corpo do composable de ~1.100 linhas.
+3. **Filtrava o ângulo, não o vetor.** Média de ângulo atravessa a descontinuidade de
+   ±180° pelo lado errado: com o aparelho de cabeça para baixo, `+179°` e `−179°` (2° de
+   diferença física) têm média ~0°, e o nível daria meia-volta em vez de convergir.
+   Defeito de correção, achado ao escrever o teste.
+
+Correções: suavizar o **vetor** de gravidade e só então tirar o `atan2`; zona morta antes
+de publicar; `derivedStateOf` nos valores travados em quadrante, para as escritas
+restantes não invalidarem o composable inteiro.
+
+#### Ajuste da zona morta, por observação do usuário
+
+0,25° foi calculado para ser imperceptível (menos de meio pixel na ponta da linha) e
+**não bastou**: com o telefone na mesa e alguém digitando ao lado, a vibração passava.
+Subiu para **0,8°**.
+
+Subir a zona morta é preferível a fortalecer o filtro, e a razão é o FR-6: a zona morta
+**não adiciona atraso** a uma rotação real, que a excede de imediato, enquanto o filtro
+atrasaria tudo — inclusive `captureRotation`, que decide a orientação do arquivo gravado.
+Girar o telefone e apertar gravar produziria vídeo torto.
+
+Invariante nova em teste: a zona morta tem de ficar abaixo de metade da tolerância de
+±2° que acende o verde de "nivelado", senão passaria a **esconder** desnivelamento real.
+Para isso valer, o `2f` que estava literal na tela virou `LEVEL_TOLERANCE` e a produção
+passou a usá-lo — invariante contra constante que ninguém usa é teatro.
+
+#### Efeito na CPU, e três conclusões erradas antes da certa
+
+| Medição | Desenho | Resultado | Vale? |
+|---|---|---|---|
+| 1 | antes e depois em **cenas diferentes** | "53,5% → 25% no main" | **não** |
+| 2 | mesma sessão, **uma amostra** de cada | 78,5% vs 82,0% → "sem efeito" | **não** |
+| 3 | **alternada** A,B,A,B, mediana de 6 | 117%/122% vs 96,5%/92,8% | **sim** |
+
+A medição 3 é a única com desenho que suporta conclusão: ordem alternada elimina deriva,
+e a separação é consistente entre rodadas. Há redução de ~20 pontos — real, mas longe de
+dominante, já que sobram ~95%.
+
+**Lição de método:** neste ambiente o valor absoluto de `top` varia mais que o efeito
+sob teste — as medições 1 e 2 tinham valores absolutos incompatíveis entre si (78% e
+117%) para o *mesmo* código. Comparação de amostra única aqui não é medição; é sorteio.
+Ordem alternada e mediana são o mínimo.
+
+#### Pendente
+
+- **Sensação não verificada.** Os 0,8° saíram de uma observação do usuário, mas o
+  resultado não foi confirmado com ele antes de comitar. Se ainda tremer, subir; se a
+  linha ficou lenta ao inclinar de propósito, baixar. `GRAVITY_SMOOTHING` e
+  `ROLL_MIN_DELTA` são constantes nomeadas para isso.
+- **Modo `PERFORMANCE`** continua bloqueado pelo espelho no `graphicsLayer`. É onde está
+  o ganho grande de CPU e bateria.
+
+---
+
 ## Decisões de produto — ressalvas da Task 4
 
 **Data:** 2026-08-04 · **Decisor:** Maicon Alves
