@@ -16,6 +16,8 @@
     "lint": "./gradlew lint",
     "detekt": "./gradlew detekt",
     "check": "./gradlew testDebugUnitTest lint detekt",
+    "backup:apk": "bash scripts/backup-apk.sh",
+    "backup:apk-install": "bash scripts/backup-apk.sh --instalar",
     "smoke": "scripts/smoke.sh",
     "logcat": "scripts/logcat.sh"
   },

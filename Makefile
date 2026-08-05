@@ -1,4 +1,4 @@
-.PHONY: help install build generate-icons clean test lint detekt check smoke logcat logcat-eventos
+.PHONY: help install build generate-icons clean test lint detekt check smoke logcat logcat-eventos backup-apk backup-apk-install backups
 
 help:
 	@echo ""
@@ -16,9 +16,14 @@ help:
 	@echo ""
 	@echo "🏗️  BUILD:"
 	@echo "  make build                - Build debug APK"
-	@echo "  make build-release        - Build release APK"
+	@echo "  make build-release        - Build release APK (SEM assinatura: não instala)"
 	@echo "  make install              - Instalar APK em dispositivo"
 	@echo "  make run                  - Compilar, instalar e executar"
+	@echo ""
+	@echo "💾 BACKUP DE APK:"
+	@echo "  make backup-apk           - Arquiva APK nomeado por versão + commit"
+	@echo "  make backup-apk-install   - Arquiva e instala no aparelho conectado"
+	@echo "  make backups              - Lista os backups já gerados"
 	@echo ""
 	@echo "🧹 LIMPEZA:"
 	@echo "  make clean                - Limpar builds"
@@ -80,6 +85,17 @@ detekt:
 
 check:
 	./gradlew testDebugUnitTest lint detekt
+
+# Invocado via `bash` e não `./`: o arquivo é novo e pode chegar sem bit de
+# execução dependendo de como veio para a máquina.
+backup-apk:
+	bash scripts/backup-apk.sh
+
+backup-apk-install:
+	bash scripts/backup-apk.sh --instalar
+
+backups:
+	bash scripts/backup-apk.sh --listar
 
 smoke:
 	./scripts/smoke.sh
