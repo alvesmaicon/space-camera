@@ -80,6 +80,7 @@ class FakeCameraController : CameraController {
     var initializeCount = 0; private set
     var releaseCount = 0; private set
     var rebindCount = 0; private set
+    var surfaceProviderUpdates = 0; private set
     var flipCount = 0; private set
     var startRecordingCount = 0; private set
     var pauseRecordingCount = 0; private set
@@ -108,7 +109,9 @@ class FakeCameraController : CameraController {
         initializeCount++
     }
 
-    override fun updateSurfaceProvider(newSurfaceProvider: Preview.SurfaceProvider) = Unit
+    override fun updateSurfaceProvider(newSurfaceProvider: Preview.SurfaceProvider) {
+        surfaceProviderUpdates++
+    }
     override fun rebindWithCurrentSettings() { rebindCount++ }
     override fun release() { releaseCount++ }
 

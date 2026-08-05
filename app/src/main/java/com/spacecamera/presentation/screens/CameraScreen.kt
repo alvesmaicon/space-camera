@@ -352,18 +352,18 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
         }
     }
 
-    LaunchedEffect(permissionGranted, previewView) {
+    // Decisions: Q-02
+    //
+    // `lifecycleOwner` é chave do efeito porque girar recria a Activity, e o
+    // ViewModel — que sobrevive — precisa saber disso: o controller retido guarda o
+    // owner antigo, e rebindar nele não reabre a câmera, deixando a
+    // pré-visualização preta para sempre.
+    //
+    // Quem decide entre reaproveitar e reconstruir é `initializeCamera`, não esta
+    // tela: é decisão testável na JVM, e aqui não há como exercitá-la.
+    LaunchedEffect(permissionGranted, previewView, lifecycleOwner) {
         if (!permissionGranted || previewView == null) return@LaunchedEffect
-        if (!cameraInitialized) {
-            viewModel.initializeCamera(context, lifecycleOwner, previewView!!.surfaceProvider)
-        } else {
-            // PreviewView foi recriado após navegação (ex: voltar de Settings).
-            // Atualiza o surfaceProvider no use case de Preview existente sem rebind completo.
-            viewModel.updateSurfaceProvider(previewView!!.surfaceProvider)
-            // Garante que mudanças feitas na tela de configurações sejam aplicadas
-            // no pipeline de vídeo ao voltar para a câmera.
-            viewModel.rebindCamera()
-        }
+        viewModel.initializeCamera(context, lifecycleOwner, previewView!!.surfaceProvider)
     }
 
     val isRecording = recordingState != RecordingState.Idle

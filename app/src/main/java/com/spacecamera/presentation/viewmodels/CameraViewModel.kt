@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.lang.ref.WeakReference
 
 enum class RecordingDelay(val seconds: Int) {
     OFF(0), THREE(3), FIVE(5), TEN(10);
@@ -54,6 +55,29 @@ class CameraViewModel(
     private var timerJob: Job? = null
     private var countdownJob: Job? = null
     private var settingsStorage: SettingsStorage? = null
+
+    /**
+     * Decisions: Q-02
+     *
+     * Qual `LifecycleOwner` o [cameraManager] atual está usando. Este ViewModel
+     * sobrevive à recriação da Activity, e o controller guarda o owner que recebeu no
+     * construtor — então sem esta comparação o rebind depois de girar acerta um
+     * ciclo de vida já DESTROYED, que o CameraX registra e nunca ativa.
+     *
+     * `WeakReference` porque a alternativa é o ViewModel segurar a Activity morta:
+     * era o que acontecia por acidente através do controller retido, e é vazamento.
+     */
+    private var boundLifecycleOwner: WeakReference<LifecycleOwner>? = null
+
+    /**
+     * Os coletores dos fluxos do controller, como um job pai só.
+     *
+     * Existem juntos para poderem ser cancelados juntos: ao trocar de controller, os
+     * coletores do antigo continuariam vivos — o `collect` num `StateFlow` nunca
+     * termina — mantendo a instância velha viva e escrevendo nos mesmos `_flows` que
+     * o controller novo escreve.
+     */
+    private var controllerCollectors: Job? = null
 
     private val _recordingState = MutableStateFlow<RecordingState>(RecordingState.Idle)
     val recordingState: StateFlow<RecordingState> = _recordingState.asStateFlow()
@@ -171,10 +195,38 @@ class CameraViewModel(
     private val _isCameraReady = MutableStateFlow(false)
     val isCameraReady: StateFlow<Boolean> = _isCameraReady.asStateFlow()
 
+    /**
+     * Requirements: NFR-3
+     * Decisions: Q-02
+     *
+     * Liga a câmera ao [lifecycleOwner] da tela. É chamada de novo a cada
+     * `PreviewView` novo, e o que ela decide é **reaproveitar ou reconstruir** o
+     * controller:
+     *
+     * - mesmo owner (voltou de Configurações — navegação do Compose dentro da mesma
+     *   Activity): religa a surface, sem fechar a câmera
+     * - owner diferente (Activity recriada por rotação): reconstrói, porque o
+     *   controller retido guarda o owner antigo e rebindar nele não reabre a câmera
+     */
     suspend fun initializeCamera(context: Context, lifecycleOwner: LifecycleOwner, surfaceProvider: Preview.SurfaceProvider?) {
         try {
-            if (cameraManager == null) {
-                val ctx = context.applicationContext
+            if (cameraManager != null && boundLifecycleOwner?.get() === lifecycleOwner) {
+                surfaceProvider?.let { cameraManager!!.updateSurfaceProvider(it) }
+                cameraManager!!.rebindWithCurrentSettings()
+                return
+            }
+            val ctx = context.applicationContext
+            if (cameraManager != null) {
+                // Activity recriada: derruba o controller preso ao owner morto. Sem
+                // isso a câmera fecha no destroy e nunca reabre (Q-02, Medição 3).
+                controllerCollectors?.cancel()
+                cameraManager?.release()
+                cameraManager = null
+            }
+            // Só na primeira criação: numa recriação por rotação o estado em memória já
+            // é o corrente, e recarregar aqui faria o ramo de "manter configurações
+            // desligado" resetar para os padrões a cada virada de tela.
+            if (boundLifecycleOwner == null) {
                 // Carrega configurações persistidas antes de criar o CameraManager
                 if (settingsStorage == null) settingsStorage = settingsStorageFactory(ctx)
                 val storage = settingsStorage!!
@@ -220,19 +272,22 @@ class CameraViewModel(
                     _isImageEnhancementEnabled.value = false
                     storage.isImageEnhancementEnabled = false
                 }
-                cameraManager = controllerFactory.create(ctx, lifecycleOwner).also { mgr ->
-                    mgr.isStabilizationEnabled = _isStabilizationEnabled.value
-                    mgr.isNoiseReductionEnabled = _isNoiseReductionEnabled.value
-                    mgr.bitratePreset = _bitratePreset.value
-                    mgr.photoQualityPreset = _photoQualityPreset.value
-                    mgr.isHdrEnabled = _isHdrEnabled.value
-                    mgr.isFrontCameraMirrorEnabled = _isFrontCameraMirrorEnabled.value
-                    mgr.isSaveLocationEnabled = _isSaveLocationEnabled.value
-                    mgr.isImageEnhancementEnabled = _isImageEnhancementEnabled.value
-                    mgr.previewAspectLabel = pendingPreviewAspectLabel
-                }
-                videoRepository = VideoRepositoryImpl(cameraManager!!)
-                viewModelScope.launch {
+            }
+            cameraManager = controllerFactory.create(ctx, lifecycleOwner).also { mgr ->
+                mgr.isStabilizationEnabled = _isStabilizationEnabled.value
+                mgr.isNoiseReductionEnabled = _isNoiseReductionEnabled.value
+                mgr.bitratePreset = _bitratePreset.value
+                mgr.photoQualityPreset = _photoQualityPreset.value
+                mgr.isHdrEnabled = _isHdrEnabled.value
+                mgr.isFrontCameraMirrorEnabled = _isFrontCameraMirrorEnabled.value
+                mgr.isSaveLocationEnabled = _isSaveLocationEnabled.value
+                mgr.isImageEnhancementEnabled = _isImageEnhancementEnabled.value
+                mgr.previewAspectLabel = pendingPreviewAspectLabel
+            }
+            boundLifecycleOwner = WeakReference(lifecycleOwner)
+            videoRepository = VideoRepositoryImpl(cameraManager!!)
+            controllerCollectors = viewModelScope.launch {
+                launch {
                     cameraManager!!.recordingState.collect { state ->
                         _recordingState.value = state
                         when (state) {
@@ -242,110 +297,102 @@ class CameraViewModel(
                         }
                     }
                 }
+                // Sync available video options from CameraManager
+                launch {
+                    cameraManager!!.availableVideoOptions.collect { list ->
+                        if (list.isNotEmpty()) {
+                            _availableVideoOptions.value = list
+                            if (_selectedVideoOption.value !in list) {
+                                _selectedVideoOption.value = list.first()
+                            }
+                        }
+                    }
+                }
+                // Sync available aspect ratios from CameraManager
+                launch {
+                    cameraManager!!.availableAspectRatios.collect { list ->
+                        if (list.isNotEmpty()) {
+                            _availableAspectRatios.value = list
+                            // "Full" é especial (só foto) e não está na lista dinâmica — não resetar
+                            if (_selectedAspectRatio.value !in list && _selectedAspectRatio.value != "Full") {
+                                _selectedAspectRatio.value = list.first()
+                            }
+                        }
+                    }
+                }
+                // Sync last video URI
+                launch {
+                    cameraManager!!.lastVideoUri.collect { uri ->
+                        _lastVideoUri.value = uri
+                    }
+                }
+                // Sync last photo URI
+                launch {
+                    cameraManager!!.lastPhotoUri.collect { uri ->
+                        _lastPhotoUri.value = uri
+                    }
+                }
+                // Sync zoom levels
+                launch {
+                    cameraManager!!.availableZoomLevels.collect { levels ->
+                        _availableZoomLevels.value = levels
+                    }
+                }
+                launch {
+                    cameraManager!!.selectedZoomLevel.collect { ratio ->
+                        _selectedZoomLevel.value = ratio
+                    }
+                }
+                launch {
+                    cameraManager!!.minZoomRatio.collect { ratio ->
+                        _minZoomRatio.value = ratio
+                    }
+                }
+                launch {
+                    cameraManager!!.maxZoomRatio.collect { ratio ->
+                        _maxZoomRatio.value = ratio
+                    }
+                }
+                launch {
+                    cameraManager!!.isEisSupported.collect { supported ->
+                        _isEisSupported.value = supported
+                        // Se não suportado, garante que EIS fique desligado
+                        if (!supported && _isStabilizationEnabled.value) {
+                            _isStabilizationEnabled.value = false
+                            settingsStorage?.isStabilizationEnabled = false
+                            cameraManager!!.setStabilization(false)
+                        }
+                    }
+                }
+                launch {
+                    cameraManager!!.isHdrSupported.collect { supported ->
+                        _isHdrSupported.value = supported
+                        if (!supported && _isHdrEnabled.value) {
+                            _isHdrEnabled.value = false
+                            settingsStorage?.isHdrEnabled = false
+                            cameraManager!!.setHdr(false)
+                        }
+                    }
+                }
+                launch {
+                    cameraManager!!.exposureIndex.collect { _exposureIndex.value = it }
+                }
+                launch {
+                    cameraManager!!.exposureMin.collect { _exposureMin.value = it }
+                }
+                launch {
+                    cameraManager!!.exposureMax.collect { _exposureMax.value = it }
+                }
+                launch {
+                    cameraManager!!.isCameraReady.collect { _isCameraReady.value = it }
+                }
             }
             cameraManager!!.initializeCamera(surfaceProvider)
             _cameraInitialized.value = true
-            // Sync available video options from CameraManager
-            viewModelScope.launch {
-                cameraManager!!.availableVideoOptions.collect { list ->
-                    if (list.isNotEmpty()) {
-                        _availableVideoOptions.value = list
-                        if (_selectedVideoOption.value !in list) {
-                            _selectedVideoOption.value = list.first()
-                        }
-                    }
-                }
-            }
-            // Sync available aspect ratios from CameraManager
-            viewModelScope.launch {
-                cameraManager!!.availableAspectRatios.collect { list ->
-                    if (list.isNotEmpty()) {
-                        _availableAspectRatios.value = list
-                        // "Full" é especial (só foto) e não está na lista dinâmica — não resetar
-                        if (_selectedAspectRatio.value !in list && _selectedAspectRatio.value != "Full") {
-                            _selectedAspectRatio.value = list.first()
-                        }
-                    }
-                }
-            }
-            // Sync last video URI
-            viewModelScope.launch {
-                cameraManager!!.lastVideoUri.collect { uri ->
-                    _lastVideoUri.value = uri
-                }
-            }
-            // Sync last photo URI
-            viewModelScope.launch {
-                cameraManager!!.lastPhotoUri.collect { uri ->
-                    _lastPhotoUri.value = uri
-                }
-            }
-            // Sync zoom levels
-            viewModelScope.launch {
-                cameraManager!!.availableZoomLevels.collect { levels ->
-                    _availableZoomLevels.value = levels
-                }
-            }
-            viewModelScope.launch {
-                cameraManager!!.selectedZoomLevel.collect { ratio ->
-                    _selectedZoomLevel.value = ratio
-                }
-            }
-            viewModelScope.launch {
-                cameraManager!!.minZoomRatio.collect { ratio ->
-                    _minZoomRatio.value = ratio
-                }
-            }
-            viewModelScope.launch {
-                cameraManager!!.maxZoomRatio.collect { ratio ->
-                    _maxZoomRatio.value = ratio
-                }
-            }
-            viewModelScope.launch {
-                cameraManager!!.isEisSupported.collect { supported ->
-                    _isEisSupported.value = supported
-                    // Se não suportado, garante que EIS fique desligado
-                    if (!supported && _isStabilizationEnabled.value) {
-                        _isStabilizationEnabled.value = false
-                        settingsStorage?.isStabilizationEnabled = false
-                        cameraManager!!.setStabilization(false)
-                    }
-                }
-            }
-            viewModelScope.launch {
-                cameraManager!!.isHdrSupported.collect { supported ->
-                    _isHdrSupported.value = supported
-                    if (!supported && _isHdrEnabled.value) {
-                        _isHdrEnabled.value = false
-                        settingsStorage?.isHdrEnabled = false
-                        cameraManager!!.setHdr(false)
-                    }
-                }
-            }
-            viewModelScope.launch {
-                cameraManager!!.exposureIndex.collect { _exposureIndex.value = it }
-            }
-            viewModelScope.launch {
-                cameraManager!!.exposureMin.collect { _exposureMin.value = it }
-            }
-            viewModelScope.launch {
-                cameraManager!!.exposureMax.collect { _exposureMax.value = it }
-            }
-            viewModelScope.launch {
-                cameraManager!!.isCameraReady.collect { _isCameraReady.value = it }
-            }
         } catch (e: Exception) {
             Timber.e(e, "evt=camera_init_failed")
             _cameraInitialized.value = false
         }
-    }
-
-    fun updateSurfaceProvider(surfaceProvider: Preview.SurfaceProvider) {
-        cameraManager?.updateSurfaceProvider(surfaceProvider)
-    }
-
-    fun rebindCamera() {
-        cameraManager?.rebindWithCurrentSettings()
     }
 
     fun startRecording(targetRotation: Int = 0) {
@@ -631,6 +678,8 @@ class CameraViewModel(
 
     override fun onCleared() {
         super.onCleared()
+        controllerCollectors?.cancel()
         cameraManager?.release()
+        boundLifecycleOwner = null
     }
 }

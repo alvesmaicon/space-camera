@@ -2,6 +2,7 @@ package com.spacecamera.presentation.viewmodels
 
 import android.content.Context
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.Preview
 import androidx.camera.video.Quality
 import androidx.lifecycle.LifecycleOwner
 import androidx.test.core.app.ApplicationProvider
@@ -443,5 +444,95 @@ class CameraViewModelTest {
         assertTrue(viewModel.isFrontCamera.value)
         assertFalse(viewModel.isFlashOn.value, "não há flash na câmera frontal")
         assertEquals(1, controller.flipCount)
+    }
+
+    // ── Recriação da Activity (Q-02) ────────────────────────────────────────
+
+    /**
+     * ViewModel com factory que registra cada controller criado e o dono usado.
+     * Diferente do `setUp`, que devolve sempre a mesma instância — aqui o que se
+     * mede é justamente **quantos** controllers foram construídos.
+     */
+    private fun viewModelComFactoryContada(
+        criados: MutableList<FakeCameraController>,
+        donos: MutableList<LifecycleOwner>
+    ) = CameraViewModel(
+        controllerFactory = CameraControllerFactory { _, owner ->
+            donos += owner
+            FakeCameraController().also { criados += it }
+        },
+        settingsStorageFactory = { storage }
+    )
+
+    /**
+     * Requirements: NFR-3
+     * Decisions: Q-02
+     *
+     * Girar o tablet recria a Activity, mas o ViewModel sobrevive — e com ele o
+     * controller, que guarda o `LifecycleOwner` no construtor. `bindToLifecycle`
+     * num owner já DESTROYED registra o binding e **nunca o ativa**, sem lançar
+     * exceção: medido em 2026-08-04, a câmera fecha no destroy e não reabre, e a
+     * pré-visualização fica preta permanentemente (Q-02, Medição 3).
+     *
+     * O ViewModel precisa perceber que o dono mudou e reconstruir o controller.
+     */
+    @Test
+    fun `recria o controller quando a Activity chega com outro LifecycleOwner`() =
+        runTest(dispatcher) {
+            val criados = mutableListOf<FakeCameraController>()
+            val donos = mutableListOf<LifecycleOwner>()
+            val vm = viewModelComFactoryContada(criados, donos)
+            val donoAntigo = mockk<LifecycleOwner>(relaxed = true)
+            val donoNovo = mockk<LifecycleOwner>(relaxed = true)
+
+            vm.initializeCamera(context, donoAntigo, null)
+            advanceUntilIdle()
+            assertEquals(1, criados.size, "primeira ligação cria um controller")
+
+            vm.initializeCamera(context, donoNovo, null)
+            advanceUntilIdle()
+
+            assertEquals(
+                2, criados.size,
+                "dono novo é Activity recriada: o controller preso ao dono morto não serve"
+            )
+            assertEquals(donoNovo, donos.last(), "o controller novo usa o dono novo")
+            assertEquals(
+                1, criados[0].releaseCount,
+                "o controller antigo tem de ser liberado, senão a câmera fica presa a ele"
+            )
+            assertEquals(1, criados[1].initializeCount, "o controller novo é inicializado")
+        }
+
+    /**
+     * Requirements: NFR-1
+     * Decisions: Q-02
+     *
+     * O contraponto do teste acima, e a razão de a correção não poder ser "recriar
+     * sempre": voltar de Configurações recria o `PreviewView` **dentro da mesma
+     * Activity**, com o dono vivo. Aí reconstruir a câmera seria desperdício visível
+     * (um ciclo de fechar/abrir a cada volta). O caminho certo é religar a surface.
+     */
+    @Test
+    fun `reaproveita o controller quando o LifecycleOwner e o mesmo`() = runTest(dispatcher) {
+        val criados = mutableListOf<FakeCameraController>()
+        val donos = mutableListOf<LifecycleOwner>()
+        val vm = viewModelComFactoryContada(criados, donos)
+        val dono = mockk<LifecycleOwner>(relaxed = true)
+        val surfaceNova = mockk<Preview.SurfaceProvider>(relaxed = true)
+
+        vm.initializeCamera(context, dono, null)
+        advanceUntilIdle()
+
+        vm.initializeCamera(context, dono, surfaceNova)
+        advanceUntilIdle()
+
+        assertEquals(1, criados.size, "mesma Activity: nada a reconstruir")
+        assertEquals(0, criados[0].releaseCount, "não pode liberar a câmera em uso")
+        assertEquals(
+            1, criados[0].surfaceProviderUpdates,
+            "o PreviewView novo precisa receber a surface do Preview existente"
+        )
+        assertEquals(1, criados[0].rebindCount, "e os ajustes voltam a ser aplicados")
     }
 }
