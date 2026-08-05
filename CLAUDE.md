@@ -17,6 +17,7 @@ são passadas por construtor e factories.
 ./gradlew detekt               # análise estática Kotlin
 ./gradlew detektBaseline       # recongela a dívida atual (ver "Detekt" abaixo)
 
+scripts/backup-apk.sh --instalar   # arquiva APK nomeado por versão+commit e instala
 scripts/smoke.sh               # build + install + start e confere que a câmera ligou
 scripts/logcat.sh              # logcat filtrado só no app
 scripts/logcat.sh evt=         # só os eventos de telemetria
@@ -105,6 +106,34 @@ um teste manual:
 unzip -qo app/build/outputs/apk/debug/app-debug.apk 'classes*.dex' -d /tmp/dexchk
 cat /tmp/dexchk/*.dex | grep -ac ALGUM_SIMBOLO_NOVO   # 0 = APK velho
 ```
+
+`scripts/backup-apk.sh` já faz essa conferência, comparando o `GIT_SHA` do commit com o
+que está dentro do APK antes de arquivar. Use `grep -c` e não `grep -q` num pipe: com
+`set -o pipefail`, o `-q` sai no primeiro acerto, o `cat` toma SIGPIPE e o pipeline
+retorna erro **quando a busca dá certo**.
+
+### Outras quatro armadilhas de verificação manual
+
+Todas produziram conclusão errada nesta base, e nenhuma é óbvia:
+
+1. **`am start` depois de `am force-stop` retoma a task preservada em recentes**, não
+   abre na tela inicial. Uma rodada de captura pegou a tela Sobre acreditando ser a
+   câmera. Use `am start -S -n com.spacecamera/.MainActivity --activity-clear-task` e
+   **confira a tela** (`content-desc` no dump do `uiautomator`) antes de medir. A
+   contagem de nós é um bom canário: número inesperado de caixas = outra tela.
+2. **Emulador em boot frio abre "System UI isn't responding"** e o diálogo engole os
+   toques em silêncio. Dispense antes de qualquer roteiro de UI.
+3. **`evt=bind` não prova imagem na tela.** Ele mede configurar os use cases; no
+   caminho em que a câmera não reabria, reportava sucesso em 7ms com a
+   pré-visualização preta. Para "tem imagem" o instrumento é luminância média de
+   `adb exec-out screencap -p`.
+4. **O emulador reportar EIS/HDR como não suportados faz o comportamento defeituoso
+   coincidir com o correto.** Um bug que desligava o EIS em aparelho capaz passou por
+   toda uma spec porque `eis_supported=false` no emulador nos dois casos. Capacidade de
+   hardware só se verifica em aparelho real.
+
+Para comparar antes/depois entre dois commits, use `git worktree` e **nunca** `git
+stash` — o stash é justamente o que confundiu o cálculo de atualidade do Gradle acima.
 
 ## Testes
 

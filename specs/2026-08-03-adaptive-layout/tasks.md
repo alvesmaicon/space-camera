@@ -105,11 +105,14 @@ Contrato de Wave 0. Existe separado porque quatro tarefas dependem dele.
   - [x] Manual: `evt=bind` traz `aspect=16:9` em tablet e `aspect=9:16` em telefone
   - [x] Manual: `elapsed_ms` de 263, 264 e 317 — teto do NFR-3 é 800
   - [x] Manual: caixa de pré-visualização medida em `[0,80]-[2560,1520]` = 1280×720dp
-  - [ ] **NFR-3 atendido só pela metade.** O `elapsed_ms` cumpre o teto, mas a outra
-        medida do NFR-3 — "sem tela preta visível por mais de 1 segundo" — **falha**: em
-        tablet, girar deixa a pré-visualização preta **permanentemente**. Medido em
-        2026-08-04. Causa em Q-02 (`decisions.md`); é bug pré-existente, não regressão
-        desta spec, mas é a remoção da ponte (FR-7) que o torna alcançável
+  - [x] **A segunda medida do NFR-3 falhava aqui e foi corrigida na Task 7.** O
+        `elapsed_ms` cumpria o teto, mas "sem tela preta visível por mais de 1 segundo"
+        **não**: em tablet, girar deixava a pré-visualização preta permanentemente.
+        Descoberto em 2026-08-04, causa em Q-02, corrigido pela Task 7 — depois dela,
+        amostras a 1,2s / 2,0s / 3,0s da virada já com imagem.
+        **Esta assinatura estava errada por instrumento, não por número:** ler
+        `elapsed_ms` do `evt=bind` mede configurar os use cases, não que tenha chegado
+        quadro na superfície — no caminho defeituoso ele reportava sucesso em 7ms
 - **_Requirements: FR-2, FR-3, FR-5, NFR-1, NFR-3_**
 - **_Decisions: ADR-001, ADR-003_**
 
@@ -140,23 +143,31 @@ Contrato de Wave 0. Existe separado porque quatro tarefas dependem dele.
   - [x] Testes passam: `./gradlew testDebugUnitTest` (59)
   - [x] Contraste medido: ícone ativo 15,7:1 sobre o fundo composto no pior caso de
         preview branco. **Estado "desligado" fica em 3,5:1** — ver ressalva abaixo
-  - [ ] **Não verificado:** transbordo em janela larga e baixa. Ver ressalva abaixo
+  - [x] Transbordo: **fallback entregue na Task 9**, que substituiu a Ressalva 2. Segue
+        não exercitável por motivo estrutural — ver a Verification da Task 9
 - **_Requirements: FR-4, FR-5, NFR-2_**
 - **_Decisions: ADR-001, ADR-003_**
 
-> **Ressalva 1 — contraste do estado "desligado" não alcança o limiar.** Medido em
-> 2026-08-04 com o fundo composto no pior caso (scrim `0xFF1C1C1E` com alfa 0,97
-> sobre preview branco = `#232325`):
+> **Ressalva 1 — resolvida pela Task 8.** O registro do problema, como foi medido em
+> 2026-08-04, com o fundo composto no pior caso (scrim `0xFF1C1C1E` com alfa 0,97 sobre
+> preview branco = `#232325`):
 >
 > | Estado do ícone | Contraste | Limiar NFR-2 |
 > |---|---|---|
 > | Ativo, branco cheio | **15,7:1** | passa |
 > | Desligado, alfa 0,38 | **3,5:1** | não passa |
 >
-> O alfa 0,38 é o valor que o app já usava, e em retrato sobre a faixa preta ele dá
-> 3,4:1 — ou seja, esta spec **melhora** marginalmente o pior caso em vez de piorá-lo,
-> mas não atinge 4,5:1 nesse estado. Subir o alfa mudaria a aparência **também em
-> retrato**, o que o NFR-1 proíbe. Fica como decisão de produto.
+> O alfa 0,38 era o valor que o app já usava, e em retrato sobre a faixa preta dava
+> 3,4:1 — a spec **melhorava** marginalmente o pior caso, mas não atingia 4,5:1 nesse
+> estado.
+>
+> Decisão do usuário: subir o alfa **nos dois** layouts, para 0,48 (Task 8). Medido
+> depois no pixel: 4,86:1 no tablet e 4,89:1 no telefone.
+>
+> **Duas afirmações desta ressalva estavam erradas.** "Subir o alfa mudaria a aparência
+> também em retrato, o que o NFR-1 proíbe": o NFR-1 mede âncoras e posicionamento, não
+> cor, e as 233 caixas seguem idênticas porque alfa não move bounds. Mudar o retrato é
+> visível, sim — mas é decisão de produto, não violação de requisito.
 >
 > **Ressalva 3 — FR-5 não é atendido em retrato, por escolha.** O texto do requisito
 > condiciona o fundo de contraste a "estar sobreposto à pré-visualização", não a a
@@ -182,15 +193,18 @@ Contrato de Wave 0. Existe separado porque quatro tarefas dependem dele.
 > pede. Cor média 129,129,129 = branco a alfa 0,55, ou seja "não nivelado" decidido pela
 > inclinação **física** (|100| − 90 = 10 > 2), como o AC-9.3 exige.
 >
-> **Ressalva 2 — transbordo (AC-4.3) não foi exercitado.** Tentativa com
+> **Ressalva 2 — resolvida pela Task 9, na parte que era resolvível.** Tentativa com
 > `wm size 2560x760` falhou como teste: a 380dp de altura o `smallestWidth` cai abaixo
 > de 600dp, o Android volta a honrar `screenOrientation` e a janela sai pillarboxed em
 > retrato — o layout largo nem ativa. Nesse aparelho, janela larga implica
 > `sw >= 600dp`, logo pelo menos 600dp de altura para cinco slots de ~46dp, e o
-> transbordo é inalcançável. Com os grupos compactos (o peso saiu do eixo vertical) a
-> folga é ainda maior, mas **não há rolagem de fallback**: numa janela livre curta o
-> suficiente, os controles se sobreporiam. Exigiria um container que meça antes de
-> escolher entre peso e rolagem.
+> transbordo é inalcançável.
+>
+> O que a ressalva apontava como risco real era outra coisa: **não havia rolagem de
+> fallback**, então numa janela livre curta o suficiente os controles se sobreporiam.
+> Decisão do usuário: implementar a rolagem (Task 9). O AC-4.3 continua sem cobertura
+> por não ser alcançável neste hardware, mas o modo de falha que a ressalva descrevia
+> deixou de existir — e sem precisar do container que mede, que era o custo temido.
 
 ---
 

@@ -717,6 +717,71 @@ luminância de captura de tela, não telemetria de bind.
 
 ---
 
+### Q-03: a Task 7 desligou o EIS em aparelho que o suporta
+
+**Levantada por:** skill `dev`, primeira instalação em aparelho **físico**, 2026-08-05
+**Status:** **Resolvida** no mesmo dia — regressão introduzida pela Task 7, corrigida
+com teste de regressão.
+**Afeta:** NFR-1, Task 7, `CameraViewModel.initializeCamera`
+
+Motorola edge 60 neo, Android 16 (API 36), 427×949dp. Primeira vez que este app roda em
+hardware real nesta spec, e a telemetria mostrou contradição na primeira linha:
+
+```
+evt=caps  eis_supported=true
+evt=bind  eis=false
+```
+
+EIS suportado pelo hardware e **desligado** pelo app — com o desligamento **persistido**
+no `SharedPreferences`.
+
+#### Causa: ordem de inicialização, introduzida por mim na Task 7
+
+`_isEisSupported` do `CameraManager` começa `MutableStateFlow(false)`, e esse `false`
+significa "ainda não sondado" — indistinguível de "não suportado". A sondagem só ocorre
+dentro de `initializeCamera`, que é o bind.
+
+O coletor do ViewModel reage a `!supported` desligando o EIS e gravando no storage. Antes
+da Task 7, os 15 coletores subiam **depois** de `initializeCamera`, então ele já
+encontrava `true` em hardware capaz. Ao agrupá-los num job único, eu os movi para
+**antes** do bind — e o coletor passou a receber o `false` inicial.
+
+Não há janela de sorte: `viewModelScope` usa `Dispatchers.Main.immediate`, que executa o
+`launch` de forma *eager* até a primeira suspensão.
+
+#### A/B que confirmou
+
+Mesmo aparelho, dados do app limpos entre as rodadas:
+
+| Build | `eis_supported` | `eis` aplicado |
+|---|---|---|
+| `5c05e41` (com a Task 7) | true | **false** |
+| `34783d9` (pré-Task 7) | true | **true** |
+
+#### Correção
+
+Os coletores voltaram para depois do bind, com comentário explicando por que a ordem não
+é cosmética. Depois: `eis=true` no `evt=bind`.
+
+#### Por que nem emulador nem teste pegaram — e o que mudou
+
+- **Emulador:** o EIS realmente não é suportado lá, então `eis_supported=false` nos dois
+  casos e o comportamento defeituoso coincide com o correto. Só hardware real distingue.
+- **Teste:** o `FakeCameraController` nascia com `isEisSupportedFlow = true`, mais
+  otimista que a produção, que nasce `false`. O dublê tornava a ordem irrelevante.
+  Ganhou o gancho `aoInicializar`, que reproduz a transição `false → true` no momento do
+  bind.
+- **Armadilha de dispatcher:** a primeira versão do teste **passou com o bug presente**.
+  O `StandardTestDispatcher` da suíte enfileira o `launch` em vez de executá-lo eager, o
+  que inverte justamente a ordem sob teste. O teste usa `UnconfinedTestDispatcher` para
+  modelar o `Main.immediate` de produção.
+
+**Lição que vale além deste bug:** dublê mais otimista que a produção e dispatcher de
+teste diferente do de produção **escondem defeitos de ordem de inicialização**. As duas
+coisas juntas deram um verde falso.
+
+---
+
 ## Decisões de produto — ressalvas da Task 4
 
 **Data:** 2026-08-04 · **Decisor:** Maicon Alves

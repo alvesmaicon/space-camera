@@ -294,6 +294,53 @@ dumps sempre tiveram 49. Corrigido em `tasks.md`.
 2. O emulador em boot frio abre "System UI isn't responding" e o diálogo engole os
    toques. O roteiro passou a dispensá-lo antes de começar.
 
+### Sessão 2026-08-05 — skill `dev`, primeiro aparelho físico
+
+- **Gates:** A, B, C, D · **Testes:** 67 (1 novo) · **Detekt e Lint:** limpos
+- **Aparelho:** Motorola edge 60 neo, Android 16 (API 36), 427×949dp, serial [serial omitido]
+
+Objetivo era só gerar um APK de backup e instalar. Criado
+[`scripts/backup-apk.sh`](../../scripts/backup-apk.sh) — o repo não tinha nada disso, e
+`assembleRelease` não serve porque não há `signingConfigs`, então sai
+`app-release-unsigned.apk`, que nenhum aparelho instala.
+
+**O que o hardware real revelou de imediato.** Primeira linha de telemetria já
+contraditória: `evt=caps eis_supported=true` com `evt=bind eis=false`. Virou Q-03 — e a
+causa era **regressão minha da Task 7**: ao agrupar os coletores num job único, eu os
+movi para antes do bind, e o coletor de `isEisSupported` passou a receber o `false`
+inicial (que significa "ainda não sondado"), desligando o EIS e persistindo isso. A/B com
+o APK pré-Task 7 no mesmo aparelho confirmou. Coletores voltaram para depois do bind;
+`eis=true` depois.
+
+**Três coisas que o emulador nunca poderia ter mostrado:**
+
+| | Emulador | edge 60 neo |
+|---|---|---|
+| Resoluções | `[HD 30]` | `[4K 30, FHD 30, FHD 60, HD 30]` |
+| EIS | não suportado | **suportado** |
+| HDR | não suportado | não suportado |
+
+É a razão de o defeito ter passado por toda a spec: com EIS não suportado, o
+comportamento defeituoso coincide com o correto.
+
+**Dois erros de método meus nesta sessão, ambos instrutivos:**
+
+1. **O script falhou na primeira execução por bug meu**, e o modo de falha era enganoso:
+   `set -o pipefail` com `cat *.dex | grep -q` faz o pipeline retornar erro **quando o
+   grep acha** o match — o `grep` sai no primeiro acerto e o `cat` toma SIGPIPE. A
+   verificação reprovava exatamente o caso bom. Corrigido lendo os arquivos sem pipe.
+2. **A primeira versão do teste de regressão passou com o bug presente.** O
+   `StandardTestDispatcher` da suíte enfileira o `launch` em vez de rodá-lo eager, o que
+   inverte a ordem sob teste. Precisou de `UnconfinedTestDispatcher` para modelar o
+   `Dispatchers.Main.immediate` de produção. Somado ao `FakeCameraController` nascendo com
+   `isEisSupportedFlow = true` (mais otimista que a produção, que nasce `false`), eram
+   dois motivos independentes para o verde ser falso.
+
+**Achado menor, não corrigido:** `evt=caps` sai com vírgula decimal (`zoom=1,0x-10,0x`)
+neste aparelho, porque `Timber.i(fmt, args)` usa `String.format` com o locale padrão.
+A telemetria é canal de diagnóstico feito para `grep` e comparação entre aparelhos, então
+depender de locale é frágil. Falta `Locale.ROOT`.
+
 ## Pendências
 
 - [x] Iniciar a Wave 0
