@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 3 · **Em andamento:** 0 · **Pendentes:** 10
+- **Concluídas:** 4 · **Em andamento:** 0 · **Pendentes:** 9
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -90,7 +90,7 @@
 - **_Requirements: NFR-6_**
 - **_Decisions: ADR-005_**
 
-#### [ ] 4. Infraestrutura de teste de Compose na JVM
+#### [x] 4. Infraestrutura de teste de Compose na JVM
 - **Size:** S
 - **Complexity:** medium
 - **Risk:** medium
@@ -105,9 +105,10 @@
   - **DADO** a suíte completa **QUANDO** roda **ENTÃO** termina em ≤ 90 s
   - **DADO** o teste **QUANDO** escrito **ENTÃO** não usa `captureToImage` (evita o estouro de tempo com gráficos nativos)
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest`
-  - [ ] Tempo: `./gradlew testDebugUnitTest --profile` e conferir o relatório
-  - [ ] Conferência manual: nenhuma
+  - [x] Testes passam: `./gradlew testDebugUnitTest` — 103 testes, 0 falhas
+  - [x] Tempo: suíte completa em **7 s** (baseline era 5,9 s; Compose custou ~1 s). Teto 90 s
+  - [x] Sem `captureToImage`; só árvore semântica
+  - [x] Conferência manual: nenhuma
 - **_Requirements: NFR-5_**
 - **_Decisions: ADR-006_**
 

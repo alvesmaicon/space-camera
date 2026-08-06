@@ -1835,7 +1835,7 @@ private fun LastVideoThumbnail(uri: Uri, onClick: () -> Unit) {
 
 // Resolution two-line button
 @Composable
-private fun ModeSelector(
+internal fun ModeSelector(
     modes: List<CameraMode>,
     selectedMode: CameraMode,
     vertical: Boolean,

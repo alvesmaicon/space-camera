@@ -3,8 +3,8 @@
 ## Estado atual
 
 - **Fase:** Implementação — Onda 1
-- **Gate atual:** Tarefas 1, 2 e 3 concluídas
-- **Status:** em andamento — falta a Tarefa 4 para fechar a Onda 1
+- **Gate atual:** Onda 1 completa (Tarefas 1 a 4) — no Checkpoint
+- **Status:** em andamento — Checkpoint da Onda 1
 - **Confiança:** 92%
 - **Última atualização:** 2026-08-05
 
@@ -121,7 +121,7 @@ roteiro das Tarefas 6, 7 e 11 já nasça certo.
 | 1 | 1. Baseline de comportamento e latência | **Concluída** | edge 60 neo; `MANUAL_SENSOR` confirmado — portão da Onda 2 antecipado |
 | 1 | 2. Contrato do registro de modos | **Concluída** | 24 testes JVM puros; `abstract` em vez de `sealed` (Q-05) |
 | 1 | 3. Corrigir opt-in do Camera2Interop | **Concluída** | 31 → 0; baseline encolheu 31 sem silenciar nada |
-| 1 | 4. Infra de teste de Compose na JVM | Pendente | falta `testImplementation` do `compose-ui-test-junit4` |
+| 1 | 4. Infra de teste de Compose na JVM | **Concluída** | 4 testes de fumaça; suíte 7 s |
 | 2 | 5. Sondagem de capacidade + `evt=caps` | Pendente | portão de viabilidade do Pro |
 | 3 | 6. Vídeo remigrado | Pendente | maior risco da spec |
 | 4 | 7. Foto remigrado | Pendente | |
@@ -143,7 +143,7 @@ Preencher conforme as tarefas forem feitas — são a evidência dos NFRs:
 | `CameraViewModel.kt` (linhas) | **694** ✓ | | não crescer |
 | Maior arquivo novo (linhas) | — | | ≤ 400 |
 | p95 de `elapsed_ms` na troca de modo | **38 ms** (20 amostras) | | **≤ 45,6 ms** |
-| Tempo da suíte `testDebugUnitTest` | **5,9 s** | | ≤ 90 s |
+| Tempo da suíte `testDebugUnitTest` | **5,9 s** | 7 s (Onda 1) | ≤ 90 s |
 | `UnsafeOptInUsageError` no `CameraManager` | **31** ✓ | **0** (Tarefa 3) | 0 |
 | Recibo do modo-exemplo (`git diff --stat`) | — | | ≤ 1 arquivo + 1 linha |
 
@@ -170,7 +170,8 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] **Q-01 decidida** — requisito corrigido para três proporções; 1:1 vai para o ROADMAP
 - [x] Tarefa 2 — contrato do registro
 - [x] Tarefa 3 — opt-in corrigido
-- [ ] Tarefa 4 — infra de teste Compose na JVM, fecha a Onda 1
+- [x] Tarefa 4 — infra de teste Compose na JVM
+- [ ] Checkpoint da Onda 1 — conferir em aparelho que o app não mudou
 - [ ] Levar as armadilhas de medição do baseline para o CLAUDE.md na Tarefa 13
 - [ ] Levar o 1:1 para o ROADMAP.md, junto do ramo morto em `cameraXAspectRatio()`
 

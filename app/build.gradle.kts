@@ -175,6 +175,9 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
+    // Compose na JVM sob Robolectric (ADR-006). A mesma biblioteca dos testes
+    // instrumentados abaixo — a diferença é rodar sem aparelho.
+    testImplementation(libs.compose.ui.test.junit4)
 
     // Testes instrumentados (device/emulador)
     androidTestImplementation(libs.androidx.test.junit)
