@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 2 · **Em andamento:** 0 · **Pendentes:** 11
+- **Concluídas:** 3 · **Em andamento:** 0 · **Pendentes:** 10
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -69,7 +69,7 @@
 - **_Requirements: FR-1, FR-5, NFR-5_**
 - **_Decisions: ADR-001, ADR-002, ADR-006_**
 
-#### [ ] 3. Corrigir o consentimento de opt-in do Camera2Interop
+#### [x] 3. Corrigir o consentimento de opt-in do Camera2Interop
 - **Size:** XS
 - **Complexity:** low
 - **Risk:** low
@@ -83,9 +83,10 @@
   - **DADO** o build **QUANDO** compila **ENTÃO** o aviso de marcador de opt-in inválido não aparece
   - **DADO** `./gradlew lint` **QUANDO** roda **ENTÃO** `UnsafeOptInUsageError` em `CameraManager` caiu de 31 para 0, e o baseline encolheu em vez de crescer
 - **Verification:**
-  - [ ] Build: `./gradlew assembleDebug 2>&1 | grep -c "opt-in requirement marker"` → 0
-  - [ ] Lint: `./gradlew lint` e conferir a contagem em `app/lint-baseline.xml`
-  - [ ] Conferência manual: nenhuma
+  - [x] Build: `./gradlew clean assembleDebug 2>&1 | grep -c "opt-in requirement marker"` → 0
+  - [x] Lint: `UnsafeOptInUsageError` 31 → 0; baseline total 119 → 88, **nenhuma categoria cresceu**
+  - [x] NFR-3: `CameraManager.kt` em 1158 linhas, exatamente o baseline
+  - [x] Conferência manual: nenhuma
 - **_Requirements: NFR-6_**
 - **_Decisions: ADR-005_**
 

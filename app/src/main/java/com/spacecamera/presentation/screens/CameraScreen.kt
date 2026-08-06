@@ -308,7 +308,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
     // Inclinação para **desenhar** a linha do nível: mesma grandeza física de
     // `rollDegrees`, com filtro muito mais forte. Exigências opostas — aquela decide a
     // orientação do arquivo gravado e precisa ser rápida; esta só precisa ser estável.
-    var levelRoll by remember { mutableStateOf(0f) }
+    var levelRoll by remember { mutableFloatStateOf(0f) }
 
     // Rotação da janela: quanto o compositor já girou o conteúdo. Fica em ROTATION_0
     // enquanto a janela está travada em retrato (telefone) e acompanha o aparelho
@@ -320,7 +320,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
     // abaixo, que é o mesmo lugar onde `rollDegrees` muda; as duas grandezas
     // precisam andar juntas, e uma rotação de 180° não muda a Configuration.
     val view = LocalView.current
-    var displayRotation by remember { mutableStateOf(AndroidSurface.ROTATION_0) }
+    var displayRotation by remember { mutableIntStateOf(AndroidSurface.ROTATION_0) }
 
     // Travadas em quadrante, então mudam raramente — mas `rollDegrees` muda a cada
     // amostra. Lidas direto no corpo deste composable, é a leitura (não o resultado) que

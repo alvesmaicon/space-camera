@@ -8,7 +8,7 @@
         errorLine2="                                     ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="798"
+            line="807"
             column="38"/>
     </issue>
 
@@ -63,7 +63,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="1045"
+            line="1054"
             column="24"/>
     </issue>
 
@@ -74,7 +74,7 @@
         errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="1049"
+            line="1058"
             column="31"/>
     </issue>
 
@@ -96,7 +96,7 @@
         errorLine2="                    ^">
         <location
             file="src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt"
-            line="217"
+            line="255"
             column="21"/>
     </issue>
 
@@ -107,7 +107,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="53"
+            line="70"
             column="13"/>
     </issue>
 
@@ -426,7 +426,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="51"
+            line="68"
             column="13"/>
     </issue>
 
@@ -530,354 +530,13 @@
     </issue>
 
     <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="                infos.filter { Camera2CameraInfo.from(it).cameraId == uwId }"
-        errorLine2="                                                 ~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="292"
-            column="50"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="                infos.filter { Camera2CameraInfo.from(it).cameraId == uwId }"
-        errorLine2="                                                          ~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="292"
-            column="59"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="        val cameraId = Camera2CameraInfo.from(matchingInfo).cameraId"
-        errorLine2="                                         ~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="309"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="        val cameraId = Camera2CameraInfo.from(matchingInfo).cameraId"
-        errorLine2="                                                            ~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="309"
-            column="61"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="        Camera2Interop.Extender(previewBuilder)"
-        errorLine2="                       ~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="420"
-            column="24"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            .setCaptureRequestOption("
-        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="421"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            val cam2Info = Camera2CameraInfo.from(camera!!.cameraInfo)"
-        errorLine2="                ~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="500"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            val cam2Info = Camera2CameraInfo.from(camera!!.cameraInfo)"
-        errorLine2="                                             ~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="500"
-            column="46"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            val availableStabModes = cam2Info.getCameraCharacteristic("
-        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="501"
-            column="47"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            val availableOisModes = cam2Info.getCameraCharacteristic("
-        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="504"
-            column="46"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            val availableSceneModes = cam2Info.getCameraCharacteristic("
-        errorLine2="                                               ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="507"
-            column="48"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            val availableToneMapModes = cam2Info.getCameraCharacteristic("
-        errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="510"
-            column="50"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            val requestCaps = cam2Info.getCameraCharacteristic("
-        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="513"
-            column="40"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="                cameraId = cam2Info.cameraId,"
-        errorLine2="                                    ~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="555"
-            column="37"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="        val builder = CaptureRequestOptions.Builder()"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="598"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="        val builder = CaptureRequestOptions.Builder()"
-        errorLine2="                                            ~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="598"
-            column="45"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            .setCaptureRequestOption("
-        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="599"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            .setCaptureRequestOption("
-        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="604"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            .setCaptureRequestOption("
-        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="609"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            .setCaptureRequestOption("
-        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="614"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            .setCaptureRequestOption("
-        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="619"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="        Camera2CameraControl.from(cam.cameraControl)"
-        errorLine2="                             ~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="624"
-            column="30"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            .setCaptureRequestOptions(builder.build())"
-        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="625"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            .setCaptureRequestOptions(builder.build())"
-        errorLine2="                                              ~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="625"
-            column="47"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="        val cam2Info = Camera2CameraInfo.from(cam.cameraInfo)"
-        errorLine2="            ~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="659"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="        val cam2Info = Camera2CameraInfo.from(cam.cameraInfo)"
-        errorLine2="                                         ~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="659"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            val range = cam2Info.getCameraCharacteristic(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)"
-        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="665"
-            column="34"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="                ?: cam2Info.getCameraCharacteristic(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM)"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="668"
-            column="29"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            maxZoom = cam2Info.getCameraCharacteristic(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) ?: 1f"
-        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="671"
-            column="32"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="        val maxAfRegions = Camera2CameraInfo.from(cam.cameraInfo)"
-        errorLine2="                                             ~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="720"
-            column="46"/>
-    </issue>
-
-    <issue
-        id="UnsafeOptInUsageError"
-        message="This declaration is opt-in and its usage should be marked with `@androidx.camera.camera2.interop.ExperimentalCamera2Interop` or `@OptIn(markerClass = androidx.camera.camera2.interop.ExperimentalCamera2Interop.class)`"
-        errorLine1="            .getCameraCharacteristic(CameraCharacteristics.CONTROL_MAX_REGIONS_AF)"
-        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="721"
-            column="14"/>
-    </issue>
-
-    <issue
         id="DiscouragedApi"
         message="Fixed screen orientations will be ignored in most cases, starting from Android 16. Android is moving toward a model where apps are expected to adapt to various orientations, display sizes, and aspect ratios."
         errorLine1="            android:screenOrientation=&quot;portrait&quot;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="51"
+            line="68"
             column="13"/>
     </issue>
 
@@ -888,7 +547,7 @@
         errorLine2="                                         ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt"
-            line="161"
+            line="199"
             column="42"/>
     </issue>
 
@@ -899,7 +558,7 @@
         errorLine2="                                              ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt"
-            line="262"
+            line="300"
             column="47"/>
     </issue>
 
@@ -910,7 +569,7 @@
         errorLine2="                                              ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt"
-            line="267"
+            line="305"
             column="47"/>
     </issue>
 
@@ -921,7 +580,7 @@
         errorLine2="                                  ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt"
-            line="268"
+            line="306"
             column="35"/>
     </issue>
 
@@ -932,7 +591,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt"
-            line="1293"
+            line="1490"
             column="32"/>
     </issue>
 
@@ -943,7 +602,7 @@
         errorLine2="                                   ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt"
-            line="1295"
+            line="1492"
             column="36"/>
     </issue>
 
@@ -954,7 +613,7 @@
         errorLine2="                                  ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt"
-            line="1924"
+            line="2193"
             column="35"/>
     </issue>
 
@@ -1124,7 +783,7 @@
         errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="972"
+            line="981"
             column="22"/>
     </issue>
 
@@ -1135,7 +794,7 @@
         errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/spacecamera/camera/CameraManager.kt"
-            line="1018"
+            line="1027"
             column="22"/>
     </issue>
 

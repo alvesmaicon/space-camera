@@ -95,7 +95,7 @@ enum class VideoBitratePreset(val bpp: Float, val label: String) {
     }
 }
 
-@OptIn(ExperimentalCamera2Interop::class)
+@androidx.annotation.OptIn(markerClass = [ExperimentalCamera2Interop::class]) // ADR-005
 class CameraManager(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner
