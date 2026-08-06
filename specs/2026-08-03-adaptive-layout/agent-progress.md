@@ -365,9 +365,37 @@ A causa dominante da CPU **não** foi atacada: é o `TextureView` da pré-visual
 (`ImplementationMode.COMPATIBLE`), e trocar para `PERFORMANCE` exige tirar o espelho da
 câmera frontal do `graphicsLayer`. Fica registrado em Q-04.
 
-**Não verificado:** a sensação. Os 0,8° de zona morta saíram de observação do usuário
-("estou digitando no teclado sobre a mesa"), mas o resultado foi comitado sem ele
-confirmar se parou de tremer e se a linha não ficou lenta ao inclinar de propósito.
+**Segunda rodada, com o usuário no aparelho.** O primeiro ajuste (zona morta 0,25° →
+0,8°) foi comitado sem confirmação e o retorno dele decidiu o resto: *"tremendo menos mas
+ainda treme um pouco"* e *"acompanha o movimento bem"*. A segunda frase é que orientou —
+havia margem para filtrar mais.
+
+Subir mais a zona morta seria errado: ela converte tremor em saltos, porque só publica
+nos picos. E filtrar mais o valor único atrasaria a orientação do arquivo gravado. A
+saída foi separar exibição de física, o mesmo padrão da Q-01, com invariantes em teste
+para que ninguém iguale os dois depois. **Confirmado:** *"tá bem melhor"*.
+
+**O teto do NFR-5 encostou.** Meus comentários levaram o arquivo a 2.241 linhas, uma
+acima do limite — eu estava repetindo em comentário o que a Q-04 já registra. Enxugando
+para apontar em vez de restatear, voltou a 2.230. Sobram 10 linhas; a próxima mudança
+neste arquivo provavelmente precisa extrair o bloco do acelerômetro antes.
+
+**E encostou de novo na mudança seguinte, que virou a Q-05.** A pendência da Q-04 (modo
+`PERFORMANCE` bloqueado pelo espelho) caiu por um caminho que ela não tinha considerado:
+escolher o modo por situação, já que o espelho é opcional e vem desligado. O bloco da
+pré-visualização saiu para `CameraPreviewSurface.kt` (82 linhas), e `CameraScreen.kt`
+fechou em **2.220**.
+
+### Lacuna de rastreabilidade encontrada depois
+
+`CameraPreviewSurface.kt` foi escrito com `Decisions: Q-05` no cabeçalho, mas a Q-05
+**nunca foi escrita** em `decisions.md` — as medições que justificam a extração (o A/B de
+CPU e a comparação por reflexo horizontal) existiam só no KDoc do arquivo. A referência
+foi encontrada pendurada no Gate A da spec seguinte, ao conferir a árvore antes de
+commitar. A Q-05 foi então redigida a partir do que o KDoc já registrava.
+
+Vale como lembrete: link de rastreabilidade escrito em código não se verifica sozinho.
+Este só apareceu porque outra spec foi ler a árvore antes de começar.
 
 ## Pendências
 
@@ -385,7 +413,8 @@ confirmar se parou de tremer e se a linha não ficou lenta ao inclinar de propó
 - [x] Exercitar o AC-9.3 (Ressalva 4)
 - [x] Decidir a Q-02 — corrigir nesta spec (Task 7); NFR-3 passa a atendido
 - [x] Wave 3 — Tasks 7, 8 e 9
-- [ ] Commit da Wave 3 (Gate E — aguarda autorização)
+- [x] Wave 3 comitada (Tasks 7, 8 e 9)
+- [x] Q-05 — `PERFORMANCE` destravado por escolha de modo por situação
 - [ ] Ressalva 3 (texto `Vídeo`/`Foto` sem fundo em retrato) — segue aberta por escolha
 
 ## Bloqueadores

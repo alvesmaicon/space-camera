@@ -79,6 +79,8 @@ import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoOption
 import com.spacecamera.presentation.layout.AxisContainer
 import com.spacecamera.presentation.layout.AxisScope
+import com.spacecamera.presentation.layout.LEVEL_MIN_DELTA
+import com.spacecamera.presentation.layout.LEVEL_SMOOTHING
 import com.spacecamera.presentation.layout.LEVEL_TOLERANCE
 import com.spacecamera.presentation.layout.captureRotation
 import com.spacecamera.presentation.layout.rememberIsWideWindow
@@ -303,6 +305,11 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
     var exposureInteractionTick by remember { mutableStateOf(0) }
     var rollDegrees by remember { mutableStateOf(0f) }
 
+    // Inclinação para **desenhar** a linha do nível: mesma grandeza física de
+    // `rollDegrees`, com filtro muito mais forte. Exigências opostas — aquela decide a
+    // orientação do arquivo gravado e precisa ser rápida; esta só precisa ser estável.
+    var levelRoll by remember { mutableStateOf(0f) }
+
     // Rotação da janela: quanto o compositor já girou o conteúdo. Fica em ROTATION_0
     // enquanto a janela está travada em retrato (telefone) e acompanha o aparelho
     // quando o sistema é livre para girar (tablet a partir do targetSdk 36).
@@ -315,15 +322,10 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
     val view = LocalView.current
     var displayRotation by remember { mutableStateOf(AndroidSurface.ROTATION_0) }
 
-    // As duas grandezas abaixo são **travadas em quadrante**, então mudam raramente —
-    // mas `rollDegrees` muda a cada amostra do acelerômetro. Lidas direto no corpo
-    // deste composable, é a leitura (não o resultado) que o invalida, e ele tem
-    // ~1.100 linhas. `derivedStateOf` faz o corpo recompor só quando o valor
-    // **quantizado** muda, ou seja quando o aparelho vira de quadrante.
-    //
-    // Isto é higiene de escopo, não otimização medida: o A/B em aparelho não mostrou
-    // diferença de CPU (78,5% contra 82,0%), porque o custo de desenho está no
-    // caminho da pré-visualização e não aqui. Ver Q-04 na spec.
+    // Travadas em quadrante, então mudam raramente — mas `rollDegrees` muda a cada
+    // amostra. Lidas direto no corpo deste composable, é a leitura (não o resultado) que
+    // invalida suas ~1.100 linhas; `derivedStateOf` limita isso à troca de quadrante.
+    // Higiene de escopo, não otimização medida — ver Q-04.
 
     // Ícones: giram só o que a janela ainda não girou. Com a janela travada, o
     // resultado é idêntico ao de antes; com a janela livre é zero, senão o ícone
@@ -456,6 +458,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
         // Vetor de gravidade suavizado. Fica aqui, e não em `mutableStateOf`, porque é
         // trabalho interno do filtro — o que interessa publicar é o resultado.
         var gravityX = 0f; var gravityY = 0f
+        var levelGravityX = 0f; var levelGravityY = 0f
         val sensorListener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
@@ -466,18 +469,27 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                         // Semear com a primeira leitura, senão o filtro sobe de zero e o
                         // nível chega inclinado por ~1s ao abrir.
                         gravityX = x; gravityY = y
+                        levelGravityX = x; levelGravityY = y
                     } else {
                         gravityX = smoothGravity(gravityX, x)
                         gravityY = smoothGravity(gravityY, y)
+                        levelGravityX = smoothGravity(levelGravityX, x, LEVEL_SMOOTHING)
+                        levelGravityY = smoothGravity(levelGravityY, y, LEVEL_SMOOTHING)
                     }
                     // Suaviza o **vetor** e só depois tira o ângulo: média de ângulo
                     // atravessa a descontinuidade de ±180° pelo lado errado.
                     val newRoll = rollFromGravity(gravityX, gravityY)
-                    // Zona morta: ruído abaixo do limiar não vira escrita de estado,
-                    // então o nível para de tremer com o aparelho na mesa. Não reduz
-                    // CPU de forma mensurável — ver Q-04.
+                    // Zona morta: ruído abaixo do limiar não vira escrita de estado.
                     if (firstReading || shouldPublishRoll(rollDegrees, newRoll)) {
                         rollDegrees = newRoll
+                    }
+                    // Caminho de exibição: filtro forte, que aqui não custa nada. O de
+                    // cima não pode ser, sob pena de atrasar a captura (FR-6).
+                    val newLevelRoll = rollFromGravity(levelGravityX, levelGravityY)
+                    if (firstReading ||
+                        shouldPublishRoll(levelRoll, newLevelRoll, LEVEL_MIN_DELTA)
+                    ) {
+                        levelRoll = newLevelRoll
                     }
                     // Leitura local e em cache no DisplayManagerGlobal — barata o
                     // bastante para acompanhar o sensor, e garante convergência em
@@ -950,25 +962,15 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
             }
         ) {
         if (permissionGranted) {
-            AndroidView(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        scaleX = if (isFrontCamera && isFrontCameraMirrorEnabled) -1f else 1f
-                    },
-                factory = { ctx ->
-                    PreviewView(ctx).apply {
-                        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-                        scaleType = PreviewView.ScaleType.FIT_CENTER
-                    }
-                },
-                update = { view ->
-                    if (previewView != view) previewView = view
-                    view.scaleType = if (cameraMode == CameraMode.PHOTO && selectedAspectRatio == "Full")
-                        PreviewView.ScaleType.FILL_CENTER
-                    else
-                        PreviewView.ScaleType.FIT_CENTER
-                }
+            // A escolha entre SurfaceView e TextureView, e o porquê de ela existir, ficam
+            // em CameraPreviewSurface — extraído daqui quando o arquivo bateu no teto do
+            // NFR-5 (Q-05).
+            CameraPreviewSurface(
+                isFrontCamera = isFrontCamera,
+                mirrorFrontCamera = isFrontCameraMirrorEnabled,
+                fillCenter = cameraMode == CameraMode.PHOTO && selectedAspectRatio == "Full",
+                onPreviewView = { if (previewView != it) previewView = it },
+                modifier = Modifier.fillMaxSize()
             )
         }
 
@@ -1028,12 +1030,14 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 // "Nivelado" é propriedade física do enquadramento, medida contra a
                 // gravidade — independe da janela. Já o ângulo desenhado é dentro da
                 // janela: com ela girada, rollDegrees cru deixaria a linha 90° fora.
-                val isLevel = abs(rollDegrees) < LEVEL_TOLERANCE ||
-                    abs(abs(rollDegrees) - 90f) < LEVEL_TOLERANCE
+                // `levelRoll` para linha e verde, senão discordariam em movimento.
+                // Continua sendo inclinação física, como o AC-9.3 exige — só menos ruidosa.
+                val isLevel = abs(levelRoll) < LEVEL_TOLERANCE ||
+                    abs(abs(levelRoll) - 90f) < LEVEL_TOLERANCE
                 val levelColor = if (isLevel) Color(0xFF30D158) else Color.White.copy(alpha = 0.55f)
                 val strokeW = 1.dp.toPx()
                 val angleRad =
-                    (windowRelativeRoll(rollDegrees, displayRotation) * PI / 180.0).toFloat()
+                    (windowRelativeRoll(levelRoll, displayRotation) * PI / 180.0).toFloat()
                 val cosA = cos(angleRad)
                 val sinA = sin(angleRad)
                 drawLine(levelColor,

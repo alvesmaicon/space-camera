@@ -66,8 +66,39 @@ private fun windowRotationDegrees(displayRotation: Int): Float = when (displayRo
     else -> 0f
 }
 
-/** Peso da amostra nova na suavização do vetor de gravidade. Ver [smoothGravity]. */
+/**
+ * Peso da amostra nova na suavização do vetor de gravidade. Ver [smoothGravity].
+ *
+ * Alimenta a inclinação **física**: [captureRotation], [uiRotation] e o verde de
+ * nivelado. Não pode ser muito baixo porque atrasa a orientação do arquivo gravado —
+ * medido: para cruzar o limiar de 45° a partir do repouso são ~4,3 amostras (~250ms) a
+ * 0,15, contra ~8,3 (~490ms) a 0,08. Girar o aparelho e apertar gravar dentro desse
+ * intervalo sairia com a orientação antiga. FR-6 é Critical.
+ */
 internal const val GRAVITY_SMOOTHING = 0.15f
+
+/**
+ * Peso da amostra nova na suavização usada **só para desenhar** a linha do nível.
+ *
+ * Bem mais forte que [GRAVITY_SMOOTHING] porque aqui atraso não custa nada: uma linha
+ * de horizonte que converge em meio segundo é melhor que uma que persegue vibração. É a
+ * mesma separação da Q-01 — grandeza física e grandeza de exibição saem do mesmo sensor
+ * mas têm exigências opostas.
+ *
+ * Motivo de existir, em vez de simplesmente aumentar a zona morta: zona morta
+ * **converte** tremor contínuo em saltos, porque só publica nos picos. Menos frequente,
+ * porém cada salto maior. Vibração de teclado sobre a mesa é alta frequência, e o
+ * instrumento para isso é filtro.
+ */
+internal const val LEVEL_SMOOTHING = 0.05f
+
+/**
+ * Zona morta da linha do nível, menor que [ROLL_MIN_DELTA].
+ *
+ * Pode ser menor porque [LEVEL_SMOOTHING] já derrubou a amplitude do ruído antes: o
+ * papel que sobra é só o de parar de publicar quando o valor convergiu.
+ */
+internal const val LEVEL_MIN_DELTA = 0.25f
 
 /**
  * Menor variação de inclinação que vale publicar, em graus. Ver [shouldPublishRoll].

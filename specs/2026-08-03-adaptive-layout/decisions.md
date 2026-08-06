@@ -867,14 +867,117 @@ sob teste — as medições 1 e 2 tinham valores absolutos incompatíveis entre 
 117%) para o *mesmo* código. Comparação de amostra única aqui não é medição; é sorteio.
 Ordem alternada e mediana são o mínimo.
 
+#### Segunda rodada: separar exibição de física
+
+Com a zona morta em 0,8° o usuário reportou *"a linha tá tremendo menos mas ainda treme
+um pouco"* e, decisivo, *"ela acompanha o movimento bem"* — ou seja, havia margem para
+filtrar mais, e o que restava não era problema de limiar.
+
+Aumentar mais a zona morta seria a resposta errada: ela **converte** tremor contínuo em
+saltos, porque só publica nos picos. Ficaria menos frequente e cada salto maior. E o
+teto da invariante (metade de ±2°) já estava perto.
+
+Vibração de teclado é alta frequência, e o instrumento para isso é filtro. Mas filtrar
+mais o valor único atrasaria `captureRotation`: medido em ~4,3 amostras (~250ms) para
+cruzar o limiar de 45° com `GRAVITY_SMOOTHING = 0,15`, contra ~8,3 (~490ms) a 0,08.
+
+Solução: **duas grandezas**, como a Q-01 já fez para captura e UI.
+
+| Caminho | Filtro | Zona morta | Alimenta |
+|---|---|---|---|
+| Física | 0,15 | 0,8° | `captureRotation`, `uiRotation` |
+| Exibição | **0,05** | 0,25° | ângulo da linha e o verde de nivelado |
+
+O verde passou a vir do caminho de exibição junto com a linha, senão os dois
+discordariam durante o movimento. Continua sendo inclinação **física**, como o AC-9.3
+exige — só menos ruidosa.
+
+Duas invariantes novas em teste, porque é o tipo de acoplamento que alguém desfaz sem
+perceber: o filtro de exibição tem de ser mais forte que o físico, e o físico tem de
+cruzar o limiar de quadrante em ≤ 6 amostras. Se alguém afrouxar o físico "para a linha
+ficar mais lisa", o teste falha antes de a mídia sair torta.
+
+**Confirmado pelo usuário:** *"tá bem melhor"*. Resolvido.
+
+#### Aprendizado sobre o teto do NFR-5
+
+Os comentários desta rodada levaram `CameraScreen.kt` a **2.241 linhas**, uma acima do
+teto de 2.240. A causa era restatear em comentário o raciocínio que já vive aqui; apontar
+para a Q-04 resolveu e devolveu o arquivo a 2.230.
+
+Sobram **10 linhas** de folga. O NFR-5 prescreve extrair componentes acima do teto, e o
+candidato pronto é o `DisposableEffect` do acelerômetro, que já é autocontido: viraria
+`rememberDeviceTilt()` em `presentation/layout/`. A próxima mudança que tocar este
+arquivo provavelmente precisa fazer isso primeiro.
+
 #### Pendente
 
-- **Sensação não verificada.** Os 0,8° saíram de uma observação do usuário, mas o
-  resultado não foi confirmado com ele antes de comitar. Se ainda tremer, subir; se a
-  linha ficou lenta ao inclinar de propósito, baixar. `GRAVITY_SMOOTHING` e
-  `ROLL_MIN_DELTA` são constantes nomeadas para isso.
 - **Modo `PERFORMANCE`** continua bloqueado pelo espelho no `graphicsLayer`. É onde está
-  o ganho grande de CPU e bateria.
+  o ganho grande de CPU e bateria: ~95% do consumo com a câmera aberta é o `TextureView`
+  desenhando cada quadro na hierarquia de views.
+  → **Resolvido na Q-05**, por caminho que não estava previsto aqui: em vez de mover o
+  espelho para o CameraX, escolher o modo por situação.
+
+---
+
+### Q-05: destravar o modo `PERFORMANCE` sem mover o espelho
+
+**Levantada por:** a pendência da Q-04 — o ganho de CPU estava identificado e parado
+atrás do espelhamento no `graphicsLayer`.
+**Status:** resolvida.
+**Afeta:** NFR-1, NFR-5, `CameraScreen`, `CameraPreviewSurface`
+
+#### A saída que a Q-04 não tinha visto
+
+A Q-04 enquadrou como escolha única para o app inteiro: ou `COMPATIBLE` com espelho, ou
+`PERFORMANCE` sem ele, e destravar exigiria mover o espelhamento para o `setMirrorMode`
+do CameraX. Mas o espelho da frontal é **opcional e vem desligado**, então a escolha não
+precisa ser única — pode ser por situação:
+
+| Situação | Modo | Por quê |
+|---|---|---|
+| sem espelho (padrão) | `PERFORMANCE` (`SurfaceView`) | compõe em overlay; o app quase não desenha |
+| com espelho | `COMPATIBLE` (`TextureView`) | `graphicsLayer` não transforma `SurfaceView` |
+
+O custo antigo passa a ser pago só por quem liga o espelho **e** está na frontal. O
+caminho comum fica barato sem que ninguém mexa em `setMirrorMode`.
+
+#### As duas medições
+
+A/B alternado em Motorola edge 60 neo:
+
+| Modo | CPU do processo | Quadros/s desenhados pelo app |
+|---|---|---|
+| `COMPATIBLE` | 60% | ~700 |
+| `PERFORMANCE` | 36–48% | ~100 |
+
+*Comparar com a tabela da Q-04 seria erro* — são rodadas distintas, e esta spec já
+registrou que valores absolutos de rodadas diferentes não se comparam. O que vale aqui é
+o A/B interno, alternado, na mesma rodada.
+
+Que `graphicsLayer` **não** espelha `SurfaceView` também foi medido, não suposto:
+comparando a tela com espelho ligado contra o **reflexo horizontal** da tela com ele
+desligado, o reflexo *piorava* a semelhança (29,4 contra 15,8, sobre piso de ruído de
+3,7) — ou seja, a transformação estava sendo ignorada. Sem essa medição, o
+`PERFORMANCE` com espelho passaria como funcionando.
+
+#### Duas armadilhas do caminho
+
+1. **`implementationMode` só é honrado antes de a superfície existir.** Trocar o modo em
+   `update` não faz efeito; exige um `PreviewView` novo, o que a `key(mirrored)` força.
+2. **Recriar o `PreviewView` reabre o caminho da Q-02** — "`PreviewView` novo, mesmo
+   `LifecycleOwner`". Por isso `onPreviewView` é chamado também a cada recriação, e não
+   só na criação.
+
+Nada disto afeta a mídia gravada: quem espelha o arquivo é o `setMirrorMode` aplicado ao
+`VideoCapture` no `CameraManager`.
+
+#### Por que virou arquivo próprio
+
+`CameraScreen.kt` estava a 10 linhas do teto do NFR-5 (ver acima). O bloco da
+pré-visualização deixou de ser trivial ao ganhar a escolha de modo e as duas armadilhas
+acima, então foi ele que saiu — `CameraPreviewSurface.kt`, 82 linhas. O candidato que a
+nota anterior previa (`rememberDeviceTilt()`) continua disponível para a próxima vez.
 
 ---
 

@@ -225,6 +225,45 @@ class DeviceRotationTest {
             "ROLL_MIN_DELTA=$ROLL_MIN_DELTA precisa ser < metade de $LEVEL_TOLERANCE",
             ROLL_MIN_DELTA < LEVEL_TOLERANCE / 2f
         )
+        assertTrue(
+            "LEVEL_MIN_DELTA=$LEVEL_MIN_DELTA precisa ser < metade de $LEVEL_TOLERANCE",
+            LEVEL_MIN_DELTA < LEVEL_TOLERANCE / 2f
+        )
+    }
+
+    /**
+     * Requirements: FR-6
+     *
+     * A invariante que protege o arquivo gravado. O caminho de exibição pode ser
+     * filtrado à vontade, mas o **físico** alimenta `captureRotation`: se alguém
+     * igualar os dois "para a linha ficar mais lisa", girar o aparelho e apertar gravar
+     * passa a produzir mídia com a orientação antiga.
+     */
+    @Test
+    fun `filtro de exibição é mais forte que o físico, nunca o contrário`() {
+        assertTrue(
+            "LEVEL_SMOOTHING=$LEVEL_SMOOTHING deve ser < GRAVITY_SMOOTHING=$GRAVITY_SMOOTHING",
+            LEVEL_SMOOTHING < GRAVITY_SMOOTHING
+        )
+    }
+
+    /**
+     * Quantifica o atraso que o filtro físico impõe à orientação da mídia: quantas
+     * amostras para cruzar o limiar de 45° a partir do repouso, num giro de 90°.
+     *
+     * A ~17 amostras/s, 0,15 dá ~4,3 amostras (~250ms). O teste falha se alguém baixar
+     * o filtro ao ponto de o atraso dobrar, que é onde "girei e gravei" começa a sair
+     * com a orientação errada.
+     */
+    @Test
+    fun `atraso do filtro físico até cruzar o limiar de quadrante é aceitável`() {
+        var angulo = 0f
+        var amostras = 0
+        while (angulo < 45f && amostras < 100) {
+            angulo = smoothGravity(angulo, 90f, GRAVITY_SMOOTHING)
+            amostras++
+        }
+        assertTrue("cruzou 45° em $amostras amostras, esperado <= 6", amostras <= 6)
     }
 
     /**
