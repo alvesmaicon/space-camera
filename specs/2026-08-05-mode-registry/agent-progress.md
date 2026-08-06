@@ -3,10 +3,10 @@
 ## Estado atual
 
 - **Fase:** Implementação — Onda 1
-- **Gate atual:** Onda 1 completa (Tarefas 1 a 4) — no Checkpoint
-- **Status:** em andamento — Checkpoint da Onda 1
+- **Gate atual:** **Checkpoint da Onda 1 passou** — pronto para a Onda 2
+- **Status:** em andamento — próxima é a Tarefa 5 (sondagem de capacidade)
 - **Confiança:** 92%
-- **Última atualização:** 2026-08-05
+- **Última atualização:** 2026-08-06
 
 ## Registro de sessões
 
@@ -171,7 +171,8 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] Tarefa 2 — contrato do registro
 - [x] Tarefa 3 — opt-in corrigido
 - [x] Tarefa 4 — infra de teste Compose na JVM
-- [ ] Checkpoint da Onda 1 — conferir em aparelho que o app não mudou
+- [x] Checkpoint da Onda 1 — app conferido em aparelho, sem mudança de comportamento
+- [ ] Tarefa 5 — sondagem de capacidade e `evt=caps` estendido (Onda 2)
 - [ ] Levar as armadilhas de medição do baseline para o CLAUDE.md na Tarefa 13
 - [ ] Levar o 1:1 para o ROADMAP.md, junto do ramo morto em `cameraXAspectRatio()`
 

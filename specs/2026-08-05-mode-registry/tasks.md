@@ -112,17 +112,17 @@
 - **_Requirements: NFR-5_**
 - **_Decisions: ADR-006_**
 
-### Checkpoint da Onda 1
-- [ ] Critérios de aceite das Tarefas 1–4 atendidos
-- [ ] Verificação de cada tarefa passou (testes + build + conferência)
-- [ ] Baseline capturado em **aparelho real** e registrado em `agent-progress.md`
-- [ ] Registro instanciável e testado em JVM pura, ainda sem consumidores
-- [ ] Teste de completude do registro existe e roda
-- [ ] Opt-in corrigido e baseline de lint **encolhido**, não regenerado
-- [ ] Suíte completa em ≤ 90 s
-- [ ] **O app em execução está idêntico ao do início da onda** — nenhuma mudança de comportamento
-- [ ] Nenhum bloqueio aberto em `decisions.md`
-- [ ] Pronto para a Onda 2
+### Checkpoint da Onda 1 — **PASSOU** (2026-08-06, commit `9d8e30d`)
+- [x] Critérios de aceite das Tarefas 1–4 atendidos
+- [x] Verificação de cada tarefa passou (testes + build + conferência)
+- [x] Baseline capturado em **aparelho real** e registrado em `agent-progress.md`
+- [x] Registro instanciável e testado em JVM pura, ainda sem consumidores — 24 testes
+- [x] Teste de completude do registro existe e roda (passa vazio, como previsto)
+- [x] Opt-in corrigido e baseline de lint **encolhido** de 119 para 88, nenhuma categoria cresceu
+- [x] Suíte completa em **7 s** (teto 90 s), 103 testes
+- [x] **O app em execução está idêntico ao do início da onda** — conferido em aparelho: `evt=caps` idêntico ao baseline; `evt=bind` idêntico campo a campo nas combinações exercitadas (`VIDEO/9:16/eis=true`, `PHOTO/9:16/eis=false`); p95 de latência 37 ms contra 38 ms do baseline
+- [x] Nenhum bloqueio aberto em `decisions.md`
+- [x] Pronto para a Onda 2 — e o portão de viabilidade dela (`MANUAL_SENSOR`) já foi antecipado na Tarefa 1
 
 ### Onda 2 — Sondagem de capacidade
 
