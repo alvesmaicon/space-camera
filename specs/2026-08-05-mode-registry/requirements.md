@@ -81,9 +81,16 @@ timer de contagem regressiva.
 **Prioridade:** Crítica
 
 Enquanto o modo ativo for Foto, o sistema deve apresentar comportamento observável idêntico
-ao da versão anterior à refatoração: proporção conforme a seleção do usuário (9:16, 3:4, 1:1,
+ao da versão anterior à refatoração: proporção conforme a seleção do usuário (9:16, 3:4 e
 Full), EIS desligado, modo de flash em ciclo OFF→AUTO→ON, preset de qualidade de foto
 aplicado e revisão da foto capturada.
+
+> **Corrigido em 2026-08-05 (Q-01, decisão do usuário).** A redação original listava quatro
+> proporções, incluindo 1:1. O app oferece **três** — `photoRatios = listOf("Full", "9:16",
+> "3:4")`, confirmado em aparelho. O `1:1` só existe num ramo inalcançável do
+> `CameraManager` e virou item de ROADMAP. Manter "quatro" aqui faria a remigração da
+> Tarefa 7 acrescentar uma proporção nova, que é o oposto do iso-comportamento que este
+> mesmo requisito exige.
 
 ### FR-5: Gate de capacidade por modo
 **Prioridade:** Crítica

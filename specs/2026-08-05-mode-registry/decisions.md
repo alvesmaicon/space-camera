@@ -1028,7 +1028,7 @@ alteração de código, senão NFR-1, NFR-3 e NFR-4 ficam sem baseline contra o 
 ### Q-01: FR-4 fala em quatro proporções de foto; o app oferece três
 
 **Levantada por:** Tarefa 1 (baseline), ao capturar uma foto em cada proporção.
-**Status:** **aberta — precisa de decisão do usuário antes da Tarefa 7.**
+**Status:** **resolvida** — usuário escolheu a saída A em 2026-08-05.
 **Afeta:** FR-4, AC-4.1, Tarefa 7, NFR-1
 
 FR-4 diz que a Foto tem "proporção conforme a seleção do usuário (9:16, 3:4, 1:1, Full)", e
@@ -1054,8 +1054,20 @@ Três saídas:
 | B — implementar o 1:1 nesta spec | Amplia o escopo e quebra o iso-comportamento da Tarefa 7 de propósito. Precisa de AC próprio. |
 | C — implementar o 1:1 em spec separada | Mantém esta spec limpa; o ramo morto do `CameraManager` fica esperando. |
 
-Não decido isto sozinho: `requirements.md` é do domínio da skill `spec`, e a escolha entre
-A e B muda o escopo entregue.
+#### Decisão: A — corrigir o requisito
+
+O usuário escolheu corrigir a redação. Aplicado:
+
+- **FR-4** passa a listar três proporções (9:16, 3:4, Full), com nota explicando a correção.
+- **Tarefa 7** verifica três proporções, e passa a comparar contra as dimensões do baseline
+  (4096×2304, 4096×3072, 1840×4096) em vez de só "conferir a mídia salva".
+- O **1:1** vira item de ROADMAP, junto do ramo morto de `cameraXAspectRatio()` que hoje o
+  mapeia para `RATIO_4_3` sem ninguém chamar.
+
+*Desvio de processo registrado:* a skill `dev` não edita `requirements.md` — quem faz isso é
+a skill `spec`. A edição foi feita aqui porque é correção factual decidida explicitamente
+pelo usuário, e deixá-la pendente manteria a Tarefa 7 inexequível. Fica anotado para quem
+reabrir a spec.
 
 ### Q-02: o método de verificação do NFR-1 precisa de mais que `evt=bind`
 
@@ -1096,6 +1108,42 @@ conclusão errada era plausível ("o app parou de rebindar"). Como o NFR-1 se ve
 comparando `evt=bind` entre dois commits, isto atinge o instrumento central da spec.
 
 Fica como candidato a entrar no CLAUDE.md junto das outras armadilhas, na Tarefa 13.
+
+### Q-05: `abstract class` em vez de `sealed class` no contrato de modo
+
+**Levantada por:** Tarefa 2, ao escrever o teste do gate de capacidade.
+**Status:** resolvida — desvio aplicado e justificado.
+**Afeta:** ADR-001, design §3, Tarefa 2
+
+O design §3 e o ADR-001 especificam `sealed class CameraModeDefinition`. Na
+implementação, isso impediu o teste do FR-5: o Kotlin proíbe herdar de classe selada a
+partir de outro módulo de compilação, e `src/test` é outro módulo. Sem poder declarar um
+modo de mentira que exija capacidade, o **caso negativo do gate ficaria sem teste** até a
+Tarefa 11 — quatro ondas depois de a lógica existir, e justamente o caso que o AC da
+Tarefa 2 cobra.
+
+Três saídas foram consideradas: declarar um modo de teste no código de produção (que
+então é empacotado no APK), esperar o Pro da Tarefa 11 (deixando FR-5 sem rede até lá), ou
+trocar `sealed` por `abstract`.
+
+**Escolhida a terceira**, porque o que `sealed` oferece aqui é nada:
+
+- O que `sealed` dá é `when` exaustivo sobre os modos. É **exatamente esse `when` que a
+  spec existe para eliminar** — o desenho todo é iterar o registro em vez de ramificar por
+  modo. Usar a exaustividade seria reintroduzir o problema.
+- Fechar a hierarquia contra outros módulos não protege nada: o projeto é módulo único, e
+  todo modo mora em `:app`.
+
+E o que o ADR-001 realmente defende continua intacto, porque vem de `abstract`, não de
+`sealed`: membro abstrato obrigando cada modo a responder sobre disparador e flash, e
+migração futura que **quebra o build em todos os modos** em vez de compilar calada.
+
+Os quatro guarda-corpos seguem valendo, e dois deles agora têm teste por reflexão: nenhum
+campo mutável, e nenhum membro de tipo `androidx.camera` ou do controller.
+
+*Para quem reabrir a spec:* vale corrigir a palavra em `design.md` §3 e no ADR-001. Não
+mexi porque `design.md` é domínio da skill `spec`, e o desvio está documentado no KDoc da
+classe e aqui.
 
 ### Q-04: divergência de nome do campo de latência
 

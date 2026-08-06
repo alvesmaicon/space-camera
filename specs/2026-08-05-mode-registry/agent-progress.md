@@ -3,8 +3,8 @@
 ## Estado atual
 
 - **Fase:** Implementação — Onda 1
-- **Gate atual:** A concluído; Tarefa 1 concluída
-- **Status:** em andamento — próximas são as Tarefas 2, 3 e 4
+- **Gate atual:** Tarefas 1 e 2 concluídas
+- **Status:** em andamento — próximas são as Tarefas 3 e 4
 - **Confiança:** 92%
 - **Última atualização:** 2026-08-05
 
@@ -100,7 +100,7 @@ Também reporta `RAW`. Isso fecha, quatro ondas antes, o maior risco de execuç�
 
 | # | Assunto | Situação |
 |---|---|---|
-| Q-01 | FR-4 fala em 4 proporções de foto; o app tem 3 (sem 1:1) | **bloqueia a Tarefa 7** — precisa de decisão |
+| Q-01 | FR-4 fala em 4 proporções de foto; o app tem 3 (sem 1:1) | **resolvida** — usuário optou por corrigir o requisito para três |
 | Q-02 | `evt=bind` sozinho não verifica iso-comportamento | resolvida: método emendado com dimensão da mídia |
 | Q-03 | anel do logcat descarta a telemetria antes da leitura | resolvida: `-G 16M` + captura ao vivo |
 | Q-04 | spec diz `latency_ms`, código emite `elapsed_ms` | registrada |
@@ -119,7 +119,7 @@ roteiro das Tarefas 6, 7 e 11 já nasça certo.
 | Onda | Tarefa | Status | Observações |
 |---:|---|---|---|
 | 1 | 1. Baseline de comportamento e latência | **Concluída** | edge 60 neo; `MANUAL_SENSOR` confirmado — portão da Onda 2 antecipado |
-| 1 | 2. Contrato do registro de modos | Pendente | sem consumidores; não muda o app |
+| 1 | 2. Contrato do registro de modos | **Concluída** | 24 testes JVM puros; `abstract` em vez de `sealed` (Q-05) |
 | 1 | 3. Corrigir opt-in do Camera2Interop | Pendente | pré-requisito do Pro |
 | 1 | 4. Infra de teste de Compose na JVM | Pendente | falta `testImplementation` do `compose-ui-test-junit4` |
 | 2 | 5. Sondagem de capacidade + `evt=caps` | Pendente | portão de viabilidade do Pro |
@@ -167,14 +167,12 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] Iniciar a implementação pela Tarefa 1 (skill `dev`)
 - [x] Confirmar `MANUAL_SENSOR` no aparelho de teste antes de contar com a Onda 6 —
       confirmado no baseline, quatro ondas antes do checkpoint que o exigia
-- [ ] **Decidir a Q-01** (três ou quatro proporções de foto) antes da Tarefa 7
-- [ ] Tarefas 2, 3 e 4 — Onda 1
+- [x] **Q-01 decidida** — requisito corrigido para três proporções; 1:1 vai para o ROADMAP
+- [x] Tarefa 2 — contrato do registro
+- [ ] Tarefas 3 e 4 — fecham a Onda 1
 - [ ] Levar as armadilhas de medição do baseline para o CLAUDE.md na Tarefa 13
+- [ ] Levar o 1:1 para o ROADMAP.md, junto do ramo morto em `cameraXAspectRatio()`
 
 ## Bloqueios
 
-Nenhum para as Tarefas 2, 3 e 4.
-
-**Q-01 bloqueia a Tarefa 7** — FR-4 descreve quatro proporções de foto e o app tem três.
-Decidir antes de remigrar a Foto, senão a implementação pode "corrigir" acrescentando o 1:1
-e quebrar o iso-comportamento que o NFR-1 exige. Folga de quatro ondas.
+Nenhum. A Q-01, que bloqueava a Tarefa 7, foi decidida na mesma sessão em que apareceu.

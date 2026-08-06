@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 1 · **Em andamento:** 0 · **Pendentes:** 12
+- **Concluídas:** 2 · **Em andamento:** 0 · **Pendentes:** 11
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -44,7 +44,7 @@
   - [x] Conferência manual: a tela medida era a câmera — `content-desc` `Flash`/`Trocar câmera`/`Timer desativado`, 32 nós
 - **_Requirements: NFR-1, NFR-3, NFR-4_**
 
-#### [ ] 2. Contrato do registro de modos
+#### [x] 2. Contrato do registro de modos
 - **Size:** M
 - **Complexity:** medium
 - **Risk:** low
@@ -62,9 +62,10 @@
   - **DADO** os testes desta tarefa **QUANDO** rodam **ENTÃO** não carregam Compose nem CameraX
   - **DADO** `CameraModeDefinition` **QUANDO** revisada **ENTÃO** não tem estado mutável, não chama o controller e não expõe `@Composable` (guarda-corpos do design §3)
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest --tests '*ModeRegistry*' --tests '*ModeDefinition*'`
-  - [ ] Build: `./gradlew assembleDebug detekt`
-  - [ ] Conferência manual: nenhuma — esta tarefa não muda o app em execução, e é isso que a torna segura
+  - [x] Testes passam: `./gradlew testDebugUnitTest --tests '*ModeRegistry*' --tests '*ModeDefinition*'` — 24 testes, JVM pura
+  - [x] Build: `./gradlew assembleDebug detekt lint`
+  - [x] Conferência manual: nenhuma — esta tarefa não muda o app em execução, e é isso que a torna segura
+  - [x] Asserções conferidas por mutação: quebrar o gate de capacidade e inverter a ordem do disparador do Vídeo fazem os testes falharem
 - **_Requirements: FR-1, FR-5, NFR-5_**
 - **_Decisions: ADR-001, ADR-002, ADR-006_**
 
@@ -210,7 +211,7 @@
 - **Verification:**
   - [ ] Testes passam: `./gradlew testDebugUnitTest`
   - [ ] Ramificações órfãs: `grep -rn "CameraMode.VIDEO\|CameraMode.PHOTO" app/src/main` → só o registro e as definições
-  - [ ] Conferência manual em aparelho: capturar foto nas quatro proporções e conferir a mídia salva
+  - [ ] Conferência manual em aparelho: capturar foto nas **três** proporções (9:16, 3:4, Full) e conferir a mídia salva contra o baseline — 4096×2304, 4096×3072 e 1840×4096. Localizar o disparador **por rótulo** a cada proporção: ele muda de posição (y=1921 em 3:4, y=2188 em 9:16, y=2455 em Full)
 - **_Requirements: FR-2, FR-4, NFR-1_**
 - **_Decisions: ADR-001, ADR-002_**
 
