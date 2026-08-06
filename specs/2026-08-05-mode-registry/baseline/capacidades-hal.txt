@@ -1,0 +1,7 @@
+# Capacidades do HAL — Motorola edge 60 neo, câmera 0
+# Fonte: adb shell dumpsys media.camera, 2026-08-05
+
+capabilities               = BACKWARD_COMPATIBLE MANUAL_SENSOR MANUAL_POST_PROCESSING READ_SENSOR_SETTINGS RAW BURST_CAPTURE STREAM_USE_CASE COLOR_SPACE_PROFILES
+sensitivityRange (ISO)     = 100 19200
+exposureTimeRange (ns)     = 100000 400000000
+maxAnalogSensitivity       = 4480

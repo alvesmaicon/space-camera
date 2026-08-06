@@ -1023,6 +1023,94 @@ alteração de código, senão NFR-1, NFR-3 e NFR-4 ficam sem baseline contra o 
 
 ---
 
+## Fase de implementação — questões levantadas na execução
+
+### Q-01: FR-4 fala em quatro proporções de foto; o app oferece três
+
+**Levantada por:** Tarefa 1 (baseline), ao capturar uma foto em cada proporção.
+**Status:** **aberta — precisa de decisão do usuário antes da Tarefa 7.**
+**Afeta:** FR-4, AC-4.1, Tarefa 7, NFR-1
+
+FR-4 diz que a Foto tem "proporção conforme a seleção do usuário (9:16, 3:4, 1:1, Full)", e
+a verificação da Tarefa 7 manda "capturar foto nas **quatro** proporções". Mas
+[CameraScreen.kt:718](../../app/src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt#L718)
+declara `photoRatios = listOf("Full", "9:16", "3:4")` — **três**. Confirmado em aparelho: o
+ciclo é Full → 9:16 → 3:4 → Full.
+
+O `"1:1"` existe num ramo de
+[CameraManager.kt:222](../../app/src/main/java/com/spacecamera/camera/CameraManager.kt#L222)
+(`"3:4", "1:1" -> RATIO_4_3`), mas **nenhuma UI o alcança**. É código morto, provavelmente
+resto de uma versão anterior.
+
+Como está, a verificação da Tarefa 7 é inexequível, e o risco é pior que isso: quem for
+implementar pode **acrescentar** o 1:1 para satisfazer o requisito — e aí a remigração
+muda comportamento, que é o oposto do que NFR-1 exige da Tarefa 7.
+
+Três saídas:
+
+| Saída | Efeito |
+|---|---|
+| **A — corrigir o requisito** (recomendada) | FR-4 e a Tarefa 7 passam a dizer três proporções; a remigração fica iso-comportamento de verdade. O 1:1 vira item de ROADMAP. |
+| B — implementar o 1:1 nesta spec | Amplia o escopo e quebra o iso-comportamento da Tarefa 7 de propósito. Precisa de AC próprio. |
+| C — implementar o 1:1 em spec separada | Mantém esta spec limpa; o ramo morto do `CameraManager` fica esperando. |
+
+Não decido isto sozinho: `requirements.md` é do domínio da skill `spec`, e a escolha entre
+A e B muda o escopo entregue.
+
+### Q-02: o método de verificação do NFR-1 precisa de mais que `evt=bind`
+
+**Levantada por:** Tarefa 1 (baseline).
+**Status:** resolvida — método emendado e registrado em `baseline/README.md`.
+**Afeta:** NFR-1, Tarefas 6, 7 e 13
+
+O NFR-1 manda comparar "os campos de `evt=bind` e `evt=caps`" entre os dois commits. A
+medição mostrou que isso é necessário mas **insuficiente**, por duas razões concretas:
+
+1. **O único campo que distingue Vídeo de Foto é o `eis`.** Os outros oito são iguais nos
+   dois modos.
+2. **`aspect` é a proporção da caixa de pré-visualização, não a de captura** — vem de
+   `previewAspectLabel`, que a UI define conforme a janela
+   ([CameraManager.kt:548-550](../../app/src/main/java/com/spacecamera/camera/CameraManager.kt#L548), herdado da
+   spec do layout adaptativo). Ou seja, **AC-3.1 não é observável em `evt=bind`**.
+
+Emenda ao método, sem mexer no requisito: a comparação de iso-comportamento passa a incluir
+as **dimensões da mídia salva** (cabeçalho JPEG e `MediaStore`), que estão no baseline. Foi
+com esse instrumento que se confirmou o essencial de AC-3.1 — vídeo em 1920×1080 (16:9) com
+a foto configurada em "Full".
+
+`evt=photo size=` não serve: no caminho direto reporta o alvo do preset, e o MAXIMA não tem
+alvo, então sai `0x0`.
+
+### Q-03: o anel do logcat descarta a telemetria antes da leitura
+
+**Levantada por:** Tarefa 1 (baseline).
+**Status:** resolvida — `adb logcat -G 16M` mais captura ao vivo.
+**Afeta:** método de verificação de todas as tarefas com conferência em aparelho
+
+O anel `main` do logcat tem 256 KiB e, com a câmera aberta, o `camerahalserver` o mantém
+saturado. As linhas do app são expulsas em segundos: `adb logcat -d` depois do fato
+reportou 3 e 4 binds onde tinham ocorrido 10.
+
+Diagnostiquei isso errado duas vezes antes de rodar `adb logcat -g` — e as duas vezes a
+conclusão errada era plausível ("o app parou de rebindar"). Como o NFR-1 se verifica
+comparando `evt=bind` entre dois commits, isto atinge o instrumento central da spec.
+
+Fica como candidato a entrar no CLAUDE.md junto das outras armadilhas, na Tarefa 13.
+
+### Q-04: divergência de nome do campo de latência
+
+**Status:** registrada, sem ação.
+
+A spec fala em `latency_ms` (Tarefa 1 e NFR-4); a telemetria emite **`elapsed_ms`**
+([CameraTelemetry.kt:40](../../app/src/main/java/com/spacecamera/camera/CameraTelemetry.kt#L40)).
+O baseline mediu `elapsed_ms`. Se a FR-13 introduzir `evt=mode` com um campo de latência,
+vale usar o mesmo nome já existente em vez de criar um terceiro.
+
+---
+
 ## Bloqueios
 
-Nenhum.
+Nenhum que impeça as Tarefas 2, 3 e 4.
+
+**A Q-01 bloqueia a Tarefa 7** (Foto remigrado) — precisa de decisão antes, e há quatro
+ondas de folga até lá.

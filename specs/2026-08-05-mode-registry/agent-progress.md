@@ -2,9 +2,9 @@
 
 ## Estado atual
 
-- **Fase:** Planejamento concluído
-- **Gate atual:** 5 — Go/No-Go
-- **Status:** **GO** — pronto para construir
+- **Fase:** Implementação — Onda 1
+- **Gate atual:** A concluído; Tarefa 1 concluída
+- **Status:** em andamento — próximas são as Tarefas 2, 3 e 4
 - **Confiança:** 92%
 - **Última atualização:** 2026-08-05
 
@@ -69,11 +69,56 @@
 
 **Próximo passo:** implementação pela skill `dev`, começando pela Tarefa 1.
 
+### Sessão: 2026-08-05 — Gate A e Tarefa 1 (baseline)
+
+- **Agente:** skill `dev`
+- **Tarefa:** 1 — Baseline de comportamento e de latência
+- **Gate:** A concluído · Tarefa 1 **concluída**
+- **Testes:** 100% passando, suíte em 5,9 s
+- **Aparelho:** Motorola edge 60 neo, Android 16 (API 36) — real
+
+**Gate A.** Os quatro artefatos lidos por inteiro. Duas condições de ambiente resolvidas
+antes de escolher tarefa:
+
+1. **Árvore suja com a Wave 3 da adaptive-layout.** Comitada primeiro, a pedido do usuário,
+   em três commits (`17d4685` código, `1bd6105` ROADMAP.md, `3b3043e` esta spec). Sem isso o
+   baseline não teria `GIT_SHA` de referência e o `wc -l` sairia de código não comitado.
+2. **Lacuna de rastreabilidade na spec anterior.** `CameraPreviewSurface.kt` referenciava
+   `Decisions: Q-05`, que nunca havia sido escrita. Redigida a partir das medições que
+   estavam só no KDoc, antes de commitar.
+
+**Tarefa 1.** Todos os passos feitos em aparelho real. APK conferido por dex
+(`GIT_SHA 3b3043e` presente) antes de qualquer medição. Baseline em
+[`baseline/`](baseline/README.md).
+
+**Antecipado: o portão de viabilidade da Onda 2 está atendido.** O aparelho reporta
+`MANUAL_SENSOR`, ISO 100–19200 (analógico até 4480) e exposição de 1/10000 s a 1/2,5 s.
+Também reporta `RAW`. Isso fecha, quatro ondas antes, o maior risco de execução da spec —
+"aparelho de teste sem `MANUAL_SENSOR`, o Pro fica inverificável".
+
+**Quatro questões abertas em `decisions.md`**, uma delas bloqueante:
+
+| # | Assunto | Situação |
+|---|---|---|
+| Q-01 | FR-4 fala em 4 proporções de foto; o app tem 3 (sem 1:1) | **bloqueia a Tarefa 7** — precisa de decisão |
+| Q-02 | `evt=bind` sozinho não verifica iso-comportamento | resolvida: método emendado com dimensão da mídia |
+| Q-03 | anel do logcat descarta a telemetria antes da leitura | resolvida: `-G 16M` + captura ao vivo |
+| Q-04 | spec diz `latency_ms`, código emite `elapsed_ms` | registrada |
+
+**Duas conclusões erradas minhas, corrigidas por remedição.** Levantei "o disparador não
+responde" e "`selectedAspectRatio` está defasado do bind" como defeitos do app. Os dois
+eram o mesmo erro meu: **os controles mudam de posição conforme a proporção da foto** — o
+disparador vai de y=1921 (3:4) a y=2455 (Full) — e meus toques em coordenada fixa caíam no
+vazio, sem log e sem erro. Refeito localizando por rótulo a cada passo, `takePhoto` recebe
+exatamente o que a UI mostra nas três proporções. Registrado em
+[`baseline/README.md`](baseline/README.md#armadilhas-encontradas-ao-medir) para que o
+roteiro das Tarefas 6, 7 e 11 já nasça certo.
+
 ## Situação das tarefas
 
 | Onda | Tarefa | Status | Observações |
 |---:|---|---|---|
-| 1 | 1. Baseline de comportamento e latência | Pendente | **em aparelho real**, antes de qualquer código |
+| 1 | 1. Baseline de comportamento e latência | **Concluída** | edge 60 neo; `MANUAL_SENSOR` confirmado — portão da Onda 2 antecipado |
 | 1 | 2. Contrato do registro de modos | Pendente | sem consumidores; não muda o app |
 | 1 | 3. Corrigir opt-in do Camera2Interop | Pendente | pré-requisito do Pro |
 | 1 | 4. Infra de teste de Compose na JVM | Pendente | falta `testImplementation` do `compose-ui-test-junit4` |
@@ -93,14 +138,17 @@ Preencher conforme as tarefas forem feitas — são a evidência dos NFRs:
 
 | Medida | Baseline (Tarefa 1) | Final (Tarefa 13) | Limite |
 |---|---|---|---|
-| `CameraScreen.kt` (linhas) | 2.220 (a confirmar) | | ≤ 2.100 |
-| `CameraManager.kt` (linhas) | 1.158 (a confirmar) | | ≤ 1.158 |
-| `CameraViewModel.kt` (linhas) | 694 (a confirmar) | | não crescer |
+| `CameraScreen.kt` (linhas) | **2.220** ✓ | | ≤ 2.100 |
+| `CameraManager.kt` (linhas) | **1.158** ✓ | | ≤ 1.158 |
+| `CameraViewModel.kt` (linhas) | **694** ✓ | | não crescer |
 | Maior arquivo novo (linhas) | — | | ≤ 400 |
-| p95 de `latency_ms` na troca de modo | | | ≤ baseline + 20% |
-| Tempo da suíte `testDebugUnitTest` | | | ≤ 90 s |
-| `UnsafeOptInUsageError` no `CameraManager` | 31 | | 0 |
+| p95 de `elapsed_ms` na troca de modo | **38 ms** (20 amostras) | | **≤ 45,6 ms** |
+| Tempo da suíte `testDebugUnitTest` | **5,9 s** | | ≤ 90 s |
+| `UnsafeOptInUsageError` no `CameraManager` | **31** ✓ | | 0 |
 | Recibo do modo-exemplo (`git diff --stat`) | — | | ≤ 1 arquivo + 1 linha |
+
+Campos de `evt=bind`, mídia gerada e capacidades do HAL em
+[`baseline/README.md`](baseline/README.md). O campo é `elapsed_ms`, não `latency_ms` (Q-04).
 
 ## Análise de paralelização
 
@@ -116,9 +164,17 @@ Preencher conforme as tarefas forem feitas — são a evidência dos NFRs:
 
 ## Pendências
 
-- [ ] Iniciar a implementação pela Tarefa 1 (skill `dev`)
-- [ ] Confirmar `manual_sensor=true` no aparelho de teste antes de contar com a Onda 6
+- [x] Iniciar a implementação pela Tarefa 1 (skill `dev`)
+- [x] Confirmar `MANUAL_SENSOR` no aparelho de teste antes de contar com a Onda 6 —
+      confirmado no baseline, quatro ondas antes do checkpoint que o exigia
+- [ ] **Decidir a Q-01** (três ou quatro proporções de foto) antes da Tarefa 7
+- [ ] Tarefas 2, 3 e 4 — Onda 1
+- [ ] Levar as armadilhas de medição do baseline para o CLAUDE.md na Tarefa 13
 
 ## Bloqueios
 
-Nenhum — especificação aprovada.
+Nenhum para as Tarefas 2, 3 e 4.
+
+**Q-01 bloqueia a Tarefa 7** — FR-4 descreve quatro proporções de foto e o app tem três.
+Decidir antes de remigrar a Foto, senão a implementação pode "corrigir" acrescentando o 1:1
+e quebrar o iso-comportamento que o NFR-1 exige. Folga de quatro ondas.

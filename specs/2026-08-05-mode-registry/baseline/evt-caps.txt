@@ -1,0 +1,1 @@
+evt=caps camera=0 eis_supported=true hdr_supported=false zoom=1,0x-10,0x options=[4K 30,FHD 30,FHD 60,HD 30]

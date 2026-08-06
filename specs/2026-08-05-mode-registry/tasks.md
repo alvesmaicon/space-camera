@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 0 · **Em andamento:** 0 · **Pendentes:** 13
+- **Concluídas:** 1 · **Em andamento:** 0 · **Pendentes:** 12
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -24,7 +24,7 @@
 
 ### Onda 1 — Medição e contratos (nenhuma mudança de comportamento)
 
-#### [ ] 1. Baseline de comportamento e de latência (antes de tocar em qualquer código)
+#### [x] 1. Baseline de comportamento e de latência (antes de tocar em qualquer código)
 - **Size:** XS
 - **Complexity:** low
 - **Risk:** low
@@ -39,9 +39,9 @@
   - **DADO** o commit atual **QUANDO** o baseline é capturado **ENTÃO** existe registro de `evt=caps`, `evt=bind`, p95 de latência e contagem de linhas dos três arquivos
   - **DADO** o baseline **QUANDO** for comparado no fim **ENTÃO** foi tirado em aparelho real, não em emulador (o emulador reporta EIS/HDR como não suportados e invalida a comparação)
 - **Verification:**
-  - [ ] Baseline existe: `ls specs/2026-08-05-mode-registry/baseline/`
-  - [ ] APK conferido: saída de `scripts/backup-apk.sh` sem divergência de `GIT_SHA`
-  - [ ] Conferência manual: a tela medida era a câmera — `content-desc` no dump do `uiautomator`, não a contagem de nós apenas
+  - [x] Baseline existe: `ls specs/2026-08-05-mode-registry/baseline/`
+  - [x] APK conferido: `GIT_SHA 3b3043e` presente no dex, sem divergência
+  - [x] Conferência manual: a tela medida era a câmera — `content-desc` `Flash`/`Trocar câmera`/`Timer desativado`, 32 nós
 - **_Requirements: NFR-1, NFR-3, NFR-4_**
 
 #### [ ] 2. Contrato do registro de modos

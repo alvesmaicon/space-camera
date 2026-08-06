@@ -1,0 +1,4 @@
+--------- beginning of main
+08-05 23:18:51.545 D/SpaceCam(25637): [CameraManager] startRecording: location=null saveEnabled=false
+08-05 23:18:51.816 I/SpaceCam(25637): [CameraTelemetry] evt=rec_start quality=FHD fps=30 bitrate=7464960 mic=true
+08-05 23:18:59.859 I/SpaceCam(25637): [CameraTelemetry] evt=rec_stop media=26018 duration_ms=6796 size_bytes=6579659

@@ -1,0 +1,34 @@
+--------- beginning of main
+08-05 23:16:09.120 D/SpaceCam(25637): [CameraManager] takePhoto: location=null saveEnabled=false enhancement=false aspectRatio=Full targetRotation=0
+08-05 23:16:09.936 I/SpaceCam(25637): [CameraTelemetry] evt=photo preset=MAXIMA size=1840x4096 elapsed_ms=816
+08-05 23:16:17.886 D/SpaceCam(25637): [CameraManager] bindCameraUseCases START — EIS=false NR=true HDR=false
+08-05 23:16:17.890 D/SpaceCam(25637): [CameraManager] bindCameraUseCases: EIS=false NR=true HDR=false
+08-05 23:16:17.918 D/SpaceCam(25637): [CameraManager] HAL stabilization — video modes=[0, 1]  OIS modes=[0, 1]
+08-05 23:16:17.919 D/SpaceCam(25637): [CameraManager] HDR support: scene=true tonemapHQ=true tenBit=false => supported=false
+08-05 23:16:17.920 D/SpaceCam(25637): [CameraManager] CONTROL_ZOOM_RATIO_RANGE: min=1.0 max=10.0  physicalUltraWide=false
+08-05 23:16:17.921 I/SpaceCam(25637): [CameraTelemetry] evt=bind mode=PHOTO quality=FHD fps=30 aspect=Full bitrate=7464960 eis=false nr=true hdr=false front=false elapsed_ms=35
+08-05 23:16:17.922 I/SpaceCam(25637): [CameraTelemetry] evt=caps camera=0 eis_supported=true hdr_supported=false zoom=1,0x-10,0x options=[4K 30,FHD 30,FHD 60,HD 30]
+08-05 23:16:18.420 D/SpaceCam(25637): [CameraManager] applyEisNrImmediate: EIS=false NR=true HDR=false
+08-05 23:16:18.590 D/SpaceCam(25637): [CameraManager] applyEisNrImmediate aplicado: EIS=false NR=true HDR=false supported=false
+08-05 23:16:26.677 D/SpaceCam(25637): [CameraManager] takePhoto: location=null saveEnabled=false enhancement=false aspectRatio=9:16 targetRotation=0
+08-05 23:16:27.054 I/SpaceCam(25637): [CameraTelemetry] evt=photo preset=MAXIMA size=0x0 elapsed_ms=377
+08-05 23:16:35.437 D/SpaceCam(25637): [CameraManager] bindCameraUseCases START — EIS=false NR=true HDR=false
+08-05 23:16:35.451 D/SpaceCam(25637): [CameraManager] bindCameraUseCases: EIS=false NR=true HDR=false
+08-05 23:16:35.488 D/SpaceCam(25637): [CameraManager] HAL stabilization — video modes=[0, 1]  OIS modes=[0, 1]
+08-05 23:16:35.488 D/SpaceCam(25637): [CameraManager] HDR support: scene=true tonemapHQ=true tenBit=false => supported=false
+08-05 23:16:35.488 D/SpaceCam(25637): [CameraManager] CONTROL_ZOOM_RATIO_RANGE: min=1.0 max=10.0  physicalUltraWide=false
+08-05 23:16:35.489 I/SpaceCam(25637): [CameraTelemetry] evt=bind mode=PHOTO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=false nr=true hdr=false front=false elapsed_ms=51
+08-05 23:16:35.489 I/SpaceCam(25637): [CameraTelemetry] evt=caps camera=0 eis_supported=true hdr_supported=false zoom=1,0x-10,0x options=[4K 30,FHD 30,FHD 60,HD 30]
+08-05 23:16:35.990 D/SpaceCam(25637): [CameraManager] applyEisNrImmediate: EIS=false NR=true HDR=false
+08-05 23:16:36.175 D/SpaceCam(25637): [CameraManager] applyEisNrImmediate aplicado: EIS=false NR=true HDR=false supported=false
+08-05 23:16:44.238 D/SpaceCam(25637): [CameraManager] takePhoto: location=null saveEnabled=false enhancement=false aspectRatio=3:4 targetRotation=0
+08-05 23:16:45.378 I/SpaceCam(25637): [CameraTelemetry] evt=photo preset=MAXIMA size=0x0 elapsed_ms=1139
+08-05 23:16:53.008 D/SpaceCam(25637): [CameraManager] bindCameraUseCases START — EIS=false NR=true HDR=false
+08-05 23:16:53.011 D/SpaceCam(25637): [CameraManager] bindCameraUseCases: EIS=false NR=true HDR=false
+08-05 23:16:53.051 D/SpaceCam(25637): [CameraManager] HAL stabilization — video modes=[0, 1]  OIS modes=[0, 1]
+08-05 23:16:53.052 D/SpaceCam(25637): [CameraManager] HDR support: scene=true tonemapHQ=true tenBit=false => supported=false
+08-05 23:16:53.053 D/SpaceCam(25637): [CameraManager] CONTROL_ZOOM_RATIO_RANGE: min=1.0 max=10.0  physicalUltraWide=false
+08-05 23:16:53.053 I/SpaceCam(25637): [CameraTelemetry] evt=bind mode=PHOTO quality=FHD fps=30 aspect=3:4 bitrate=7464960 eis=false nr=true hdr=false front=false elapsed_ms=46
+08-05 23:16:53.054 I/SpaceCam(25637): [CameraTelemetry] evt=caps camera=0 eis_supported=true hdr_supported=false zoom=1,0x-10,0x options=[4K 30,FHD 30,FHD 60,HD 30]
+08-05 23:16:53.556 D/SpaceCam(25637): [CameraManager] applyEisNrImmediate: EIS=false NR=true HDR=false
+08-05 23:16:53.744 D/SpaceCam(25637): [CameraManager] applyEisNrImmediate aplicado: EIS=false NR=true HDR=false supported=false
