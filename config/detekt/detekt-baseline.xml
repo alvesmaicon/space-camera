@@ -16,7 +16,6 @@
     <ID>ImplicitDefaultLocale:VideoStorage.kt$VideoStorage$String.format("%.2f KB", sizeInBytes / 1024.0)</ID>
     <ID>ImplicitDefaultLocale:VideoStorage.kt$VideoStorage$String.format("%.2f MB", sizeInBytes / (1024.0 * 1024.0))</ID>
     <ID>LargeClass:CameraManager.kt$CameraManager : CameraController</ID>
-    <ID>LongMethod:CameraManager.kt$CameraManager$private fun bindCameraUseCases()</ID>
     <ID>LongMethod:CameraScreen.kt$@Composable fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () -&gt; Unit = {})</ID>
     <ID>LongMethod:CameraScreen.kt$@Composable private fun LensZoomDial( minZoom: Float, maxZoom: Float, currentZoom: Float, screenHeightDp: Dp, railLengthDp: Dp, vertical: Boolean, enabled: Boolean, rotationDeg: Float = 0f, onZoomChange: (Float) -&gt; Unit, onInteraction: () -&gt; Unit )</ID>
     <ID>LongMethod:CameraViewModel.kt$CameraViewModel$suspend fun initializeCamera(context: Context, lifecycleOwner: LifecycleOwner, surfaceProvider: Preview.SurfaceProvider?)</ID>
@@ -92,7 +91,6 @@
     <ID>MagicNumber:TimerIcons.kt$0xFF000000</ID>
     <ID>MagicNumber:VideoStorage.kt$VideoStorage$1024</ID>
     <ID>MagicNumber:VideoStorage.kt$VideoStorage$1024.0</ID>
-    <ID>MaxLineLength:CameraManager.kt$CameraManager$Timber.d("HDR support: scene=$hasHdrSceneMode tonemapHQ=$hasHighQualityToneMap tenBit=$hasTenBitCapability =&gt; supported=${_isHdrSupported.value}")</ID>
     <ID>MaxLineLength:CameraManager.kt$CameraManager$Timber.d("enhanceBitmap: avgSat=${"%.2f".format(avgSat)} avgVal=${"%.2f".format(avgVal)} skinRatio=${"%.2f".format(skinRatio)} satBoost=${"%.2f".format(satBoost)} contrast=${"%.2f".format(contrastBoost)}")</ID>
     <ID>MaxLineLength:CameraManager.kt$CameraManager$Timber.d("takePhoto: location=$photoLocation saveEnabled=$isSaveLocationEnabled enhancement=$isImageEnhancementEnabled aspectRatio=$selectedAspectRatio targetRotation=$targetRotation")</ID>
     <ID>MaxLineLength:CameraManager.kt$CameraManager${ Timber.d("applyEisNrImmediate aplicado: EIS=$isStabilizationEnabled NR=$isNoiseReductionEnabled HDR=$isHdrEnabled supported=${_isHdrSupported.value}") }</ID>
@@ -108,7 +106,6 @@
     <ID>TooGenericExceptionThrown:VideoStorage.kt$VideoStorage$throw Exception("Failed to create MediaStore entry")</ID>
     <ID>TooGenericExceptionThrown:VideoStorage.kt$VideoStorage$throw Exception("Unable to get Videos directory")</ID>
     <ID>TooManyFunctions:CameraController.kt$CameraController</ID>
-    <ID>VariableNaming:CameraManager.kt$CameraManager$private val EXIF_CAMERA_TAGS = listOf( ExifInterface.TAG_MAKE, ExifInterface.TAG_MODEL, ExifInterface.TAG_F_NUMBER, ExifInterface.TAG_APERTURE_VALUE, ExifInterface.TAG_EXPOSURE_TIME, ExifInterface.TAG_ISO_SPEED_RATINGS, ExifInterface.TAG_FOCAL_LENGTH, ExifInterface.TAG_FOCAL_LENGTH_IN_35MM_FILM, ExifInterface.TAG_WHITE_BALANCE, ExifInterface.TAG_FLASH, ExifInterface.TAG_EXPOSURE_BIAS_VALUE, ExifInterface.TAG_EXPOSURE_PROGRAM, ExifInterface.TAG_METERING_MODE, ExifInterface.TAG_SCENE_CAPTURE_TYPE, ExifInterface.TAG_DATETIME_ORIGINAL, ExifInterface.TAG_DATETIME_DIGITIZED, ExifInterface.TAG_SUBSEC_TIME_ORIGINAL, ExifInterface.TAG_BRIGHTNESS_VALUE, ExifInterface.TAG_SUBJECT_DISTANCE, ExifInterface.TAG_LIGHT_SOURCE, )</ID>
     <ID>WildcardImport:AboutScreen.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:AboutScreen.kt$import androidx.compose.material3.*</ID>
     <ID>WildcardImport:CameraManager.kt$import androidx.camera.video.*</ID>

@@ -39,9 +39,10 @@ class ProModeTest {
     @Test
     fun `Pro vem na gaveta em aparelho com MANUAL_SENSOR`() {
         // AC-5.2 + decisão do usuário (2026-10-07): por padrão, gaveta.
+        // Afirma o lugar do Pro, não a lista inteira: outro modo na gaveta não é erro.
         val arranjo = ModeRegistry.arranged(ModeArrangement.DEFAULT, comManual)
-        assertEquals(listOf<CameraModeDefinition>(VideoMode, PhotoMode), arranjo.pinned)
-        assertEquals(listOf<CameraModeDefinition>(ProMode), arranjo.drawer)
+        assertTrue(ProMode in arranjo.drawer)
+        assertFalse(ProMode in arranjo.pinned)
     }
 
     @Test

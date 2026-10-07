@@ -706,8 +706,10 @@ class CameraViewModelTest {
         // AC-8.2: sem preferência gravada (a persistência chega na Tarefa 10).
         inicializar()
 
-        assertEquals(listOf(VideoMode, PhotoMode), viewModel.arrangedModes.value.pinned)
-        assertTrue(viewModel.arrangedModes.value.drawer.isEmpty())
+        // Derivado do registro, e não a lista literal: um modo novo não quebra este teste.
+        val semExigencia = ModeRegistry.all.filter { it.requiredCapability == null }
+        assertEquals(semExigencia.filter { it.pinnedByDefault }, viewModel.arrangedModes.value.pinned)
+        assertEquals(semExigencia.filterNot { it.pinnedByDefault }, viewModel.arrangedModes.value.drawer)
     }
 
     @Test

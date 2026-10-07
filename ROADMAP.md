@@ -20,16 +20,19 @@ com sondagem de suporte · HDR · redução de ruído · zoom (dial contínuo + 
 lente) · toque para focar · compensação de exposição por arraste · flash e lanterna ·
 grade · nível de horizonte · timer de gravação (3/5/10s) · mudo · espelho da frontal ·
 GPS no EXIF (opcional) · proporção · pausar e retomar · miniatura da última mídia ·
-layout adaptativo para janela larga · telemetria `evt=caps` / `evt=bind`.
+layout adaptativo para janela larga · telemetria `evt=caps` / `evt=bind` / `evt=mode` ·
+seletor de modos com gaveta "Mais" e personalização em Configurações · **modo Pro** com
+ISO e obturador manuais (até 1/4 s).
 
 ## Legenda
 
 - **Esforço:** P = até um dia · M = alguns dias · G = mais de uma semana
 - **Onde** aponta os arquivos que a fatia atravessa. Serve de insumo para o spec.
 - **Como verificar** vale mais que a estimativa: o [CLAUDE.md](CLAUDE.md#como-diagnosticar-problema-de-aparelho)
-  lista cinco armadilhas que já produziram conclusão errada nesta base. Toda feature
-  de capacidade de hardware precisa de aparelho real — o emulador reporta EIS/HDR como
-  não suportados e faz o comportamento defeituoso coincidir com o correto.
+  lista as armadilhas que já produziram conclusão errada nesta base. Toda feature
+  de capacidade de hardware precisa de aparelho real — o que o emulador reporta depende
+  da AVD, e quando ele diz "não suportado" o comportamento defeituoso coincide com o
+  correto.
 
 ---
 
@@ -162,6 +165,22 @@ item 5 do REFACTORING.md.
 
 **Esforço** M · **Depende de** R2, R3 · **Verificar** faixas de ISO e exposição vêm do
 HAL; a UI tem que se adaptar ao que `evt=caps` reportar, como já faz com resolução.
+
+**Andamento (2026-10-07).** ISO e obturador entregues pela spec de registro de modos —
+`ProMode`, na gaveta, só em aparelho com `MANUAL_SENSOR`. Faltam **foco manual** e
+**balanço de branco**, que entram como controles do mesmo modo. E **exposição longa**: o
+obturador vai até 1/4 s porque, medido no Redmi Note 10, 1 s levou 23 s para capturar, 4 s
+levou 34 s e 28,8 s falhou (`ERROR_CAPTURE_FAILED`). Hipótese a verificar: o CameraX, em
+`CAPTURE_MODE_MAXIMIZE_QUALITY`, faz varredura de foco antes da foto, e com quadros longos
+ela custa dezenas de quadros. Ver Q-13 da spec.
+
+### B3a. Proporção 1:1
+
+O `CameraManager` mapeia `"1:1"` para 4:3 num ramo que nenhuma UI alcança — sobra de uma
+versão anterior (Q-01 da spec de registro de modos). Oferecer 1:1 é acrescentar a
+proporção ao ciclo do seletor de foto e um recorte quadrado no caminho de bitmap.
+
+**Esforço** P · **Verificar** a mídia salva sai quadrada nas duas câmeras.
 
 ### B4. RAW / DNG
 
@@ -303,6 +322,9 @@ seis.
 
 **Destrava** B1, B2, B3, C3
 
+**Feito** (spec de registro de modos, 2026-10-07). O enum `CameraMode` não existe mais;
+cada modo é um `object` que declara tudo o que precisa, e o registro é uma lista.
+
 ### R2. Sondagem de capacidade isolada
 
 Item 2 do REFACTORING.md (`CameraCapabilityProbe`). Toda feature do Grupo B começa com
@@ -317,6 +339,11 @@ linha") e que hoje depende de disciplina.
 
 **Destrava** todo o Grupo B
 
+**Parcial.** Existe o conceito (`Capability`, `CapabilityProbe`, `DeviceCapabilities`) e o
+gate por modo; `MANUAL_SENSOR` passa por ele. EIS e HDR foram tirados do `CameraManager`
+para `SensorCharacteristicsReader`, mas ainda não viraram `Capability` — a próxima
+capacidade (alta velocidade, para B1) deve entrar pelo caminho novo.
+
 ### R3. Estado agrupado no ViewModel
 
 Item 3 do REFACTORING.md. ~30 `StateFlow` privados espelhados em ~30 públicos, mais 15
@@ -328,6 +355,9 @@ limites de cada um: são mais de dez.
 **Destrava** B3, B4, B8 · **Ordem** depois de R4, porque mudar a forma do estado obriga
 a tocar a UI.
 
+**Parcial.** O estado de modos e o do Pro estão agrupados em `CameraModes`; os ~30
+`StateFlow` antigos continuam.
+
 ### R4. Overlays e controles como componentes
 
 Item 1 do REFACTORING.md. Cada modo novo quer seu overlay (intervalo do time-lapse,
@@ -335,6 +365,10 @@ fps da lenta, escalas do pro) e hoje entraria dentro de um composable de ~1.200 
 O recorte mecânico já está mapeado, e `HorizontalPickerBar` e o dial já são reusáveis.
 
 **Destrava** B1, B2, B3, C3
+
+**Parcial.** Seletor, gaveta, barra superior (montada da lista que o modo declara) e
+overlays por modo viraram componentes; um overlay novo entra em `ModeOverlays`, sem tocar
+a tela. Os overlays antigos (grade, nível, foco, exposição) continuam na `CameraScreen`.
 
 ### Como fica a fatia depois
 
@@ -345,12 +379,17 @@ de fps (R4), um evento novo em `CameraTelemetry`, teste de ViewModel com
 aparelho real. Nenhum arquivo grande crescendo — que é justamente a regra que o
 CLAUDE.md pede ao mexer nesses três arquivos.
 
+**Medido.** O recibo da spec de registro de modos criou um modo de demonstração num ramo
+descartável: **1 arquivo novo + 1 linha** no registro, zero edição nos arquivos grandes, e
+o modo apareceu na gaveta, ligou só pré-visualização e foto e salvou foto no aparelho. O
+roteiro está no CLAUDE.md, em "Como adicionar um modo".
+
 ## Ordem sugerida
 
 | Onda | Conteúdo | Por que nesta ordem |
 |---|---|---|
 | 1 | Grupo A inteiro (A6 no fim) | não depende de refatoração, é o que mais muda a percepção de "completo", e A6 fica barato agora |
-| 2 | R1–R4 | pré-requisito das features grandes; R3 depois de R4 |
+| 2 | R1–R4 | pré-requisito das features grandes; R3 depois de R4 — **R1 feito, R2–R4 parciais** (2026-10-07) |
 | 3 | B3+B4 (pro/RAW), depois B1+B2 (lenta/time-lapse) | pro é a identidade do app; lenta e time-lapse são o que se procura na loja |
 | 4 | B7, B8, B5 | robustez e áudio pagam em nota; extensões dependem de aparelho |
 | 5 | Grupo D + B9, depois C conforme vontade | publicar antes de crescer mais |

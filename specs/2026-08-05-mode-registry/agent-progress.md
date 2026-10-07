@@ -2,9 +2,9 @@
 
 ## Estado atual
 
-- **Fase:** Implementação — Onda 6
-- **Gate atual:** **Checkpoint da Onda 5 passou** — pronto para a Onda 6
-- **Status:** em andamento — próximas: Tarefas 9, 10 e 11 (independentes entre si)
+- **Fase:** **Concluída**
+- **Gate atual:** **Checkpoint final passou** — pronta para revisão e merge
+- **Status:** concluída em 2026-10-07 — 13/13 tarefas
 - **Confiança:** 92%
 - **Última atualização:** 2026-10-07
 
@@ -352,6 +352,32 @@ vista. Dois achados de método: o emulador de tablet **reporta `MANUAL_SENSOR`**
 nele), e a imagem em retrato dentro da caixa 16:9 é da câmera virtual — o build de antes da
 spec mostra o mesmo.
 
+### Sessão: 2026-10-07 — Tarefa 13 (fechamento)
+
+- **Agente:** skill `dev`
+- **Gate:** D concluído · **Checkpoint final passou** — spec concluída
+- **Verificação:** [`verificacao/tarefa-13/`](verificacao/tarefa-13/README.md)
+
+**Recibo do NFR-2: 1 arquivo + 1 linha**, e o modo de demonstração funcionou no aparelho.
+A primeira tentativa revelou cinco testes presos ao conteúdo do registro de produção — que
+fariam todo modo novo editar testes. Corrigidos antes da segunda tentativa.
+
+**NFR-3 fechado com a extração que faltava ao desenho:** a barra superior saiu para
+`components/TopBarControl.kt`, e a `CameraScreen` foi a 1.830 linhas. O detekt pegou a
+função de 161 linhas e complexidade 33 que a extração ingênua criou; virou um `when` que só
+despacha para um composable por controle.
+
+**Verificação final contra o build de antes da spec**, na mesma sessão: UI, mídia, binds e
+flash idênticos, exceto o "Mais". Latência sem efeito atribuível ao código (A/B/A).
+
+**Não atingido:** a meta "ViewModel não crescer" (786 contra 694). O ViewModel ganhou o
+despacho do disparador, o coletor de recusa e a personalização; o agrupamento em
+`CameraModes` tirou parte. Registrado no REFACTORING.md.
+
+**Documentos:** CLAUDE.md (estrutura, "Como adicionar um modo", três armadilhas novas,
+emulador por AVD), ROADMAP.md (R1 feito, R2–R4 parciais, B3 andamento, 1:1, exposição
+longa) e REFACTORING.md (tamanhos, o que já saiu de cada item, defeitos conhecidos).
+
 ## Situação das tarefas
 
 | Onda | Tarefa | Status | Observações |
@@ -368,7 +394,7 @@ spec mostra o mesmo.
 | 6 | 10. Personalização em Configurações | **Concluída** | estado de modos agrupado em `CameraModes`; persistência conferida em aparelho |
 | 6 | 11. Pro com ISO manual | **Concluída** | ISO muda o brilho em aparelho; EXIF com o ISO manual |
 | 7 | 12. Obturador manual | **Concluída** | teto de 1/4 s após medir exposição longa (Q-13) |
-| 8 | 13. Recibo do NFR-2 e fechamento | Pendente | prova que a spec entregou o que prometeu |
+| 8 | 13. Recibo do NFR-2 e fechamento | **Concluída** | recibo: 1 arquivo + 1 linha; verificação final contra o build de antes da spec |
 
 ## Medições a registrar durante a execução
 
@@ -376,14 +402,14 @@ Preencher conforme as tarefas forem feitas — são a evidência dos NFRs:
 
 | Medida | Baseline (Tarefa 1) | Final (Tarefa 13) | Limite |
 |---|---|---|---|
-| `CameraScreen.kt` (linhas) | **2.220** ✓ | 2.215 após T6 · 2.173 após T7 · 2.144 após T8 · **2.153** após T11 | ≤ 2.100 |
-| `CameraManager.kt` (linhas) | **1.158** ✓ | 1.163 após T5 · 1.153 após T6 · 1.154 após T7 · 1.150 após T11 · **1.154** após T12 | ≤ 1.158 |
-| `CameraViewModel.kt` (linhas) | **694** ✓ | 733 após T6 · 732 após T7 · **752** após T8 — agrupar na T10 (Q-10) | não crescer |
-| Maior arquivo novo (linhas) | — | | ≤ 400 |
+| `CameraScreen.kt` (linhas) | **2.220** ✓ | **1.830** ✓ | ≤ 2.100 |
+| `CameraManager.kt` (linhas) | **1.158** ✓ | **1.154** ✓ | ≤ 1.158 |
+| `CameraViewModel.kt` (linhas) | **694** ✓ | **786** ✗ | não crescer |
+| Maior arquivo novo (linhas) | — | **286** ✓ | ≤ 400 |
 | p95 de `elapsed_ms` na troca de modo | ~~38 ms~~ edge 60 neo · **57 ms** Redmi Note 10 (20 amostras) | | **≤ 68,4 ms** (Redmi) |
 | Tempo da suíte `testDebugUnitTest` | **5,9 s** | 7 s (Onda 1) · 10 s (Tarefa 5, 114 testes) | ≤ 90 s |
 | `UnsafeOptInUsageError` no `CameraManager` | **31** ✓ | **0** (Tarefa 3) | 0 |
-| Recibo do modo-exemplo (`git diff --stat`) | — | | ≤ 1 arquivo + 1 linha |
+| Recibo do modo-exemplo (`git diff --stat`) | — | **1 arquivo + 1 linha** ✓ | ≤ 1 arquivo + 1 linha |
 
 Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 [`baseline/README.md`](baseline/README.md). O campo é `elapsed_ms`, não `latency_ms` (Q-04).
@@ -420,12 +446,12 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] Tarefa 10 — personalização; estado de modos agrupado (Q-10 resolvida)
 - [x] Tarefa 12 — obturador manual, com teto de 1/4 s
 - [x] Tarefa 9 — janela larga; Checkpoints das Ondas 6 e 7
-- [ ] Tarefa 13: levar ao ROADMAP a exposição longa (Q-13), o 1:1 (Q-01), a defasagem de `aspect` (Q-06) e o modo não reaplicado ao recriar o controller (Q-08)
-- [ ] Q-06 (`aspect` defasado em `evt=bind`): corrigir em commit próprio depois da Tarefa 7, ou levar ao ROADMAP
-- [ ] Q-08 (modo não reaplicado ao recriar o controller): verificar em aparelho e corrigir depois da Tarefa 7
-- [ ] Aviso visual da recusa de modo — na Tarefa 11 (Q-07)
-- [ ] Levar as armadilhas de medição do baseline para o CLAUDE.md na Tarefa 13
-- [ ] Levar o 1:1 para o ROADMAP.md, junto do ramo morto em `cameraXAspectRatio()`
+- [x] Tarefa 13 — recibo, verificação final, baselines e documentos; Q-01/Q-13 no ROADMAP, Q-06/Q-08 no REFACTORING
+- [x] Q-06 (`aspect` defasado em `evt=bind`) → REFACTORING.md, "Defeitos conhecidos"
+- [x] Q-08 (modo não reaplicado ao recriar o controller) → REFACTORING.md, "Defeitos conhecidos"
+- [x] Aviso visual da recusa de modo — entregue na Tarefa 11 (`ModeRejectedNotice`)
+- [x] Armadilhas de medição levadas ao CLAUDE.md (5, 6 e 7)
+- [x] 1:1 levado ao ROADMAP.md (B3a)
 
 ## Bloqueios
 

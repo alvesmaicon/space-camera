@@ -44,18 +44,30 @@ app/src/main/java/com/spacecamera/
 ├── MainActivity.kt                host do Compose + NavHost (camera/settings/about)
 ├── camera/
 │   ├── CameraController.kt        interface que o ViewModel enxerga + factory
-│   ├── CameraManager.kt           implementação CameraX/Camera2  ⚠ 1.100+ linhas
-│   ├── CameraTelemetry.kt         eventos estruturados evt=...
-│   └── CameraMode.kt              VIDEO | PHOTO
+│   ├── CameraManager.kt           implementação CameraX/Camera2  ⚠ 1.150 linhas
+│   ├── CameraTelemetry.kt         eventos evt=... (CameraTelemetry, ModeTelemetry, TelemetryFields)
+│   ├── ModeSession.kt             modo pedido × ligado; quando sai evt=mode
+│   ├── ManualExposure*.kt         ISO e obturador do Pro (regra pura + escrita no Camera2)
+│   ├── SensorCharacteristicsReader.kt  leitura do HAL: MANUAL_SENSOR, EIS, HDR
+│   └── mode/                      o registro de modos — ver "Como adicionar um modo"
+│       ├── ModeRegistry.kt        a lista de modos (uma linha por modo)
+│       ├── VideoMode, PhotoMode, ProMode
+│       ├── CameraModeDefinition.kt, ModeContract.kt   o que um modo declara
+│       ├── ModeBinder.kt          AppUseCase → use case; falha religa o modo anterior
+│       └── CapabilityProbe.kt     decide as capacidades a partir do HAL
 ├── presentation/
 │   ├── screens/
-│   │   ├── CameraScreen.kt        UI da câmera  ⚠ 2.100+ linhas
+│   │   ├── CameraScreen.kt        UI da câmera  ⚠ 1.830 linhas
 │   │   ├── SettingsScreen.kt      configurações (Material 3 dinâmico)
 │   │   └── AboutScreen.kt
+│   ├── components/                seletor, gaveta, overlays e controles por identificador
 │   ├── layout/
 │   │   ├── WindowAxis.kt          janela larga, AxisContainer, largura de leitura
+│   │   ├── PreviewAspect.kt       proporção da caixa de pré-visualização
 │   │   └── DeviceRotation.kt      rotação de captura vs compensação da UI
-│   ├── viewmodels/CameraViewModel.kt   ⚠ ~30 StateFlows
+│   ├── viewmodels/
+│   │   ├── CameraViewModel.kt     ⚠ ~790 linhas, ~30 StateFlows
+│   │   └── CameraModes.kt         estado de modos agrupado (puro)
 │   └── icons/TimerIcons.kt
 ├── data/
 │   ├── storage/SettingsStorage.kt      SharedPreferences
@@ -65,6 +77,27 @@ app/src/main/java/com/spacecamera/
 
 Fluxo: `CameraScreen` → `CameraViewModel` → `CameraController` → CameraX.
 O ViewModel espelha em `StateFlow` tudo o que o controller publica.
+
+## Como adicionar um modo
+
+O que um modo faz mora na própria definição (`CameraModeDefinition`): use cases a ligar,
+capacidade exigida, controles da barra, proporção, EIS, o que o disparador faz, o
+comportamento do flash. Ninguém ramifica por modo — tela, ViewModel e controller leem a
+definição.
+
+**Custo medido** (recibo do NFR-2 da spec de registro de modos): **um arquivo novo** com o
+`object` do modo e **uma linha** em `ModeRegistry.all`. Nenhuma edição em `CameraScreen`,
+`CameraViewModel` ou `CameraManager`, e os testes passam sem mudança. Só sai disso quando
+o modo precisa de algo que ainda não existe:
+
+- **controle novo na barra:** valor em `ControlId` + o desenho em `components/TopBarControl.kt`
+  (o `when` é exaustivo — esquecer não compila);
+- **overlay próprio:** `OverlayId` em `ModeSurfaces` + o ramo em `components/ModeOverlays.kt`;
+- **capacidade nova:** valor em `Capability` + a decisão em `CapabilityProbe`.
+
+Um membro abstrato novo em `CameraModeDefinition` quebra o build em todos os modos, de
+propósito: cada um precisa responder. Detalhes e decisões em
+[specs/2026-08-05-mode-registry/](specs/2026-08-05-mode-registry/).
 
 ## Convenções
 
@@ -112,7 +145,7 @@ que está dentro do APK antes de arquivar. Use `grep -c` e não `grep -q` num pi
 `set -o pipefail`, o `-q` sai no primeiro acerto, o `cat` toma SIGPIPE e o pipeline
 retorna erro **quando a busca dá certo**.
 
-### Outras quatro armadilhas de verificação manual
+### Outras armadilhas de verificação manual
 
 Todas produziram conclusão errada nesta base, e nenhuma é óbvia:
 
@@ -130,7 +163,21 @@ Todas produziram conclusão errada nesta base, e nenhuma é óbvia:
 4. **O emulador reportar EIS/HDR como não suportados faz o comportamento defeituoso
    coincidir com o correto.** Um bug que desligava o EIS em aparelho capaz passou por
    toda uma spec porque `eis_supported=false` no emulador nos dois casos. Capacidade de
-   hardware só se verifica em aparelho real.
+   hardware só se verifica em aparelho real. Mas **depende da AVD**: o `Tablet_API36`
+   reporta `eis_supported=true` e `manual_sensor=true` — confira `evt=caps` antes de
+   supor.
+5. **O anel `main` do logcat tem 256 KiB e o HAL o esvazia em segundos** com a câmera
+   aberta: `logcat -d` depois do fato contou 3 binds onde houve 10. Antes de medir,
+   `adb logcat -G 16M` e capture ao vivo (`adb logcat -v time -s SpaceCam:V > arquivo &`).
+6. **Os controles mudam de posição com a proporção da foto** (o disparador vai de y=1921
+   a y=2455). Toque em coordenada gravada cai no vazio, sem log nem erro. Localize por
+   rótulo a cada passo — e **não** faça `uiautomator dump` dentro de um laço de toques,
+   que atrapalha a sessão. Os roteiros prontos estão em
+   [specs/2026-08-05-mode-registry/verificacao/roteiros/](specs/2026-08-05-mode-registry/verificacao/roteiros/).
+7. **Latência só se compara na mesma sessão.** Contra um número de outro dia, o
+   "depois" saiu 28% mais rápido sem causa no código; com o aparelho a 37 °C, as mesmas
+   20 trocas foram de 43 ms para ~100 ms. Meça antes e depois em sequência, de
+   preferência A/B/A.
 
 Para comparar antes/depois entre dois commits, use `git worktree` e **nunca** `git
 stash` — o stash é justamente o que confundiu o cálculo de atualidade do Gradle acima.
@@ -155,8 +202,13 @@ Duas armadilhas:
    android.jar stub devolve 0 em `width`/`height` e a asserção passa sem testar
    nada.
 
-O emulador usa câmera virtual: reporta EIS/HDR não suportados e só HD 30.
+O emulador usa câmera virtual, e o que ela reporta depende da AVD (ver armadilha 4).
 Validação de qualidade precisa de aparelho real.
+
+Para testar o registro de modos sem depender dos modos de produção, use `modoDeTeste(...)`
+(em `src/test`) e passe o registro explicitamente — `ModeRegistry.arranged(..., registry)`,
+`CameraViewModel(modeRegistry = ...)`, `CameraModes(registry)`. Teste que afirma o conteúdo
+exato do registro de produção quebra a cada modo novo.
 
 ## Detekt
 
@@ -171,11 +223,13 @@ O prazo da Play Store (`targetSdk` 36 até **31/10/2026**) foi cumprido: o item 
 mudança de orientação do Android 16 exigiu — ver
 [specs/2026-08-03-adaptive-layout/](specs/2026-08-03-adaptive-layout/).
 
-O resto está mapeado em [REFACTORING.md](REFACTORING.md). Em resumo: `CameraScreen.kt` tem um
-composable de ~1.100 linhas, `CameraManager.kt` acumula bind, sondagem de
-capacidades, gravação, processamento de bitmap e EXIF, e o ViewModel expõe ~30
-`StateFlow` soltos. Ao mexer nesses arquivos, prefira extrair a parte que você
-tocou a aumentá-los.
+O resto está mapeado em [REFACTORING.md](REFACTORING.md). A spec de registro de modos
+(2026-08-05) tirou dos três arquivos grandes o que tocou — seletor, gaveta, controles,
+overlays, bind por modo, sondagem de capacidade, estado de modos. Continua lá:
+`CameraScreen.kt` (1.830 linhas) com gestos e os overlays de grade, nível e foco;
+`CameraManager.kt` (1.150) com gravação, processamento de bitmap e EXIF; e o ViewModel
+(~790) com ~30 `StateFlow` soltos. Ao mexer nesses arquivos, prefira extrair a parte que
+você tocou a aumentá-los.
 
 `ARCHITECTURE.md`, `PROJECT_STRUCTURE.md` e `README.md` descreviam `usecase/`,
 `VideoProcessor.kt`, Hilt e Room, que nunca existiram. Foram corrigidos — se

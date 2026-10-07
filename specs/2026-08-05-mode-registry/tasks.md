@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 12 · **Em andamento:** 0 · **Pendentes:** 1
+- **Concluídas:** 13 · **Em andamento:** 0 · **Pendentes:** 0
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -379,7 +379,7 @@
 
 ### Onda 8 — Recibo e fechamento
 
-#### [ ] 13. Recibo do NFR-2, verificação final e baselines
+#### [x] 13. Recibo do NFR-2, verificação final e baselines
 - **Size:** M
 - **Complexity:** medium
 - **Risk:** low
@@ -397,22 +397,22 @@
   - **DADO** os baselines **QUANDO** reencolhidos **ENTÃO** ambos diminuíram e nenhum achado novo foi silenciado (NFR-6)
   - **DADO** a comparação com o baseline **QUANDO** feita **ENTÃO** usou `git worktree`, nunca `git stash`
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest`
-  - [ ] Build limpo: `./gradlew assembleDebug lint detekt`
-  - [ ] Recibo anotado em `agent-progress.md` e commit do `ModoDemo` descartado
-  - [ ] Conferência manual final: `scripts/smoke.sh` mais o roteiro completo em aparelho real
+  - [x] Testes passam: `./gradlew testDebugUnitTest`
+  - [x] Build limpo: `./gradlew assembleDebug lint detekt`
+  - [x] Recibo anotado e ramo do modo de demonstração descartado — **1 arquivo + 1 linha**, e o modo funcionou no aparelho
+  - [x] Conferência manual final: roteiro completo em aparelho real contra o build de antes da spec — ver [`verificacao/tarefa-13/`](verificacao/tarefa-13/README.md)
 - **_Requirements: NFR-1, NFR-2, NFR-3, NFR-4, NFR-6_**
 - **_Decisions: ADR-001_**
 
-### Checkpoint final
-- [ ] Todos os critérios de aceite de todas as ondas atendidos
-- [ ] Verificação ponta a ponta rodada contra o sistema integrado
-- [ ] Recibo do NFR-2 dentro do limite — é o que prova que a spec entregou o que prometeu
-- [ ] NFR-1 confirmado: nenhum teste anterior com asserção alterada e `evt=bind` preexistente idêntico
-- [ ] NFR-3, NFR-4 e NFR-6 confirmados por **medição**, não por impressão
-- [ ] Nenhum bloqueio aberto em `decisions.md`
-- [ ] Red flags do §9.0.3 revisadas e ausentes: nenhuma tarefa `XL`, nenhum título com "e" escondendo duas fatias, nenhuma tarefa única de integração no fim (os checkpoints por onda substituem), nenhuma cadeia serial de 4+ sem ramificação que fosse decomponível
-- [ ] Pronto para revisão e merge
+### Checkpoint final — **PASSOU** (2026-10-07)
+- [x] Todos os critérios de aceite de todas as ondas atendidos — com o teto de 1/4 s do obturador decidido pelo usuário (Q-13)
+- [x] Verificação ponta a ponta rodada contra o sistema integrado, no aparelho, contra o build de antes da spec
+- [x] Recibo do NFR-2 dentro do limite: 1 arquivo + 1 linha
+- [x] NFR-1 confirmado: `evt=bind` preexistente, mídia e árvore de UI idênticos (exceto o "Mais"). Dois testes anteriores à spec mudaram de **forma**, não de asserção, porque o enum que testavam deixou de existir (Q-10)
+- [x] NFR-3, NFR-4 e NFR-6 confirmados por **medição** — com a ressalva de que a meta "ViewModel não crescer" não foi atingida (786 contra 694)
+- [x] Nenhum bloqueio aberto em `decisions.md`; Q-06 e Q-08 viraram itens do REFACTORING.md
+- [x] Red flags do §9.0.3 revisadas
+- [x] Pronto para revisão e merge
 
 ---
 

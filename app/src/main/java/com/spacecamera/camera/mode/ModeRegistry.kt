@@ -20,7 +20,7 @@ object ModeRegistry {
     val all: List<CameraModeDefinition> = listOf(
         VideoMode,
         PhotoMode,
-        ProMode
+        ProMode,  // vírgula final: o próximo modo é uma linha só no diff
     )
 
     /**

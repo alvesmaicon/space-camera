@@ -84,9 +84,13 @@ aparelho passar a reportar capacidades diferentes, aparece ali.
 
 | Arquivo | Linhas | Problema |
 |---|---:|---|
-| `presentation/screens/CameraScreen.kt` | ~2.150 | um composable de ~1.200 linhas |
-| `camera/CameraManager.kt` | ~1.130 | cinco responsabilidades no mesmo arquivo |
-| `presentation/viewmodels/CameraViewModel.kt` | ~615 | ~30 `StateFlow` soltos |
+| `presentation/screens/CameraScreen.kt` | 1.830 | composable ainda grande: gestos, overlays de grade/nível/foco |
+| `camera/CameraManager.kt` | 1.150 | gravação, processamento de bitmap e EXIF no mesmo arquivo |
+| `presentation/viewmodels/CameraViewModel.kt` | ~790 | ~30 `StateFlow` soltos |
+
+Medido em 2026-10-07, ao fim da spec de registro de modos
+([specs/2026-08-05-mode-registry/](specs/2026-08-05-mode-registry/)), que tirou dos três
+arquivos o que tocou. O que saiu está anotado em cada item abaixo.
 
 ## 1. Quebrar `CameraScreen.kt`
 
@@ -112,6 +116,14 @@ O estado local (`showZoomDial`, `focusPoint`, `exposureAnchor`,
 **Sugestão:** um overlay por PR, verificando na tela a cada passo. Não vale a
 pena tentar tudo de uma vez.
 
+**Já saiu** (spec de registro de modos): seletor de modos e gaveta
+(`components/ModeSelector`, `ModeDrawer`), a barra superior inteira
+(`components/TopBarControl`, `TopBarButtons`, montada da lista que o modo declara),
+overlays por modo (`components/ModeOverlays`), escalas do Pro (`ProScaleSlider`) e a
+proporção da pré-visualização (`layout/PreviewAspect`). Os roteiros de comparação de
+árvore de UI em `specs/2026-08-05-mode-registry/verificacao/roteiros/` servem de rede
+para os próximos recortes.
+
 ## 2. Separar `CameraManager.kt`
 
 Hoje o arquivo faz cinco coisas distintas:
@@ -135,6 +147,13 @@ que já é a implementação de `CameraController`.
 `decimalToDmsExif` (~linha 1035) tem um `val d = ...` colado na mesma linha da
 assinatura; provavelmente um merge malfeito. Vale olhar ao mexer.
 
+**Já saiu** (spec de registro de modos): a tradução de use cases e a recuperação de bind
+recusado (`mode/ModeBinder`, `ModeSession`), a sondagem de `MANUAL_SENSOR`, EIS e HDR
+(`SensorCharacteristicsReader`, `mode/CapabilityProbe`), a exposição manual
+(`ManualExposureControls`) e a lista de tags EXIF (`ExifCameraTags`). Faltam
+`VideoRecorder`, `PhotoCapturer`, `ImagePostProcessor` e `MediaSaver`; a sondagem de
+resoluções e ultra-wide continua dentro do `CameraManager`.
+
 ## 3. Agrupar o estado do ViewModel
 
 ~30 `StateFlow` privados espelhados em ~30 públicos, mais 15 blocos
@@ -150,6 +169,24 @@ Duas frentes:
 
 Faça **depois** dos itens 1 e 2: mudar a forma do estado obriga a tocar a UI, e é
 melhor que a UI já esteja quebrada em pedaços.
+
+**Já saiu:** o estado de modos (ativo, arranjo, preferência, exposição manual) está em
+`viewmodels/CameraModes`, puro e testado em JVM. É o modelo a seguir para os outros grupos.
+
+## 3a. Defeitos conhecidos, registrados e não corrigidos
+
+Encontrados durante a spec de registro de modos; ficaram fora porque corrigi-los mudaria
+comportamento numa spec cujo critério era não mudar. Cada um tem a análise completa em
+`specs/2026-08-05-mode-registry/decisions.md`.
+
+- **`evt=bind` registra a proporção anterior** (Q-06). O bind roda antes de o
+  `LaunchedEffect` entregar o rótulo novo ao controller. A captura está certa — só a
+  telemetria mente, sempre por um passo.
+- **O modo não é reaplicado quando o controller é recriado** (Q-08). Em janela larga,
+  girar o aparelho em Foto 3:4 recria a Activity, e o controller novo nasce em Vídeo. Não
+  verificado em aparelho.
+- **Gaveta aberta em janela larga desloca o seletor** (verificação da Tarefa 9): a coluna
+  de controles alarga para os 280dp do painel. Cosmético.
 
 ## 4. `VideoRepository` não paga o próprio custo
 
@@ -179,10 +216,9 @@ atenção, já que afetam distribuição ou correção:
 - **`MissingPermission`** — chamada de localização sem checagem explícita de
   permissão. Hoje protegida por convenção (`isSaveLocationEnabled`), não por
   verificação.
-- **`UnsafeOptInUsageError`** (31x) — o `@OptIn(ExperimentalCamera2Interop)` no
-  topo do `CameraManager` não está surtindo efeito. O compilador Kotlin também
-  avisa: *"Annotation ... is not an opt-in requirement marker"*. Na prática o uso
-  de Camera2 interop está sem opt-in válido.
+- ~~**`UnsafeOptInUsageError`** (31x)~~ — **corrigido** na spec de registro de modos
+  (Tarefa 3): o consentimento passou a ser `@androidx.annotation.OptIn`, e o baseline de
+  lint encolheu de 119 para 88.
 - **`GradleDependency`** (84x) — dependências desatualizadas. Uma passada de
   atualização faz sentido junto do item 0, já que subir o SDK provavelmente vai
   exigir CameraX e Compose mais novos de qualquer forma.

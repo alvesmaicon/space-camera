@@ -81,6 +81,8 @@ import com.spacecamera.camera.mode.ControlId
 import com.spacecamera.camera.mode.FlashBehavior
 import com.spacecamera.camera.mode.ShutterAction
 import com.spacecamera.presentation.components.ModeDrawer
+import com.spacecamera.presentation.components.TopBarContext
+import com.spacecamera.presentation.components.TopBarControl
 import com.spacecamera.presentation.components.ModeOverlay
 import com.spacecamera.presentation.components.ModeRejectedNotice
 import com.spacecamera.presentation.components.ModeSelector
@@ -155,7 +157,7 @@ import androidx.compose.foundation.verticalScroll
  * isenta componentes inativos do contraste mínimo, e igualar os dois faria
  * "não suportado" parecer apenas "desligado".
  */
-private const val OFF_CONTROL_ALPHA = 0.48f
+internal const val OFF_CONTROL_ALPHA = 0.48f
 
 @Composable
 fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () -> Unit = {}) {
@@ -624,154 +626,22 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
             // Só um modo que grava pode estar gravando, e o modo não muda durante a
             // gravação (FR-15) — então `isRecording` já implica o modo certo.
             val barDisabled = isRecording || countdownSeconds > 0
-            // Um controle da barra, pelo identificador que o modo declara (ADR-001,
-            // Q-09). O `when` é exaustivo: controle novo sem desenho não compila.
-            // `modo` é o do conteúdo animado, não o atual — na troca as duas barras
-            // aparecem juntas, e a que sai não pode mudar de estilo no caminho.
+            // Um controle da barra, pelo identificador que o modo declara — o desenho de cada
+            // um mora em components/TopBarControls.kt (ADR-001, Q-09).
             val controleDaBarra: @Composable (ControlId, CameraModeDefinition) -> Unit = { id, modo ->
-                when (id) {
-                    ControlId.RESOLUTION -> ResolutionTopBarButton(
-                        option = selectedVideoOption,
-                        isActive = showResolutionMenu,
-                        enabled = !barDisabled,
+                TopBarControl(
+                    id, modo,
+                    TopBarContext(
+                        viewModel = viewModel,
+                        barDisabled = barDisabled,
                         rotationDeg = iconRotation,
-                        onClick = { showResolutionMenu = !showResolutionMenu }
+                        resolutionMenuOpen = showResolutionMenu,
+                        onToggleResolutionMenu = { showResolutionMenu = !showResolutionMenu },
+                        expanded = isTopBarExpanded,
+                        onToggleExpanded = { isTopBarExpanded = !isTopBarExpanded },
+                        onOpenSettings = onOpenSettings
                     )
-                    ControlId.STABILIZATION -> TopBarTextToggle(
-                        label = "EIS",
-                        isOn = isStabilizationEnabled,
-                        enabled = !barDisabled && isEisSupported,
-                        rotationDeg = iconRotation,
-                        onClick = { viewModel.toggleStabilization() }
-                    )
-                    ControlId.PHOTO_QUALITY -> ResolutionTopBarButton(
-                        displayLabel = photoQualityPreset.displayLabel,
-                        isActive = false,
-                        enabled = countdownSeconds == 0,
-                        rotationDeg = iconRotation,
-                        onClick = { viewModel.setPhotoQualityPreset(photoQualityPreset.next()) }
-                    )
-                    ControlId.ASPECT_RATIO -> TopBarTextToggle(
-                        label = selectedAspectRatio,
-                        isOn = true,
-                        enabled = countdownSeconds == 0,
-                        rotationDeg = iconRotation,
-                        onClick = {
-                            val photoRatios = listOf("Full", "9:16", "3:4")
-                            val idx = photoRatios.indexOf(selectedAspectRatio).let { if (it < 0) 0 else it }
-                            val next = photoRatios[(idx + 1) % photoRatios.size]
-                            viewModel.setAspectRatio(next)
-                        }
-                    )
-                    ControlId.FLASH -> when (modo.flashBehavior()) {
-                        FlashBehavior.Torch -> TopBarIconToggle(
-                            isOn = isFlashOn,
-                            iconOn = Icons.Default.FlashOn,
-                            iconOff = Icons.Default.FlashOff,
-                            desc = "Flash",
-                            enabled = !isFrontCamera && countdownSeconds == 0,
-                            rotationDeg = iconRotation,
-                            onClick = { viewModel.toggleFlash() },
-                            iconSize = 26.dp
-                        )
-                        FlashBehavior.PhotoCycle -> IconButton(
-                            onClick = { viewModel.toggleFlash() },
-                            enabled = !isFrontCamera && countdownSeconds == 0,
-                            modifier = Modifier.size(46.dp)
-                        ) {
-                            Icon(
-                                imageVector = when (photoFlashMode) {
-                                    PhotoFlashMode.AUTO -> Icons.Default.FlashAuto
-                                    PhotoFlashMode.ON -> Icons.Default.FlashOn
-                                    else -> Icons.Default.FlashOff
-                                },
-                                contentDescription = "Flash",
-                                tint = when {
-                                    isFrontCamera || countdownSeconds > 0 -> Color.White.copy(alpha = 0.2f)
-                                    photoFlashMode != PhotoFlashMode.OFF -> Color.White
-                                    else -> Color.White.copy(alpha = OFF_CONTROL_ALPHA)
-                                },
-                                modifier = Modifier.size(26.dp).rotate(iconRotation)
-                            )
-                        }
-                        FlashBehavior.Unavailable -> Unit
-                    }
-                    ControlId.TIMER -> TopBarTimerButton(
-                        delay = recordingDelay,
-                        enabled = !barDisabled,
-                        rotationDeg = iconRotation,
-                        onClick = { viewModel.cycleRecordingDelay() }
-                    )
-                    ControlId.MORE_OPTIONS -> IconButton(
-                        onClick = { isTopBarExpanded = !isTopBarExpanded },
-                        modifier = Modifier.size(46.dp)
-                    ) {
-                        Icon(
-                            if (isTopBarExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (isTopBarExpanded) "Recolher" else "Mais opções",
-                            tint = if (isTopBarExpanded) Color.White else Color.White.copy(alpha = 0.6f),
-                            modifier = Modifier.size(24.dp).rotate(iconRotation)
-                        )
-                    }
-                    ControlId.NOISE_REDUCTION -> TopBarTextToggle(
-                        label = "NR",
-                        isOn = isNoiseReductionEnabled,
-                        enabled = !barDisabled,
-                        rotationDeg = iconRotation,
-                        onClick = { viewModel.toggleNoiseReduction() }
-                    )
-                    ControlId.IMAGE_ENHANCEMENT -> TopBarIconToggle(
-                        isOn = isImageEnhancementEnabled,
-                        iconOn = Icons.Default.AutoAwesome,
-                        iconOff = Icons.Default.AutoAwesome,
-                        desc = "Melhoria",
-                        enabled = countdownSeconds == 0,
-                        rotationDeg = iconRotation,
-                        onClick = { viewModel.toggleImageEnhancement() },
-                        iconSize = 24.dp
-                    )
-                    ControlId.HDR -> TopBarIconToggle(
-                        isOn = isHdrEnabled,
-                        iconOn = Icons.Default.HdrOn,
-                        iconOff = Icons.Default.HdrOff,
-                        desc = "HDR",
-                        enabled = !barDisabled && isHdrSupported,
-                        rotationDeg = iconRotation,
-                        onClick = { viewModel.toggleHdr() },
-                        iconSize = 26.dp
-                    )
-                    ControlId.MICROPHONE -> TopBarIconToggle(
-                        isOn = !isMicMuted,
-                        iconOn = Icons.Default.Mic,
-                        iconOff = Icons.Default.MicOff,
-                        desc = "Microfone",
-                        enabled = !barDisabled,
-                        rotationDeg = iconRotation,
-                        onClick = { viewModel.toggleMic() },
-                        iconSize = 26.dp
-                    )
-                    ControlId.GRID -> TopBarIconToggle(
-                        isOn = isGridEnabled,
-                        iconOn = Icons.Default.GridOn,
-                        iconOff = Icons.Default.GridOff,
-                        desc = "Grade",
-                        enabled = !barDisabled,
-                        rotationDeg = iconRotation,
-                        onClick = { viewModel.toggleGrid() },
-                        iconSize = 26.dp
-                    )
-                    ControlId.SETTINGS -> IconButton(
-                        onClick = { onOpenSettings() },
-                        modifier = Modifier.size(46.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.VideoSettings,
-                            contentDescription = "Configurações",
-                            tint = Color.White,
-                            modifier = Modifier.size(26.dp).rotate(iconRotation)
-                        )
-                    }
-                }
+                )
             }
             AnimatedContent(
                 targetState = activeMode,
@@ -1868,199 +1738,6 @@ private fun LastPhotoThumbnail(uri: Uri, onClick: () -> Unit) {
                 contentDescription = "Última foto",
                 tint = Color.White.copy(alpha = 0.7f),
                 modifier = Modifier.size(26.dp)
-            )
-        }
-    }
-}
-
-// Resolution two-line button (original — video mode)
-@Composable
-private fun ResolutionTopBarButton(
-    option: com.spacecamera.camera.VideoOption,
-    isActive: Boolean,
-    enabled: Boolean = true,
-    rotationDeg: Float = 0f,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .background(
-                if (isActive && enabled) Color.White.copy(alpha = 0.22f) else Color.Transparent,
-                RoundedCornerShape(7.dp)
-            )
-            .clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() },
-                enabled = enabled,
-                onClick = onClick
-            )
-            .padding(horizontal = 10.dp, vertical = 2.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy((-2).dp),
-            modifier = Modifier.rotate(rotationDeg)
-        ) {
-            Text(
-                option.qualityLabel,
-                color = if (enabled) Color.White else Color.White.copy(alpha = 0.28f),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                lineHeight = 12.sp
-            )
-            Text(
-                "${option.fps}",
-                color = if (enabled) Color.White.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.2f),
-                fontSize = 8.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                lineHeight = 8.sp
-            )
-        }
-    }
-}
-
-// Resolution button — photo mode (single label like "MAX", "12MP")
-@Composable
-private fun ResolutionTopBarButton(
-    displayLabel: String,
-    isActive: Boolean,
-    enabled: Boolean = true,
-    rotationDeg: Float = 0f,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .background(
-                if (isActive && enabled) Color.White.copy(alpha = 0.22f) else Color.Transparent,
-                RoundedCornerShape(7.dp)
-            )
-            .clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() },
-                enabled = enabled,
-                onClick = onClick
-            )
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            displayLabel,
-            color = if (enabled) Color.White else Color.White.copy(alpha = 0.28f),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.rotate(rotationDeg)
-        )
-    }
-}
-
-// Text-only toggle (EIS) — no background, white when on, gray when off
-@Composable
-private fun TopBarTextToggle(
-    label: String,
-    isOn: Boolean,
-    enabled: Boolean = true,
-    rotationDeg: Float = 0f,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() },
-                enabled = enabled,
-                onClick = onClick
-            )
-            .padding(horizontal = 8.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            label,
-            color = when {
-                !enabled -> Color.White.copy(alpha = 0.2f)
-                isOn -> Color.White
-                else -> Color.White.copy(alpha = OFF_CONTROL_ALPHA)
-            },
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.rotate(rotationDeg)
-        )
-    }
-}
-
-@Composable
-private fun TopBarIconToggle(
-    isOn: Boolean,
-    iconOn: ImageVector,
-    iconOff: ImageVector,
-    desc: String,
-    enabled: Boolean = true,
-    iconSize: Dp = 26.dp,
-    rotationDeg: Float = 0f,
-    onClick: () -> Unit
-) {
-    IconButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier.size(46.dp)
-    ) {
-        Icon(
-            if (isOn) iconOn else iconOff,
-            contentDescription = desc,
-            tint = when {
-                !enabled -> Color.White.copy(alpha = 0.2f)
-                isOn -> Color.White
-                else -> Color.White.copy(alpha = OFF_CONTROL_ALPHA)
-            },
-            modifier = Modifier.size(iconSize).rotate(rotationDeg)
-        )
-    }
-}
-
-@Composable
-private fun TopBarTimerButton(
-    delay: RecordingDelay,
-    enabled: Boolean = true,
-    rotationDeg: Float = 0f,
-    onClick: () -> Unit
-) {
-    val iconTint = when {
-        !enabled -> Color.White.copy(alpha = 0.2f)
-        delay != RecordingDelay.OFF -> Color.White
-        else -> Color.White.copy(alpha = OFF_CONTROL_ALPHA)
-    }
-    IconButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier.size(46.dp)
-    ) {
-        when (delay) {
-            RecordingDelay.OFF -> Icon(
-                Icons.Outlined.TimerOff,
-                contentDescription = "Timer desativado",
-                tint = iconTint,
-                modifier = Modifier.size(26.dp).rotate(rotationDeg)
-            )
-            RecordingDelay.THREE -> Icon(
-                TimerIcon3,
-                contentDescription = "Timer 3s",
-                tint = iconTint,
-                modifier = Modifier.size(26.dp).rotate(rotationDeg)
-            )
-            RecordingDelay.FIVE -> Icon(
-                TimerIcon5,
-                contentDescription = "Timer 5s",
-                tint = iconTint,
-                modifier = Modifier.size(26.dp).rotate(rotationDeg)
-            )
-            RecordingDelay.TEN -> Icon(
-                TimerIcon10,
-                contentDescription = "Timer 10s",
-                tint = iconTint,
-                modifier = Modifier.size(26.dp).rotate(rotationDeg)
             )
         }
     }

@@ -21,6 +21,12 @@ class ModeRegistryTest {
     /** Aparelho com controle manual, como o edge 60 neo do baseline. */
     private val comManual = setOf(Capability.MANUAL_SENSOR)
 
+    /**
+     * Registro fixo para os testes de **regra**. Com o de produção, cada modo novo
+     * quebrava estes testes — o recibo do NFR-2 (Tarefa 13) mostrou isso.
+     */
+    private val base = listOf(VideoMode, PhotoMode)
+
     // ── FR-1: o registro é a fonte única ────────────────────────────────────
 
     @Test
@@ -83,7 +89,7 @@ class ModeRegistryTest {
     @Test
     fun `sem preferência gravada usa a ordem e o plano do registro`() {
         // AC-8.2
-        val arranjo = ModeRegistry.arranged(ModeArrangement.DEFAULT, semNada)
+        val arranjo = ModeRegistry.arranged(ModeArrangement.DEFAULT, semNada, base)
         assertEquals(listOf("video", "photo"), arranjo.pinned.map { it.id.value })
         assertTrue(arranjo.drawer.isEmpty())
     }
@@ -112,7 +118,7 @@ class ModeRegistryTest {
         // Caso 3 do fluxo 4.5 do design: preferência gravada por uma versão que não
         // conhecia este modo. Ele não pode sumir só por não estar na lista.
         val pref = ModeArrangement(order = listOf("photo"), pinned = setOf("photo"))
-        val arranjo = ModeRegistry.arranged(pref, semNada)
+        val arranjo = ModeRegistry.arranged(pref, semNada, base)
         val todos = arranjo.pinned + arranjo.drawer
         assertEquals(setOf("photo", "video"), todos.map { it.id.value }.toSet())
         assertEquals("photo", todos.first().id.value)
@@ -180,7 +186,8 @@ class ModeRegistryTest {
         // NFR-8, quarto caso: nada aproveitável na preferência.
         val arranjo = ModeRegistry.arranged(
             ModeArrangement(order = listOf("nada", "disso", "existe"), pinned = setOf("nada")),
-            semNada
+            semNada,
+            base
         )
         val todos = (arranjo.pinned + arranjo.drawer).map { it.id.value }
         assertEquals(setOf("video", "photo"), todos.toSet())
