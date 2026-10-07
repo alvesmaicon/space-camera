@@ -1,7 +1,11 @@
 package com.spacecamera.camera
 
+import com.spacecamera.camera.mode.AppUseCase
+import com.spacecamera.camera.mode.CameraModeId
 import com.spacecamera.camera.mode.DeviceCapabilities
+import com.spacecamera.camera.mode.ModeBinder
 import timber.log.Timber
+import java.util.Locale
 
 /**
  * Eventos estruturados dos momentos decisivos da câmera.
@@ -27,7 +31,7 @@ internal object CameraTelemetry {
 
     /** Bind do CameraX concluído: o que de fato foi aplicado na sessão. */
     fun bind(
-        mode: CameraMode,
+        mode: CameraModeId,
         option: VideoOption,
         aspectRatio: String,
         bitrate: Int,
@@ -39,9 +43,24 @@ internal object CameraTelemetry {
     ) {
         Timber.i(
             "evt=bind mode=%s quality=%s fps=%d aspect=%s bitrate=%d eis=%b nr=%b hdr=%b front=%b elapsed_ms=%d",
-            mode.name, option.qualityLabel, option.fps, aspectRatio,
+            TelemetryFields.bindModeName(mode), option.qualityLabel, option.fps, aspectRatio,
             bitrate, eis, noiseReduction, hdr, frontCamera, elapsedMs
         )
+    }
+
+    /**
+     * Requirements: FR-13
+     *
+     * Troca de modo efetivada na sessão. Só sai quando o modo **ligado** muda — um
+     * rebind por proporção ou resolução não é troca de modo.
+     */
+    fun modeChanged(from: CameraModeId?, to: CameraModeId, useCases: Set<AppUseCase>, elapsedMs: Long) {
+        Timber.i("evt=mode %s", TelemetryFields.modeFields(from, to, useCases, elapsedMs))
+    }
+
+    /** O aparelho recusou o conjunto de [rejected]; o de [restored] foi religado no lugar. */
+    fun modeRejected(rejected: CameraModeId, restored: CameraModeId, error: Throwable) {
+        Timber.w(error, "evt=mode_failed to=%s restored=%s", rejected.value, restored.value)
     }
 
     fun bindFailed(error: Throwable) {
@@ -69,27 +88,7 @@ internal object CameraTelemetry {
             cameraId, eisSupported, hdrSupported,
             zoomRange.start, zoomRange.endInclusive,
             videoOptions.joinToString(",") { it.label },
-            manualSensorFields(device)
-        )
-    }
-
-    /**
-     * Requirements: FR-13, NFR-7
-     *
-     * Os campos de controle manual que fecham a linha `evt=caps`. Sem suporte, sai
-     * só `manual_sensor=false` — sem faixa nenhuma, para não sugerir que existe.
-     * Com suporte, os quatro campos sempre presentes (limite analógico ausente vira
-     * `-`), para quem fatia a linha por posição não quebrar.
-     *
-     * A exposição sai em nanossegundos, como o HAL reporta: a conversão para
-     * fração de segundo é coisa de UI, e na telemetria só atrapalharia o grep.
-     */
-    fun manualSensorFields(caps: DeviceCapabilities): String {
-        val faixas = caps.manualSensor ?: return "manual_sensor=false"
-        return "manual_sensor=true iso=%d-%d iso_analog_max=%s exposure_ns=%d-%d".format(
-            faixas.iso.first, faixas.iso.last,
-            faixas.maxAnalogIso?.toString() ?: "-",
-            faixas.exposureTimeNs.first, faixas.exposureTimeNs.last
+            TelemetryFields.manualSensorFields(device)
         )
     }
 
@@ -121,5 +120,50 @@ internal object CameraTelemetry {
     fun photoFailed(reason: String, error: Throwable? = null) {
         if (error != null) Timber.e(error, "evt=photo_failed reason=%s", reason)
         else Timber.e("evt=photo_failed reason=%s", reason)
+    }
+}
+
+/**
+ * Requirements: FR-13, NFR-1, NFR-7
+ *
+ * Os pedaços de linha de telemetria que têm regra própria, separados da emissão
+ * para serem testados na JVM sem depender do Timber. Só nomes e números saem daqui.
+ */
+internal object TelemetryFields {
+
+    /**
+     * Requirements: NFR-1
+     *
+     * O `mode=` de `evt=bind`. Passou a vir do identificador estável do modo, mas é
+     * campo preexistente comparado entre commits: `video` continua saindo `VIDEO`.
+     */
+    fun bindModeName(id: CameraModeId): String = id.value.uppercase(Locale.ROOT)
+
+    /** Campos de `evt=mode`. Use cases na ordem do bind, para a linha ser estável no grep. */
+    fun modeFields(from: CameraModeId?, to: CameraModeId, useCases: Set<AppUseCase>, elapsedMs: Long): String =
+        "from=%s to=%s use_cases=%s elapsed_ms=%d".format(
+            from?.value ?: "-", to.value,
+            ModeBinder.ordered(useCases).joinToString(",") { it.name.lowercase(Locale.ROOT) },
+            elapsedMs
+        )
+
+    /**
+     * Requirements: FR-13, NFR-7
+     *
+     * Os campos de controle manual que fecham a linha `evt=caps`. Sem suporte, sai
+     * só `manual_sensor=false` — sem faixa nenhuma, para não sugerir que existe.
+     * Com suporte, os quatro campos sempre presentes (limite analógico ausente vira
+     * `-`), para quem fatia a linha por posição não quebrar.
+     *
+     * A exposição sai em nanossegundos, como o HAL reporta: a conversão para
+     * fração de segundo é coisa de UI, e na telemetria só atrapalharia o grep.
+     */
+    fun manualSensorFields(caps: DeviceCapabilities): String {
+        val faixas = caps.manualSensor ?: return "manual_sensor=false"
+        return "manual_sensor=true iso=%d-%d iso_analog_max=%s exposure_ns=%d-%d".format(
+            faixas.iso.first, faixas.iso.last,
+            faixas.maxAnalogIso?.toString() ?: "-",
+            faixas.exposureTimeNs.first, faixas.exposureTimeNs.last
+        )
     }
 }

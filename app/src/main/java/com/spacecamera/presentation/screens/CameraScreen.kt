@@ -75,6 +75,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.spacecamera.camera.CameraMode
+import com.spacecamera.camera.mode.ShutterAction
 import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoOption
 import com.spacecamera.presentation.layout.AxisContainer
@@ -1240,15 +1241,9 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                     .size(80.dp)
                     .background(Color.White.copy(alpha = 0.12f), CircleShape)
                     .clickable {
-                        when {
-                            cameraMode == CameraMode.PHOTO && countdownSeconds > 0 -> viewModel.cancelCountdown()
-                            cameraMode == CameraMode.PHOTO -> {
-                                reviewIconRotation = snappedIconRotation
-                                viewModel.takePhotoWithDelay(snappedSurfaceRotation)
-                            }
-                            isRecording -> viewModel.stopRecording()
-                            countdownSeconds > 0 -> viewModel.cancelCountdown()
-                            else -> viewModel.startRecordingWithDelay(snappedSurfaceRotation)
+                        // O modo decide o que o disparador faz (FR-2, ADR-001).
+                        if (viewModel.onShutter(snappedSurfaceRotation) == ShutterAction.CapturePhoto) {
+                            reviewIconRotation = snappedIconRotation
                         }
                     },
                 contentAlignment = Alignment.Center

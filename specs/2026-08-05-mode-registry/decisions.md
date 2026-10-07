@@ -1190,6 +1190,48 @@ em que ele chega ao controller, ou passar a proporção junto com o pedido de bi
 mudança de comportamento observável da telemetria e fica fora do iso-comportamento das
 Tarefas 6 e 7 — candidata a commit próprio depois da Tarefa 7, ou ao ROADMAP.
 
+### Q-07: decisões tomadas na Tarefa 6
+
+**Status:** registradas, nenhuma bloqueante.
+
+1. **"Aviso discreto" da recusa de modo fica para a Tarefa 11.** O design §4.2 manda o
+   modo voltar ao anterior **e** mostrar um aviso. A volta foi implementada (controller
+   religa, `ModeSession` avisa, ViewModel reverte seletor e EIS — com teste). O aviso
+   visual não: Vídeo e Foto declaram o mesmo conjunto de use cases, então nenhuma troca
+   entre eles pode ser recusada por combinação. O primeiro modo que pode é o Pro — e é
+   na Tarefa 11 que o aviso tem como ser visto e verificado.
+2. **`CameraMode` ganhou `definition` como ponte.** O seletor e a tela ainda falam
+   `CameraMode` (enum); o ViewModel passa `mode.definition` ao controller. A ponte some
+   quando o seletor passar a ler o registro (Tarefa 8).
+3. **A regra "vídeo é sempre 16:9" ficou como `modes.current === VideoMode`** em
+   `cameraXAspectRatio()`. Comparar identidade de modo é exatamente o tipo de ramificação
+   que a spec elimina — mas levar a regra de proporção para a definição é o passo 3 da
+   Tarefa 7, e antecipar seria fazer a 7 dentro da 6.
+4. **Uma linha do baseline de detekt foi reescrita, não regenerada.** A entrada
+   `LongParameterList` de `CameraTelemetry.bind` é identificada pela assinatura, que
+   mudou de `mode: CameraMode` para `mode: CameraModeId`. É a mesma dívida, com a mesma
+   contagem de parâmetros; regenerar o baseline inteiro é o que o CLAUDE.md proíbe,
+   porque esconderia achado novo. Os achados novos de verdade foram corrigidos:
+   `TooManyFunctions` (formatadores puros saíram para `TelemetryFields`) e `SpreadOperator`
+   (suprimido no ponto, com motivo: a API do `bindToLifecycle` só aceita vararg).
+5. **A sondagem de EIS/HDR saiu do `CameraManager`** para `SensorCharacteristicsReader.kt`,
+   sem mudar a regra — necessário para o NFR-3 e conferido pelo `evt=caps` idêntico.
+
+### Q-08: modo não é reaplicado quando o controller é recriado
+
+**Levantada por:** Tarefa 6, lendo o código. **Não verificada em aparelho.**
+**Status:** aberta — candidata a correção própria depois da Tarefa 7.
+
+Quando a Activity é recriada com outro `LifecycleOwner` (rotação em janela larga), o
+ViewModel cria um controller novo, que nasce em `VideoMode`. O modo do ViewModel só
+chega ao controller por `setCameraMode` — nunca na criação, nem antes nem depois desta
+spec. Se o usuário estiver em Foto 3:4 e a Activity for recriada, a sessão provavelmente
+liga com a proporção do vídeo (16:9) enquanto a tela mostra Foto.
+
+Não corrigido aqui de propósito: mudaria comportamento observável numa tarefa cujo
+critério é iso-comportamento. Para verificar: em janela larga, Foto 3:4, girar, fotografar
+e ler a dimensão no MediaStore.
+
 ---
 
 ## Bloqueios

@@ -9,10 +9,14 @@ import androidx.test.core.app.ApplicationProvider
 import com.spacecamera.camera.CameraControllerFactory
 import com.spacecamera.camera.CameraMode
 import com.spacecamera.camera.FakeCameraController
+import com.spacecamera.camera.ModeRejection
 import com.spacecamera.camera.PhotoQualityPreset
 import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoBitratePreset
 import com.spacecamera.camera.VideoOption
+import com.spacecamera.camera.mode.PhotoMode
+import com.spacecamera.camera.mode.ShutterAction
+import com.spacecamera.camera.mode.VideoMode
 import com.spacecamera.data.storage.SettingsStorage
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -588,5 +592,93 @@ class CameraViewModelTest {
             "o PreviewView novo precisa receber a surface do Preview existente"
         )
         assertEquals(1, criados[0].rebindCount, "e os ajustes voltam a ser aplicados")
+    }
+
+    // ── Despacho pela definição do modo (Tarefa 6) ──────────────────────────
+    //
+    // Requirements: FR-2, FR-3, FR-15 · Decisions: ADR-001, ADR-002
+    //
+    // O disparador e o flash deixam de ramificar por `CameraMode` e passam a
+    // perguntar à definição do modo. O que se testa aqui é que a pergunta chega e
+    // que a resposta é executada — o conteúdo das respostas tem teste JVM puro em
+    // `CameraModeDefinitionTest`.
+
+    @Test
+    fun `disparador no video em repouso inicia a gravacao`() = teste {
+        inicializar()
+
+        val acao = viewModel.onShutter(targetRotation = 0)
+        advanceTimeBy(50)
+
+        assertEquals(ShutterAction.StartRecording, acao)
+        assertEquals(1, controller.startRecordingCount)
+    }
+
+    @Test
+    fun `disparador no video gravando para a gravacao`() = teste {
+        inicializar()
+        viewModel.startRecording(targetRotation = 0)
+        advanceTimeBy(100)
+
+        val acao = viewModel.onShutter(targetRotation = 0)
+        advanceTimeBy(50)
+
+        assertEquals(ShutterAction.StopRecording, acao)
+        assertEquals(1, controller.stopRecordingCount)
+    }
+
+    @Test
+    fun `disparador durante a contagem cancela em vez de disparar de novo`() = teste {
+        inicializar()
+        viewModel.cycleRecordingDelay() // 3s
+        viewModel.onShutter(targetRotation = 0)
+        advanceTimeBy(1_500)
+
+        val acao = viewModel.onShutter(targetRotation = 0)
+        advanceTimeBy(5_000)
+
+        assertEquals(ShutterAction.CancelCountdown, acao)
+        assertEquals(0, controller.startRecordingCount)
+        assertEquals(0, viewModel.countdownSeconds.value)
+    }
+
+    @Test
+    fun `disparador na foto captura`() = teste {
+        inicializar()
+        viewModel.setCameraMode(CameraMode.PHOTO)
+
+        val acao = viewModel.onShutter(targetRotation = 0)
+        advanceTimeBy(50)
+
+        assertEquals(ShutterAction.CapturePhoto, acao)
+        assertEquals(1, controller.takePhotoCount)
+        assertEquals(0, controller.startRecordingCount)
+    }
+
+    @Test
+    fun `trocar de modo entrega a definicao ao controller`() = teste {
+        inicializar()
+
+        viewModel.setCameraMode(CameraMode.PHOTO)
+        assertEquals(PhotoMode, controller.lastAppliedMode)
+
+        viewModel.setCameraMode(CameraMode.VIDEO)
+        assertEquals(VideoMode, controller.lastAppliedMode)
+    }
+
+    @Test
+    fun `modo recusado pelo aparelho volta o seletor e o EIS para o modo restaurado`() = teste {
+        // Fluxo 4.2 do design: o controller já religou o conjunto anterior; o
+        // ViewModel só precisa parar de mostrar o modo que não existe na sessão.
+        storage.isStabilizationEnabled = true
+        inicializar()
+        viewModel.setCameraMode(CameraMode.PHOTO)
+        assertFalse(viewModel.isStabilizationEnabled.value)
+
+        controller.modeRejectionsFlow.emit(ModeRejection(rejected = PhotoMode.id, active = VideoMode.id))
+        advanceUntilIdle()
+
+        assertEquals(CameraMode.VIDEO, viewModel.cameraMode.value)
+        assertTrue(viewModel.isStabilizationEnabled.value, "o EIS do vídeo precisa voltar junto")
     }
 }

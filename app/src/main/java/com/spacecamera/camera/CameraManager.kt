@@ -51,6 +51,13 @@ import androidx.camera.core.FocusMeteringAction
 import timber.log.Timber
 import com.spacecamera.camera.mode.CapabilityProbe
 import com.spacecamera.camera.mode.DeviceCapabilities
+import com.spacecamera.camera.mode.AppUseCase.IMAGE_CAPTURE
+import com.spacecamera.camera.mode.AppUseCase.PREVIEW
+import com.spacecamera.camera.mode.AppUseCase.VIDEO_CAPTURE
+import com.spacecamera.camera.mode.CameraModeDefinition
+import com.spacecamera.camera.mode.ModeBinder
+import com.spacecamera.camera.mode.VideoMode
+import kotlinx.coroutines.flow.SharedFlow
 
 sealed class RecordingState {
     object Idle : RecordingState()
@@ -143,6 +150,8 @@ class CameraManager(
 
     private val _deviceCapabilities = MutableStateFlow(DeviceCapabilities.UNKNOWN)
     override val deviceCapabilities: StateFlow<DeviceCapabilities> = _deviceCapabilities
+    private val modes = ModeSession(VideoMode)
+    override val modeRejections: SharedFlow<ModeRejection> = modes.rejections
 
     private val _isEisSupported = MutableStateFlow(false)
     override val isEisSupported: StateFlow<Boolean> = _isEisSupported
@@ -196,7 +205,6 @@ class CameraManager(
     private var selectedAspectRatio: String = "9:16"   // aspect ratio do modo FOTO
     // Só telemetria — quem define é a UI, conforme a janela. Ver CameraController.
     override var previewAspectLabel: String = "9:16"
-    private var currentCameraMode: CameraMode = CameraMode.VIDEO
     private var currentPhotoFlashMode: Int = ImageCapture.FLASH_MODE_OFF
     override var photoQualityPreset: PhotoQualityPreset = PhotoQualityPreset.MAXIMA
     var isFrontCamera = false
@@ -221,8 +229,9 @@ class CameraManager(
 
     /** Converts our aspect ratio string to a CameraX AspectRatio constant. */
     private fun cameraXAspectRatio(): Int {
-        // Vídeo é sempre 9:16 independente do que estiver selecionado em foto
-        if (currentCameraMode == CameraMode.VIDEO) return AspectRatio.RATIO_16_9
+        // Vídeo é sempre 9:16 independente do que estiver selecionado em foto.
+        // A Tarefa 7 leva esta regra para a definição do modo.
+        if (modes.current === VideoMode) return AspectRatio.RATIO_16_9
         return when (selectedAspectRatio) {
             "3:4", "1:1" -> AspectRatio.RATIO_4_3
             // "Full" usa sensor 16:9 + FILL_CENTER no PreviewView = crop para tela cheia
@@ -412,7 +421,6 @@ class CameraManager(
         val cameraProvider = cameraProvider ?: return
         val bindStartedAt = SystemClock.elapsedRealtime()
         Timber.d("bindCameraUseCases START — EIS=$isStabilizationEnabled NR=$isNoiseReductionEnabled HDR=$isHdrEnabled")
-        cameraProvider.unbindAll()
 
         val aspectRatio = cameraXAspectRatio()
 
@@ -486,14 +494,18 @@ class CameraManager(
         Timber.d("bindCameraUseCases: EIS=${isStabilizationEnabled} NR=${isNoiseReductionEnabled} HDR=${isHdrEnabled}")
         _isCameraReady.value = false
 
+        // Liga só o que o modo declara (FR-2); se o aparelho recusar, religa o modo
+        // anterior em vez de deixar a sessão vazia (fluxo 4.2 do design, ADR-002).
+        val construidos = mapOf(PREVIEW to preview, VIDEO_CAPTURE to videoCapture!!, IMAGE_CAPTURE to imageCapture!!)
         try {
-            camera = cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                effectiveCameraSelector,
-                preview,
-                videoCapture,
-                imageCapture!!
-            )
+            camera = modes.bind(onRestored = { scheduleBind() }) { modo ->
+                cameraProvider.unbindAll()
+                @Suppress("SpreadOperator") // a API só tem vararg; até 3 itens, uma vez por bind
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner, effectiveCameraSelector, *ModeBinder.resolve(modo.useCases, construidos).toTypedArray()
+                )
+            }
+            if (VIDEO_CAPTURE !in modes.current.useCases) videoCapture = null  // nada grava fora da sessão
             camera?.cameraControl?.setExposureCompensationIndex(0)
             // Populate exposure range from camera info
             val expState = camera?.cameraInfo?.exposureState
@@ -503,35 +515,13 @@ class CameraManager(
                 _exposureIndex.value = expState.exposureCompensationIndex
             }
 
-            // Diagnóstico: modos de estabilização suportados pelo HAL
+            // Capacidades do HAL — leitura e regras em SensorCharacteristicsReader.kt
             val cam2Info = Camera2CameraInfo.from(camera!!.cameraInfo)
-            val availableStabModes = cam2Info.getCameraCharacteristic(
-                CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES
-            )
-            val availableOisModes = cam2Info.getCameraCharacteristic(
-                CameraCharacteristics.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION
-            )
-            val availableSceneModes = cam2Info.getCameraCharacteristic(
-                CameraCharacteristics.CONTROL_AVAILABLE_SCENE_MODES
-            )
-            val availableToneMapModes = cam2Info.getCameraCharacteristic(
-                CameraCharacteristics.TONEMAP_AVAILABLE_TONE_MAP_MODES
-            )
             val sensor = cam2Info.sensorCharacteristics()
             _deviceCapabilities.value = CapabilityProbe.decide(sensor)
-            Timber.d("HAL stabilization — video modes=${availableStabModes?.toList()}  OIS modes=${availableOisModes?.toList()}")
-            _isEisSupported.value = availableStabModes?.contains(
-                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON
-            ) == true
-            val hasHdrSceneMode = availableSceneModes?.contains(CaptureRequest.CONTROL_SCENE_MODE_HDR) == true
-            val hasHighQualityToneMap = availableToneMapModes?.contains(CaptureRequest.TONEMAP_MODE_HIGH_QUALITY) == true
-            val hasTenBitCapability = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                sensor.requestCapabilities?.contains(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT) == true
-            } else {
-                true
-            }
-            _isHdrSupported.value = hasHdrSceneMode && hasHighQualityToneMap && hasTenBitCapability
-            Timber.d("HDR support: scene=$hasHdrSceneMode tonemapHQ=$hasHighQualityToneMap tenBit=$hasTenBitCapability => supported=${_isHdrSupported.value}")
+            val video = cam2Info.videoFeatureSupport(sensor.requestCapabilities)
+            _isEisSupported.value = video.eis
+            _isHdrSupported.value = video.hdr
 
             if (!_isHdrSupported.value && isHdrEnabled) {
                 Timber.w("HDR solicitado, mas não suportado por scene mode neste dispositivo. Desativando HDR.")
@@ -546,8 +536,9 @@ class CameraManager(
 
             updateAvailableZoomLevels()
 
+            val decorrido = SystemClock.elapsedRealtime() - bindStartedAt
             CameraTelemetry.bind(
-                mode = currentCameraMode,
+                mode = modes.current.id,
                 option = selectedVideoOption,
                 // A proporção efetiva da caixa de pré-visualização, que depende da
                 // janela — não a preferência de foto persistida (FR-3, AC-3.2).
@@ -557,8 +548,9 @@ class CameraManager(
                 noiseReduction = isNoiseReductionEnabled,
                 hdr = isHdrEnabled,
                 frontCamera = isFrontCamera,
-                elapsedMs = SystemClock.elapsedRealtime() - bindStartedAt
+                elapsedMs = decorrido
             )
+            modes.reportIfChanged(decorrido)
             CameraTelemetry.capabilities(
                 cameraId = cam2Info.cameraId,
                 eisSupported = _isEisSupported.value,
@@ -716,9 +708,8 @@ class CameraManager(
         scheduleBind()
     }
 
-    override fun setCameraMode(mode: CameraMode) {
-        if (currentCameraMode == mode) return
-        currentCameraMode = mode
+    override fun applyMode(definition: CameraModeDefinition) {
+        if (!modes.request(definition)) return
         _isCameraReady.value = false  // sinaliza "não pronto" imediatamente antes do rebind
         scheduleBind()
     }

@@ -1,7 +1,7 @@
 package com.spacecamera.camera.mode
 
 import android.hardware.camera2.CameraCharacteristics
-import com.spacecamera.camera.CameraTelemetry
+import com.spacecamera.camera.TelemetryFields
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -138,7 +138,7 @@ class CapabilityProbeTest {
 
     @Test
     fun `evt=caps traz manual_sensor=true com as duas faixas`() {
-        val campos = CameraTelemetry.manualSensorFields(CapabilityProbe.decide(edge60Neo))
+        val campos = TelemetryFields.manualSensorFields(CapabilityProbe.decide(edge60Neo))
 
         assertEquals(
             "manual_sensor=true iso=100-19200 iso_analog_max=4480 exposure_ns=100000-400000000",
@@ -148,7 +148,7 @@ class CapabilityProbeTest {
 
     @Test
     fun `evt=caps traz manual_sensor=false e nenhuma faixa`() {
-        val campos = CameraTelemetry.manualSensorFields(CapabilityProbe.decide(semManual))
+        val campos = TelemetryFields.manualSensorFields(CapabilityProbe.decide(semManual))
 
         assertEquals("manual_sensor=false", campos)
     }
@@ -156,7 +156,7 @@ class CapabilityProbeTest {
     @Test
     fun `limite analógico ausente sai como traço, sem sumir o campo`() {
         // Campo fixo deixa o grep/awk previsível: quem fatia por posição não quebra.
-        val campos = CameraTelemetry.manualSensorFields(
+        val campos = TelemetryFields.manualSensorFields(
             CapabilityProbe.decide(edge60Neo.copy(maxAnalogSensitivity = null))
         )
 
@@ -167,7 +167,7 @@ class CapabilityProbeTest {
     fun `campos novos de evt=caps só têm nomes e números`() {
         // NFR-7: nada de caminho, nome de arquivo ou dado do usuário.
         val linhas = listOf(edge60Neo, semManual).map {
-            CameraTelemetry.manualSensorFields(CapabilityProbe.decide(it))
+            TelemetryFields.manualSensorFields(CapabilityProbe.decide(it))
         }
         linhas.forEach { assertTrue(Regex("^[a-z_]+=[a-z0-9-]+( [a-z_]+=[a-z0-9-]+)*$").matches(it), it) }
     }

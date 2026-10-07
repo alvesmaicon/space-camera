@@ -2,9 +2,9 @@
 
 ## Estado atual
 
-- **Fase:** Implementação — Onda 3
-- **Gate atual:** **Checkpoint da Onda 2 passou** — pronto para a Onda 3
-- **Status:** em andamento — próxima é a Tarefa 6 (Vídeo remigrado)
+- **Fase:** Implementação — Onda 4
+- **Gate atual:** **Checkpoint da Onda 3 passou** — pronto para a Onda 4
+- **Status:** em andamento — próxima é a Tarefa 7 (Foto remigrado)
 - **Confiança:** 92%
 - **Última atualização:** 2026-10-07
 
@@ -208,6 +208,38 @@ primeira rodada de fotos foi com o aparelho deitado (`targetRotation=3`) e a de 
 retrato — refeito tudo em retrato; (3) anotei o disparador como "cortado" em Full olhando o
 dump; a captura de tela mostrou que só o nó de acessibilidade é recortado.
 
+### Sessão: 2026-10-07 — Tarefa 6 (Vídeo remigrado)
+
+- **Agente:** skill `dev`
+- **Gate:** D concluído · Tarefa 6 **concluída** · Checkpoint da Onda 3 **passou**
+- **Testes:** 139 passando (25 novos), os 114 preexistentes sem asserção alterada
+- **Verificação em aparelho:** [`verificacao/tarefa-6/`](verificacao/tarefa-6/README.md)
+
+**O que mudou.** O bind passa a ligar exatamente o conjunto que o modo declara:
+`ModeBinder` (puro, genérico, testado na JVM) traduz `AppUseCase` → use case e aplica o
+fluxo 4.2 — recusa religa o modo anterior, nunca deixa a sessão vazia, e não repete a
+tentativa quando não há anterior ou quando o anterior é o próprio modo. `ModeSession`
+guarda modo pedido × ligado, decide quando sai `evt=mode` e avisa o ViewModel pela
+recusa. O ViewModel ganhou `onShutter` (a definição diz a ação; o ViewModel executa) e
+`toggleFlash` pergunta `flashBehavior()`. O controller troca `setCameraMode(CameraMode)` por
+`applyMode(CameraModeDefinition)`.
+
+**NFR-3 recuperado.** A primeira versão deixou o `CameraManager` em 1.192 linhas. Em vez
+de enxugar comentário, saíram dois blocos que esta spec já tinha tocado: a contabilidade
+de modo (para `ModeSession`) e a sondagem de EIS/HDR (para `SensorCharacteristicsReader`).
+Resultado 1.153, abaixo do teto. O ViewModel cresceu 39 linhas (despacho do disparador,
+coletor de recusa); a Tarefa 7 tira dele a regra de EIS por modo e deve compensar.
+
+**Latência: desconfiei de uma melhora.** O "depois" deu p95 41 ms contra 57 ms do baseline
+registrado — 28% mais rápido sem causa no código. Re-medi o "antes" na mesma sessão, com o
+commit do baseline num `git worktree`: 43 ms. Era condição de medida (bateria), não
+código. Lição registrada: latência se compara na mesma sessão.
+
+**Decisões e achados:** Q-07 (aviso visual da recusa adiado para a Tarefa 11, ponte
+`CameraMode.definition`, regra de 16:9 para a Tarefa 7, uma linha do baseline de detekt
+reescrita e por quê) e Q-08 (modo não reaplicado quando o controller é recriado —
+defeito antigo, achado lendo o código, não verificado em aparelho).
+
 ## Situação das tarefas
 
 | Onda | Tarefa | Status | Observações |
@@ -217,7 +249,7 @@ dump; a captura de tela mostrou que só o nó de acessibilidade é recortado.
 | 1 | 3. Corrigir opt-in do Camera2Interop | **Concluída** | 31 → 0; baseline encolheu 31 sem silenciar nada |
 | 1 | 4. Infra de teste de Compose na JVM | **Concluída** | 4 testes de fumaça; suíte 7 s |
 | 2 | 5. Sondagem de capacidade + `evt=caps` | **Concluída** | 12 testes JVM; `evt=caps` = `dumpsys` nas 2 câmeras do Redmi Note 10 |
-| 3 | 6. Vídeo remigrado | Pendente | maior risco da spec |
+| 3 | 6. Vídeo remigrado | **Concluída** | iso-comportamento conferido no Redmi; `CameraManager` 1.153 |
 | 4 | 7. Foto remigrado | Pendente | |
 | 5 | 8. Seletor + gaveta | Pendente | **primeira mudança visível ao usuário** |
 | 6 | 9. Janela larga com N modos | Pendente | folga 4 |
@@ -232,9 +264,9 @@ Preencher conforme as tarefas forem feitas — são a evidência dos NFRs:
 
 | Medida | Baseline (Tarefa 1) | Final (Tarefa 13) | Limite |
 |---|---|---|---|
-| `CameraScreen.kt` (linhas) | **2.220** ✓ | | ≤ 2.100 |
-| `CameraManager.kt` (linhas) | **1.158** ✓ | 1.163 após Tarefa 5 (+5) | ≤ 1.158 |
-| `CameraViewModel.kt` (linhas) | **694** ✓ | | não crescer |
+| `CameraScreen.kt` (linhas) | **2.220** ✓ | 2.215 após T6 | ≤ 2.100 |
+| `CameraManager.kt` (linhas) | **1.158** ✓ | 1.163 após T5 · **1.153** após T6 | ≤ 1.158 |
+| `CameraViewModel.kt` (linhas) | **694** ✓ | **733** após T6 (+39) — T7 precisa compensar | não crescer |
 | Maior arquivo novo (linhas) | — | | ≤ 400 |
 | p95 de `elapsed_ms` na troca de modo | ~~38 ms~~ edge 60 neo · **57 ms** Redmi Note 10 (20 amostras) | | **≤ 68,4 ms** (Redmi) |
 | Tempo da suíte `testDebugUnitTest` | **5,9 s** | 7 s (Onda 1) · 10 s (Tarefa 5, 114 testes) | ≤ 90 s |
@@ -269,7 +301,10 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] Tarefa 5 — sondagem de capacidade e `evt=caps` estendido
 - [x] Checkpoint da Onda 2 — conferido em aparelho real (Redmi Note 10)
 - [x] **Antes da Tarefa 6:** baseline novo no Redmi Note 10 — decisão do usuário; ver [`baseline/redmi-note-10/`](baseline/redmi-note-10/README.md)
+- [x] Tarefa 6 — Vídeo remigrado; Checkpoint da Onda 3
 - [ ] Q-06 (`aspect` defasado em `evt=bind`): corrigir em commit próprio depois da Tarefa 7, ou levar ao ROADMAP
+- [ ] Q-08 (modo não reaplicado ao recriar o controller): verificar em aparelho e corrigir depois da Tarefa 7
+- [ ] Aviso visual da recusa de modo — na Tarefa 11 (Q-07)
 - [ ] Levar as armadilhas de medição do baseline para o CLAUDE.md na Tarefa 13
 - [ ] Levar o 1:1 para o ROADMAP.md, junto do ramo morto em `cameraXAspectRatio()`
 

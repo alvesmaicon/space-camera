@@ -3,7 +3,10 @@ package com.spacecamera.camera
 import android.net.Uri
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.Preview
+import com.spacecamera.camera.mode.CameraModeDefinition
 import com.spacecamera.camera.mode.DeviceCapabilities
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -33,6 +36,10 @@ class FakeCameraController : CameraController {
 
     val deviceCapabilitiesFlow = MutableStateFlow(DeviceCapabilities.UNKNOWN)
     override val deviceCapabilities: StateFlow<DeviceCapabilities> = deviceCapabilitiesFlow
+
+    /** Emita aqui para simular o aparelho recusando a combinação de use cases de um modo. */
+    val modeRejectionsFlow = MutableSharedFlow<ModeRejection>(extraBufferCapacity = 1)
+    override val modeRejections: SharedFlow<ModeRejection> = modeRejectionsFlow
 
     val availableVideoOptionsFlow = MutableStateFlow<List<VideoOption>>(emptyList())
     override val availableVideoOptions: StateFlow<List<VideoOption>> = availableVideoOptionsFlow
@@ -96,7 +103,7 @@ class FakeCameraController : CameraController {
     var lastTargetRotation: Int? = null; private set
     var lastVideoOption: VideoOption? = null; private set
     var lastAspectRatio: String? = null; private set
-    var lastCameraMode: CameraMode? = null; private set
+    var lastAppliedMode: CameraModeDefinition? = null; private set
     var lastZoomLevel: Float? = null; private set
     var lastExposureIndex: Int? = null; private set
     var lastTorchEnabled: Boolean? = null; private set
@@ -132,7 +139,7 @@ class FakeCameraController : CameraController {
 
     override fun setVideoOption(option: VideoOption) { lastVideoOption = option }
     override fun setAspectRatio(ratio: String) { lastAspectRatio = ratio }
-    override fun setCameraMode(mode: CameraMode) { lastCameraMode = mode }
+    override fun applyMode(definition: CameraModeDefinition) { lastAppliedMode = definition }
 
     override fun setStabilization(enabled: Boolean) {
         isStabilizationEnabled = enabled

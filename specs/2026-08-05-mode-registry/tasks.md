@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 5 · **Em andamento:** 0 · **Pendentes:** 8
+- **Concluídas:** 6 · **Em andamento:** 0 · **Pendentes:** 7
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -156,7 +156,7 @@
 
 ### Onda 3 — Vídeo remigrado
 
-#### [ ] 6. Vídeo remigrado para o registro
+#### [x] 6. Vídeo remigrado para o registro
 - **Size:** M
 - **Complexity:** high
 - **Risk:** high
@@ -175,23 +175,24 @@
   - **DADO** o baseline da Tarefa 1 **QUANDO** comparado **ENTÃO** os campos que já existiam em `evt=bind` têm os mesmos valores
   - **DADO** os testes JVM que já existiam **QUANDO** rodam **ENTÃO** passam **sem alteração de asserção**
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest`
-  - [ ] Build: `./gradlew assembleDebug detekt`
-  - [ ] Conferência de APK: `unzip -qo app/build/outputs/apk/debug/app-debug.apk 'classes*.dex' -d /tmp/dexchk && cat /tmp/dexchk/*.dex | grep -ac applyMode` → maior que 0 (`grep -c`, nunca `-q`, por causa do `pipefail`)
-  - [ ] Conferência manual em aparelho: gravar, pausar, retomar, parar; conferir imagem na tela por luminância de `adb exec-out screencap -p`, porque `evt=bind` com sucesso **não** prova imagem
-  - [ ] Comparação antes/depois com `git worktree`, **nunca** `git stash`
+  - [x] Testes passam: `./gradlew testDebugUnitTest` — 139, 0 falhas; os 114 preexistentes **sem asserção alterada**
+  - [x] Build: `./gradlew assembleDebug detekt lint` — limpo (ver Q-07 sobre a única linha do baseline de detekt)
+  - [x] Conferência de APK: `evt=mode ` presente no dex do novo e ausente no do antigo (`applyMode` é ofuscável por nome; a string de telemetria não)
+  - [x] Conferência manual em aparelho (Redmi Note 10): gravar, pausar, retomar, parar; luminância 136,9 — ver [`verificacao/tarefa-6/`](verificacao/tarefa-6/README.md)
+  - [x] Comparação antes/depois com `git worktree` — latência re-medida na mesma sessão: 43 ms antes, 41 ms depois
+  - [x] Mutação: 7 mutações nas regras novas, todas mortas
 - **_Requirements: FR-2, FR-3, FR-13, FR-15, NFR-1_**
 - **_Decisions: ADR-001, ADR-002_**
 
-### Checkpoint da Onda 3
-- [ ] Critérios de aceite da Tarefa 6 atendidos
-- [ ] `evt=bind` dos campos preexistentes idêntico ao baseline no modo Vídeo
-- [ ] Todos os testes JVM anteriores passando **sem asserção alterada**
-- [ ] Gravar, pausar, retomar e parar conferidos em aparelho real
-- [ ] Imagem na tela confirmada por **luminância**, não por sucesso de `evt=bind`
-- [ ] APK conferido por dex antes de acreditar em qualquer teste manual
-- [ ] **Aviso antecipado de NFR-3:** `wc -l` de `CameraManager.kt` não cresceu — se cresceu, o tradutor ficou no lugar errado e o custo só aumenta daqui para frente
-- [ ] Pronto para a Onda 4
+### Checkpoint da Onda 3 — **PASSOU** (2026-10-07)
+- [x] Critérios de aceite da Tarefa 6 atendidos
+- [x] `evt=bind` dos campos preexistentes idêntico ao baseline no modo Vídeo — e na Foto, de quebra
+- [x] Todos os testes JVM anteriores passando **sem asserção alterada**
+- [x] Gravar, pausar, retomar e parar conferidos em aparelho real
+- [x] Imagem na tela confirmada por **luminância** (136,9), não por sucesso de `evt=bind`
+- [x] APK conferido por dex antes de acreditar em qualquer teste manual
+- [x] **Aviso antecipado de NFR-3:** `CameraManager.kt` **1.153** — abaixo do teto (1.158) e 10 abaixo do commit da Tarefa 5, que tinha deixado +5. O tradutor ficou fora (`ModeBinder`, `ModeSession`) e a sondagem de EIS/HDR saiu para `SensorCharacteristicsReader`
+- [x] Pronto para a Onda 4
 
 ### Onda 4 — Foto remigrado
 

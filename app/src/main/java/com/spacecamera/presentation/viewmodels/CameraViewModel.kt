@@ -17,6 +17,9 @@ import com.spacecamera.camera.PhotoQualityPreset
 import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoBitratePreset
 import com.spacecamera.camera.VideoOption
+import com.spacecamera.camera.mode.CaptureState
+import com.spacecamera.camera.mode.FlashBehavior
+import com.spacecamera.camera.mode.ShutterAction
 import com.spacecamera.data.repository.VideoRepositoryImpl
 import com.spacecamera.data.storage.SettingsStorage
 import kotlinx.coroutines.Job
@@ -33,7 +36,12 @@ enum class RecordingDelay(val seconds: Int) {
     fun next() = entries[(ordinal + 1) % entries.size]
 }
 
-enum class PhotoFlashMode { OFF, AUTO, ON }
+/** Ciclo do flash em foto, na ordem em que o botão percorre. */
+enum class PhotoFlashMode(val imageCaptureMode: Int) {
+    OFF(ImageCapture.FLASH_MODE_OFF), AUTO(ImageCapture.FLASH_MODE_AUTO), ON(ImageCapture.FLASH_MODE_ON);
+
+    fun next(): PhotoFlashMode = entries[(ordinal + 1) % entries.size]
+}
 
 /**
  * @param controllerFactory como obter o [CameraController]. Em produção cria um
@@ -397,6 +405,15 @@ class CameraViewModel(
                 launch {
                     cameraManager!!.isCameraReady.collect { _isCameraReady.value = it }
                 }
+                // O aparelho recusou o modo e o controller religou o anterior (fluxo
+                // 4.2 do design): o seletor e o EIS voltam para o que está na sessão.
+                launch {
+                    cameraManager!!.modeRejections.collect { recusa ->
+                        val restaurado = CameraMode.entries.first { it.definition.id == recusa.active }
+                        _cameraMode.value = restaurado
+                        syncStabilizationWithMode(restaurado)
+                    }
+                }
             }
         } catch (e: Exception) {
             Timber.e(e, "evt=camera_init_failed")
@@ -457,24 +474,20 @@ class CameraViewModel(
     }
 
     fun toggleFlash() {
-        if (_cameraMode.value == CameraMode.VIDEO) {
-            _isFlashOn.value = !_isFlashOn.value
-            cameraManager?.toggleFlash(_isFlashOn.value)
-        } else {
-            // Foto: cicla OFF → AUTO → ON → OFF sem tocha contínua
-            val next = when (_photoFlashMode.value) {
-                PhotoFlashMode.OFF -> PhotoFlashMode.AUTO
-                PhotoFlashMode.AUTO -> PhotoFlashMode.ON
-                PhotoFlashMode.ON -> PhotoFlashMode.OFF
+        when (_cameraMode.value.definition.flashBehavior()) {
+            FlashBehavior.Torch -> {
+                _isFlashOn.value = !_isFlashOn.value
+                cameraManager?.toggleFlash(_isFlashOn.value)
             }
-            _photoFlashMode.value = next
-            val flashMode = when (next) {
-                PhotoFlashMode.OFF -> ImageCapture.FLASH_MODE_OFF
-                PhotoFlashMode.AUTO -> ImageCapture.FLASH_MODE_AUTO
-                PhotoFlashMode.ON -> ImageCapture.FLASH_MODE_ON
-            }
-            cameraManager?.setPhotoFlashMode(flashMode)
+            FlashBehavior.PhotoCycle -> cyclePhotoFlash()
+            FlashBehavior.Unavailable -> Unit
         }
+    }
+
+    /** Cicla OFF → AUTO → ON → OFF, sem tocha contínua. */
+    private fun cyclePhotoFlash() {
+        _photoFlashMode.value = _photoFlashMode.value.next()
+        cameraManager?.setPhotoFlashMode(_photoFlashMode.value.imageCaptureMode)
     }
 
     fun resetFlash() {
@@ -488,6 +501,11 @@ class CameraViewModel(
         if (_recordingState.value != RecordingState.Idle) return
         _cameraMode.value = mode
         resetFlash()
+        syncStabilizationWithMode(mode)
+        cameraManager?.applyMode(mode.definition)
+    }
+
+    private fun syncStabilizationWithMode(mode: CameraMode) {
         // Desativa EIS no modo Foto (não se aplica a captura de imagem)
         // Ao voltar para Vídeo, restaura o valor persistido no storage
         if (mode == CameraMode.PHOTO) {
@@ -502,8 +520,29 @@ class CameraViewModel(
                 cameraManager?.setStabilization(stored)
             }
         }
-        // Rebind com aspect ratio correto para o modo (vídeo sempre 9:16)
-        cameraManager?.setCameraMode(mode)
+    }
+
+    /**
+     * Requirements: FR-2, FR-3 · Decisions: ADR-001
+     *
+     * O disparador pergunta à definição do modo **o que** fazer e faz. É o que deixa
+     * um modo novo decidir o próprio disparador sem `when` por modo aqui ou na tela.
+     *
+     * @return a ação executada — a tela guarda a rotação da revisão quando é foto.
+     */
+    fun onShutter(targetRotation: Int): ShutterAction {
+        val estado = CaptureState(
+            recording = _recordingState.value != RecordingState.Idle,
+            countdownActive = _countdownSeconds.value > 0
+        )
+        val acao = _cameraMode.value.definition.shutterAction(estado)
+        when (acao) {
+            ShutterAction.StartRecording -> startRecordingWithDelay(targetRotation)
+            ShutterAction.StopRecording -> stopRecording()
+            ShutterAction.CapturePhoto -> takePhotoWithDelay(targetRotation)
+            ShutterAction.CancelCountdown -> cancelCountdown()
+        }
+        return acao
     }
 
     fun takePhoto(targetRotation: Int = android.view.Surface.ROTATION_0) {

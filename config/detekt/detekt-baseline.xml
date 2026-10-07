@@ -21,7 +21,7 @@
     <ID>LongMethod:CameraScreen.kt$@Composable private fun LensZoomDial( minZoom: Float, maxZoom: Float, currentZoom: Float, screenHeightDp: Dp, railLengthDp: Dp, vertical: Boolean, enabled: Boolean, rotationDeg: Float = 0f, onZoomChange: (Float) -&gt; Unit, onInteraction: () -&gt; Unit )</ID>
     <ID>LongMethod:CameraViewModel.kt$CameraViewModel$suspend fun initializeCamera(context: Context, lifecycleOwner: LifecycleOwner, surfaceProvider: Preview.SurfaceProvider?)</ID>
     <ID>LongMethod:SettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SettingsScreen( navController: NavController, viewModel: CameraViewModel )</ID>
-    <ID>LongParameterList:CameraTelemetry.kt$CameraTelemetry$( mode: CameraMode, option: VideoOption, aspectRatio: String, bitrate: Int, eis: Boolean, noiseReduction: Boolean, hdr: Boolean, frontCamera: Boolean, elapsedMs: Long )</ID>
+    <ID>LongParameterList:CameraTelemetry.kt$CameraTelemetry$( mode: CameraModeId, option: VideoOption, aspectRatio: String, bitrate: Int, eis: Boolean, noiseReduction: Boolean, hdr: Boolean, frontCamera: Boolean, elapsedMs: Long )</ID>
     <ID>LoopWithTooManyJumpStatements:CameraManager.kt$CameraManager$for</ID>
     <ID>MagicNumber:CameraManager.kt$CameraManager$0.04f</ID>
     <ID>MagicNumber:CameraManager.kt$CameraManager$0.07f</ID>

@@ -5,7 +5,10 @@ import android.net.Uri
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.Preview
 import androidx.lifecycle.LifecycleOwner
+import com.spacecamera.camera.mode.CameraModeDefinition
+import com.spacecamera.camera.mode.CameraModeId
 import com.spacecamera.camera.mode.DeviceCapabilities
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -33,6 +36,9 @@ interface CameraController {
 
     /** Capacidades que decidem quais modos existem (FR-5). [DeviceCapabilities.UNKNOWN] até o bind. */
     val deviceCapabilities: StateFlow<DeviceCapabilities>
+
+    /** Modo pedido que o aparelho recusou, e o modo que ficou ligado no lugar dele. */
+    val modeRejections: SharedFlow<ModeRejection>
 
     val availableVideoOptions: StateFlow<List<VideoOption>>
     val availableAspectRatios: StateFlow<List<String>>
@@ -90,7 +96,14 @@ interface CameraController {
 
     fun setVideoOption(option: VideoOption)
     fun setAspectRatio(ratio: String)
-    fun setCameraMode(mode: CameraMode)
+    /**
+     * Requirements: FR-2 · Decisions: ADR-002
+     *
+     * Liga na sessão exatamente os use cases que a definição declara. Se o aparelho
+     * recusar a combinação, o controller religa o conjunto do modo anterior e avisa
+     * por [modeRejections] — a sessão nunca fica sem bind (fluxo 4.2 do design).
+     */
+    fun applyMode(definition: CameraModeDefinition)
     fun setStabilization(enabled: Boolean)
     fun setNoiseReduction(enabled: Boolean)
     fun setHdr(enabled: Boolean)
@@ -127,6 +140,12 @@ interface CameraController {
  * A criação é adiada porque depende do [LifecycleOwner] da tela, que só existe
  * quando a UI já está montada.
  */
+/**
+ * O aparelho recusou a combinação de use cases de [rejected]; [active] é o modo cujo
+ * conjunto foi religado no lugar.
+ */
+data class ModeRejection(val rejected: CameraModeId, val active: CameraModeId)
+
 fun interface CameraControllerFactory {
     fun create(context: Context, lifecycleOwner: LifecycleOwner): CameraController
 }
