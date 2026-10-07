@@ -3,6 +3,7 @@ package com.spacecamera.camera
 import android.net.Uri
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.Preview
+import com.spacecamera.camera.mode.DeviceCapabilities
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -29,6 +30,9 @@ class FakeCameraController : CameraController {
 
     val isHdrSupportedFlow = MutableStateFlow(true)
     override val isHdrSupported: StateFlow<Boolean> = isHdrSupportedFlow
+
+    val deviceCapabilitiesFlow = MutableStateFlow(DeviceCapabilities.UNKNOWN)
+    override val deviceCapabilities: StateFlow<DeviceCapabilities> = deviceCapabilitiesFlow
 
     val availableVideoOptionsFlow = MutableStateFlow<List<VideoOption>>(emptyList())
     override val availableVideoOptions: StateFlow<List<VideoOption>> = availableVideoOptionsFlow

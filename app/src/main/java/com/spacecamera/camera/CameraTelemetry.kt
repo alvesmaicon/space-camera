@@ -1,5 +1,6 @@
 package com.spacecamera.camera
 
+import com.spacecamera.camera.mode.DeviceCapabilities
 import timber.log.Timber
 
 /**
@@ -58,13 +59,37 @@ internal object CameraTelemetry {
         eisSupported: Boolean,
         hdrSupported: Boolean,
         videoOptions: List<VideoOption>,
-        zoomRange: ClosedFloatingPointRange<Float>
+        zoomRange: ClosedFloatingPointRange<Float>,
+        device: DeviceCapabilities
     ) {
+        // Campos de controle manual no fim: são aditivos (FR-13), e quem já fatia a
+        // linha até `options=[...]` continua lendo o mesmo de antes (NFR-1).
         Timber.i(
-            "evt=caps camera=%s eis_supported=%b hdr_supported=%b zoom=%.1fx-%.1fx options=[%s]",
+            "evt=caps camera=%s eis_supported=%b hdr_supported=%b zoom=%.1fx-%.1fx options=[%s] %s",
             cameraId, eisSupported, hdrSupported,
             zoomRange.start, zoomRange.endInclusive,
-            videoOptions.joinToString(",") { it.label }
+            videoOptions.joinToString(",") { it.label },
+            manualSensorFields(device)
+        )
+    }
+
+    /**
+     * Requirements: FR-13, NFR-7
+     *
+     * Os campos de controle manual que fecham a linha `evt=caps`. Sem suporte, sai
+     * só `manual_sensor=false` — sem faixa nenhuma, para não sugerir que existe.
+     * Com suporte, os quatro campos sempre presentes (limite analógico ausente vira
+     * `-`), para quem fatia a linha por posição não quebrar.
+     *
+     * A exposição sai em nanossegundos, como o HAL reporta: a conversão para
+     * fração de segundo é coisa de UI, e na telemetria só atrapalharia o grep.
+     */
+    fun manualSensorFields(caps: DeviceCapabilities): String {
+        val faixas = caps.manualSensor ?: return "manual_sensor=false"
+        return "manual_sensor=true iso=%d-%d iso_analog_max=%s exposure_ns=%d-%d".format(
+            faixas.iso.first, faixas.iso.last,
+            faixas.maxAnalogIso?.toString() ?: "-",
+            faixas.exposureTimeNs.first, faixas.exposureTimeNs.last
         )
     }
 

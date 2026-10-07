@@ -49,6 +49,8 @@ import java.util.*
 import java.util.concurrent.Executor
 import androidx.camera.core.FocusMeteringAction
 import timber.log.Timber
+import com.spacecamera.camera.mode.CapabilityProbe
+import com.spacecamera.camera.mode.DeviceCapabilities
 
 sealed class RecordingState {
     object Idle : RecordingState()
@@ -138,6 +140,9 @@ class CameraManager(
 
     private val _isCameraReady = MutableStateFlow(false)
     override val isCameraReady: StateFlow<Boolean> = _isCameraReady
+
+    private val _deviceCapabilities = MutableStateFlow(DeviceCapabilities.UNKNOWN)
+    override val deviceCapabilities: StateFlow<DeviceCapabilities> = _deviceCapabilities
 
     private val _isEisSupported = MutableStateFlow(false)
     override val isEisSupported: StateFlow<Boolean> = _isEisSupported
@@ -512,9 +517,8 @@ class CameraManager(
             val availableToneMapModes = cam2Info.getCameraCharacteristic(
                 CameraCharacteristics.TONEMAP_AVAILABLE_TONE_MAP_MODES
             )
-            val requestCaps = cam2Info.getCameraCharacteristic(
-                CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES
-            )
+            val sensor = cam2Info.sensorCharacteristics()
+            _deviceCapabilities.value = CapabilityProbe.decide(sensor)
             Timber.d("HAL stabilization — video modes=${availableStabModes?.toList()}  OIS modes=${availableOisModes?.toList()}")
             _isEisSupported.value = availableStabModes?.contains(
                 CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON
@@ -522,7 +526,7 @@ class CameraManager(
             val hasHdrSceneMode = availableSceneModes?.contains(CaptureRequest.CONTROL_SCENE_MODE_HDR) == true
             val hasHighQualityToneMap = availableToneMapModes?.contains(CaptureRequest.TONEMAP_MODE_HIGH_QUALITY) == true
             val hasTenBitCapability = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                requestCaps?.contains(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT) == true
+                sensor.requestCapabilities?.contains(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT) == true
             } else {
                 true
             }
@@ -560,7 +564,8 @@ class CameraManager(
                 eisSupported = _isEisSupported.value,
                 hdrSupported = _isHdrSupported.value,
                 videoOptions = _availableVideoOptions.value,
-                zoomRange = _minZoomRatio.value.._maxZoomRatio.value
+                zoomRange = _minZoomRatio.value.._maxZoomRatio.value,
+                device = _deviceCapabilities.value
             )
         } catch (e: Exception) {
             CameraTelemetry.bindFailed(e)

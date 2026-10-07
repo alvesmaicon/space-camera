@@ -2,11 +2,11 @@
 
 ## Estado atual
 
-- **Fase:** Implementação — Onda 1
-- **Gate atual:** **Checkpoint da Onda 1 passou** — pronto para a Onda 2
-- **Status:** em andamento — próxima é a Tarefa 5 (sondagem de capacidade)
+- **Fase:** Implementação — Onda 3
+- **Gate atual:** **Checkpoint da Onda 2 passou** — pronto para a Onda 3
+- **Status:** em andamento — próxima é a Tarefa 6 (Vídeo remigrado)
 - **Confiança:** 92%
-- **Última atualização:** 2026-08-06
+- **Última atualização:** 2026-10-07
 
 ## Registro de sessões
 
@@ -114,6 +114,77 @@ exatamente o que a UI mostra nas três proporções. Registrado em
 [`baseline/README.md`](baseline/README.md#armadilhas-encontradas-ao-medir) para que o
 roteiro das Tarefas 6, 7 e 11 já nasça certo.
 
+### Sessão: 2026-10-07 — Tarefa 5 (sondagem de capacidade)
+
+- **Agente:** skill `dev`
+- **Tarefa:** 5 — Sondagem de capacidade e `evt=caps` estendido
+- **Gate:** D concluído · Tarefa 5 **concluída** · Checkpoint da Onda 2 **passou**
+- **Testes:** 114 passando, 0 falhando (12 novos em `CapabilityProbeTest`)
+
+**Contexto da retomada.** A spec ficou parada de 06/08 a 07/10. O usuário decidiu
+concluí-la antes de publicar o repositório no GitHub; a ordem combinada está na memória do
+projeto (refatoração → i18n da UI → preparo do repositório → reescrita do histórico).
+
+**Desenho.** Três peças, cada uma no seu arquivo:
+
+| Peça | Arquivo | Testável onde |
+|---|---|---|
+| Decisão pura (`CapabilityProbe.decide`) + tipos | `camera/mode/CapabilityProbe.kt` | JVM pura |
+| Leitura do HAL → tipos Kotlin | `camera/SensorCharacteristicsReader.kt` | só aparelho real |
+| Campos novos de `evt=caps` | `CameraTelemetry.manualSensorFields` | JVM pura |
+
+`SensorCharacteristics` é a fronteira dublável: usa `IntRange`/`LongRange`, não
+`android.util.Range`, porque o stub do android.jar devolve `null` nos limites fora do
+Robolectric (mesma armadilha do `Size` no CLAUDE.md). Publicado como
+`CameraController.deviceCapabilities: StateFlow<DeviceCapabilities>`, começando em
+`UNKNOWN` (não oferece nada) para que um modo exigente não pisque no seletor antes da
+sondagem.
+
+Decisão defensiva: `MANUAL_SENSOR` declarado **sem** as faixas de ISO ou exposição não
+oferece a capacidade — o Pro abriria com escala vazia. O limite analógico é opcional no
+Camera2 e sai como `-` na telemetria, sem derrubar a capacidade.
+
+**Mutação pegou um teste fraco.** O caso negativo usava um aparelho sem capacidade **e**
+sem faixas; tirar a checagem da capacidade passava em tudo. Entrou o caso "faixas
+reportadas sem `MANUAL_SENSOR`" (típico de hardware LIMITED) e as três mutações passaram
+a morrer.
+
+**NFR-3 — aviso antecipado.** `CameraManager.kt` foi a **1.163** (+5): declaração do flow,
+dois imports, a atribuição e o parâmetro da telemetria. Já compensado em parte: a leitura
+de `REQUEST_AVAILABLE_CAPABILITIES` para o HDR passou a reusar `sensor.requestCapabilities`
+(−2). **A Tarefa 6 precisa devolver essas 5 linhas** ao tirar o bind para o `ModeBinder`.
+
+**Lint.** Nenhum achado nos arquivos novos. Aparecem 18 `GradleDependency`/
+`NewerVersionAvailable` fora do baseline, mas são os mesmos do baseline com a versão
+"disponível" atualizada no texto — o lint consulta a versão do dia, e a mensagem deixou de
+casar. Não é efeito desta tarefa; reencolher na Tarefa 13.
+
+**Conferência em aparelho — outro aparelho.** O usuário conectou um **Redmi Note 10
+(M2101K7AG, Android 12 / API 31)**, não o edge 60 neo. Para a Tarefa 5 serve: o critério é o
+`evt=caps` dizer a verdade sobre o aparelho, e a verdade foi tirada **independente do
+código**, por `adb shell dumpsys media.camera`:
+
+| Câmera | `dumpsys` (referência) | `evt=caps` do app |
+|---|---|---|
+| 0 traseira | `MANUAL_SENSOR`, ISO 100–3200, analógico 3200, 65424–30071705440 ns | `manual_sensor=true iso=100-3200 iso_analog_max=3200 exposure_ns=65424-30071705440` |
+| 1 frontal | `MANUAL_SENSOR`, ISO 100–1550, analógico 1550, 41992–341545334 ns | `manual_sensor=true iso=100-1550 iso_analog_max=1550 exposure_ns=41992-341545334` |
+
+Valor a valor idêntico, e o valor muda ao virar a câmera e volta ao desvirar — prova de que
+vem do sensor ativo, não de constante. APK conferido por dex (`manual_sensor=true` presente)
+antes; tela conferida por `content-desc` (33 nós); imagem na tela por luminância (150 ± 52).
+
+**Ressalvas registradas:**
+
+1. **Caso `manual_sensor=false` não observado em aparelho** — as duas câmeras deste aparelho
+   reportam a capacidade. Coberto pelos testes JVM; o emulador seria o caso real.
+2. **O baseline da Tarefa 1 é do edge 60 neo.** As comparações de iso-comportamento das
+   Tarefas 6 e 7 (NFR-1, NFR-4) exigem o mesmo aparelho do baseline — ou um baseline novo
+   tirado no Redmi **antes** de começar a Tarefa 6, com `git worktree` no commit atual.
+3. Ruído do aparelho: `uiautomator dump` imprime stacktrace do MIUI
+   (`theme_compatibility.xml`) e ainda assim gera o dump — não é falha.
+4. Preexistente, não desta tarefa: `zoom=1,0x-10,0x` sai com vírgula decimal porque o
+   `%.1f` usa o locale do aparelho. Quebra quem fatia por vírgula; candidato a `Locale.ROOT`.
+
 ## Situação das tarefas
 
 | Onda | Tarefa | Status | Observações |
@@ -122,7 +193,7 @@ roteiro das Tarefas 6, 7 e 11 já nasça certo.
 | 1 | 2. Contrato do registro de modos | **Concluída** | 24 testes JVM puros; `abstract` em vez de `sealed` (Q-05) |
 | 1 | 3. Corrigir opt-in do Camera2Interop | **Concluída** | 31 → 0; baseline encolheu 31 sem silenciar nada |
 | 1 | 4. Infra de teste de Compose na JVM | **Concluída** | 4 testes de fumaça; suíte 7 s |
-| 2 | 5. Sondagem de capacidade + `evt=caps` | Pendente | portão de viabilidade do Pro |
+| 2 | 5. Sondagem de capacidade + `evt=caps` | **Concluída** | 12 testes JVM; `evt=caps` = `dumpsys` nas 2 câmeras do Redmi Note 10 |
 | 3 | 6. Vídeo remigrado | Pendente | maior risco da spec |
 | 4 | 7. Foto remigrado | Pendente | |
 | 5 | 8. Seletor + gaveta | Pendente | **primeira mudança visível ao usuário** |
@@ -139,11 +210,11 @@ Preencher conforme as tarefas forem feitas — são a evidência dos NFRs:
 | Medida | Baseline (Tarefa 1) | Final (Tarefa 13) | Limite |
 |---|---|---|---|
 | `CameraScreen.kt` (linhas) | **2.220** ✓ | | ≤ 2.100 |
-| `CameraManager.kt` (linhas) | **1.158** ✓ | | ≤ 1.158 |
+| `CameraManager.kt` (linhas) | **1.158** ✓ | 1.163 após Tarefa 5 (+5) | ≤ 1.158 |
 | `CameraViewModel.kt` (linhas) | **694** ✓ | | não crescer |
 | Maior arquivo novo (linhas) | — | | ≤ 400 |
 | p95 de `elapsed_ms` na troca de modo | **38 ms** (20 amostras) | | **≤ 45,6 ms** |
-| Tempo da suíte `testDebugUnitTest` | **5,9 s** | 7 s (Onda 1) | ≤ 90 s |
+| Tempo da suíte `testDebugUnitTest` | **5,9 s** | 7 s (Onda 1) · 10 s (Tarefa 5, 114 testes) | ≤ 90 s |
 | `UnsafeOptInUsageError` no `CameraManager` | **31** ✓ | **0** (Tarefa 3) | 0 |
 | Recibo do modo-exemplo (`git diff --stat`) | — | | ≤ 1 arquivo + 1 linha |
 
@@ -172,7 +243,9 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] Tarefa 3 — opt-in corrigido
 - [x] Tarefa 4 — infra de teste Compose na JVM
 - [x] Checkpoint da Onda 1 — app conferido em aparelho, sem mudança de comportamento
-- [ ] Tarefa 5 — sondagem de capacidade e `evt=caps` estendido (Onda 2)
+- [x] Tarefa 5 — sondagem de capacidade e `evt=caps` estendido
+- [x] Checkpoint da Onda 2 — conferido em aparelho real (Redmi Note 10)
+- [ ] **Antes da Tarefa 6:** decidir aparelho de comparação — edge 60 neo (baseline existente) ou baseline novo no Redmi
 - [ ] Levar as armadilhas de medição do baseline para o CLAUDE.md na Tarefa 13
 - [ ] Levar o 1:1 para o ROADMAP.md, junto do ramo morto em `cameraXAspectRatio()`
 

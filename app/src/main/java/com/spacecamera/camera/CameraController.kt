@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.Preview
 import androidx.lifecycle.LifecycleOwner
+import com.spacecamera.camera.mode.DeviceCapabilities
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -29,6 +30,9 @@ interface CameraController {
     /** Capacidades sondadas do hardware — só se sabe depois do bind. */
     val isEisSupported: StateFlow<Boolean>
     val isHdrSupported: StateFlow<Boolean>
+
+    /** Capacidades que decidem quais modos existem (FR-5). [DeviceCapabilities.UNKNOWN] até o bind. */
+    val deviceCapabilities: StateFlow<DeviceCapabilities>
 
     val availableVideoOptions: StateFlow<List<VideoOption>>
     val availableAspectRatios: StateFlow<List<String>>

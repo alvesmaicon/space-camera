@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 4 · **Em andamento:** 0 · **Pendentes:** 9
+- **Concluídas:** 5 · **Em andamento:** 0 · **Pendentes:** 8
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -126,7 +126,7 @@
 
 ### Onda 2 — Sondagem de capacidade
 
-#### [ ] 5. Sondagem de capacidade e `evt=caps` estendido
+#### [x] 5. Sondagem de capacidade e `evt=caps` estendido
 - **Size:** S
 - **Complexity:** medium
 - **Risk:** low
@@ -141,17 +141,18 @@
   - **DADO** um aparelho que não reporta **QUANDO** a câmera inicializa **ENTÃO** `evt=caps` traz `manual_sensor=false` e nenhuma faixa
   - **DADO** as linhas novas de telemetria **QUANDO** inspecionadas **ENTÃO** não contêm caminho de arquivo nem dado pessoal
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest --tests '*Capability*'`
-  - [ ] Conferência manual: `scripts/logcat.sh 'evt=caps'` em **aparelho real** — o emulador reporta ausência de suporte e faria o caso positivo passar sem ser exercitado
+  - [x] Testes passam: `./gradlew testDebugUnitTest --tests '*Capability*'` — 12 testes JVM puros; suíte completa 114 testes, 0 falhas
+  - [x] Asserções conferidas por mutação: tirar a checagem da capacidade, a da faixa de ISO e descartar o limite analógico fazem os testes falharem (a primeira sobrevivia até entrar o caso "faixas sem `MANUAL_SENSOR`")
+  - [x] Conferência manual em **aparelho real** (Redmi Note 10, API 31): `evt=caps` bate valor a valor com `dumpsys media.camera` nas duas câmeras — traseira `iso=100-3200 iso_analog_max=3200 exposure_ns=65424-30071705440`, frontal `iso=100-1550 iso_analog_max=1550 exposure_ns=41992-341545334` — e volta ao da traseira ao desvirar. APK conferido por dex antes. O caso `manual_sensor=false` só existe em teste JVM: as duas câmeras deste aparelho reportam a capacidade
 - **_Requirements: FR-5, FR-13, NFR-7_**
 - **_Decisions: ADR-007_**
 
-### Checkpoint da Onda 2
-- [ ] Critérios de aceite da Tarefa 5 atendidos
-- [ ] `evt=caps` estendido conferido em **aparelho real**, com `manual_sensor=true` observado
-- [ ] Decisão registrada: se o aparelho de teste **não** suportar `MANUAL_SENSOR`, a Onda 6 (Pro) não pode ser aceita como concluída — providenciar aparelho antes
-- [ ] Comportamento do app ainda inalterado
-- [ ] Pronto para a Onda 3
+### Checkpoint da Onda 2 — **PASSOU** (2026-10-07)
+- [x] Critérios de aceite da Tarefa 5 atendidos
+- [x] `evt=caps` estendido conferido em **aparelho real**, com `manual_sensor=true` observado — e com valores diferentes por câmera, o que prova que vêm do sensor ativo
+- [x] Decisão registrada: os **dois** aparelhos disponíveis reportam `MANUAL_SENSOR` (edge 60 neo no baseline, Redmi Note 10 aqui) — a Onda 6 tem onde ser verificada
+- [x] Comportamento do app ainda inalterado — campos preexistentes de `evt=bind`/`evt=caps` presentes e no lugar; imagem na tela por luminância (média 150, desvio 52). **Ressalva:** a comparação campo a campo com o baseline exige o edge 60 neo, onde ele foi tirado
+- [x] Pronto para a Onda 3
 
 ### Onda 3 — Vídeo remigrado
 
