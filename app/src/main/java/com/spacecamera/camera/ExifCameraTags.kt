@@ -1,5 +1,11 @@
+// Só constantes com o nome das tags — nenhuma leitura nem escrita de EXIF aqui. O uso do
+// `ExifInterface` do framework mora no `CameraManager` e já está no baseline do lint.
+// A anotação é de arquivo porque o lint acusa a linha do import.
+@file:SuppressLint("ExifInterface")
+
 package com.spacecamera.camera
 
+import android.annotation.SuppressLint
 import android.media.ExifInterface
 
 /**
