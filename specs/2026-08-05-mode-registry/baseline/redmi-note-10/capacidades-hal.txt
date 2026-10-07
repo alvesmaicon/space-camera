@@ -1,0 +1,30 @@
+      android.lens.facing (80005): byte[1]
+        [BACK ]
+--
+      android.request.availableCapabilities (c000c): byte[9]
+        [BACKWARD_COMPATIBLE CONSTRAINED_HIGH_SPEED_VIDEO RAW YUV_REPROCESSING PRIVATE_REPROCESSING READ_SENSOR_SETTINGS MANUAL_SENSOR BURST_CAPTURE MANUAL_POST_PROCESSING ]
+--
+      android.sensor.info.sensitivityRange (f0001): int32[2]
+        [100 3200 ]
+--
+      android.sensor.info.exposureTimeRange (f0003): int64[2]
+        [65424 30071705440 ]
+--
+      android.sensor.maxAnalogSensitivity (e000d): int32[1]
+        [3200 ]
+--
+      android.lens.facing (80005): byte[1]
+        [FRONT ]
+--
+      android.request.availableCapabilities (c000c): byte[8]
+        [BACKWARD_COMPATIBLE RAW YUV_REPROCESSING PRIVATE_REPROCESSING READ_SENSOR_SETTINGS MANUAL_SENSOR BURST_CAPTURE MANUAL_POST_PROCESSING ]
+--
+      android.sensor.info.sensitivityRange (f0001): int32[2]
+        [100 1550 ]
+--
+      android.sensor.info.exposureTimeRange (f0003): int64[2]
+        [41992 341545334 ]
+--
+      android.sensor.maxAnalogSensitivity (e000d): int32[1]
+        [1550 ]
+--

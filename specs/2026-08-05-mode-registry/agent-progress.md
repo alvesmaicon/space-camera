@@ -185,6 +185,29 @@ antes; tela conferida por `content-desc` (33 nós); imagem na tela por luminânc
 4. Preexistente, não desta tarefa: `zoom=1,0x-10,0x` sai com vírgula decimal porque o
    `%.1f` usa o locale do aparelho. Quebra quem fatia por vírgula; candidato a `Locale.ROOT`.
 
+### Sessão: 2026-10-07 — baseline novo no Redmi Note 10
+
+- **Agente:** skill `dev`
+- **Motivo:** o aparelho disponível é outro; o usuário escolheu re-tirar o baseline em vez de
+  depender do edge 60 neo. Detalhes e dados brutos em
+  [`baseline/redmi-note-10/`](baseline/redmi-note-10/README.md).
+
+**Números de referência daqui em diante:** p95 de troca **57 ms** (teto NFR-4: 68,4 ms);
+mídia em retrato 3840×2160 / 3264×2448 / 1832×3840 / vídeo 1920×1080; luminância 134 com
+cena real; `hdr_supported=true` (no edge 60 neo era false — o caminho de HDR passa a ser
+exercitado).
+
+**Achado: Q-06.** O `aspect` de `evt=bind` sai com a proporção **anterior**, sempre por um
+passo — o bind acontece antes de o `LaunchedEffect` da UI entregar o rótulo novo. A mídia
+prova que a captura está certa. Registrado em `decisions.md` com o encaminhamento: comparar
+a sequência observada, não corrigir dentro das Tarefas 6 e 7.
+
+**Erros meus nesta medição, corrigidos antes de registrar:** (1) variável com espaço
+interno não se divide em palavras no zsh — o primeiro roteiro não tocou em nada; (2) a
+primeira rodada de fotos foi com o aparelho deitado (`targetRotation=3`) e a de Full em
+retrato — refeito tudo em retrato; (3) anotei o disparador como "cortado" em Full olhando o
+dump; a captura de tela mostrou que só o nó de acessibilidade é recortado.
+
 ## Situação das tarefas
 
 | Onda | Tarefa | Status | Observações |
@@ -213,7 +236,7 @@ Preencher conforme as tarefas forem feitas — são a evidência dos NFRs:
 | `CameraManager.kt` (linhas) | **1.158** ✓ | 1.163 após Tarefa 5 (+5) | ≤ 1.158 |
 | `CameraViewModel.kt` (linhas) | **694** ✓ | | não crescer |
 | Maior arquivo novo (linhas) | — | | ≤ 400 |
-| p95 de `elapsed_ms` na troca de modo | **38 ms** (20 amostras) | | **≤ 45,6 ms** |
+| p95 de `elapsed_ms` na troca de modo | ~~38 ms~~ edge 60 neo · **57 ms** Redmi Note 10 (20 amostras) | | **≤ 68,4 ms** (Redmi) |
 | Tempo da suíte `testDebugUnitTest` | **5,9 s** | 7 s (Onda 1) · 10 s (Tarefa 5, 114 testes) | ≤ 90 s |
 | `UnsafeOptInUsageError` no `CameraManager` | **31** ✓ | **0** (Tarefa 3) | 0 |
 | Recibo do modo-exemplo (`git diff --stat`) | — | | ≤ 1 arquivo + 1 linha |
@@ -245,7 +268,8 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] Checkpoint da Onda 1 — app conferido em aparelho, sem mudança de comportamento
 - [x] Tarefa 5 — sondagem de capacidade e `evt=caps` estendido
 - [x] Checkpoint da Onda 2 — conferido em aparelho real (Redmi Note 10)
-- [ ] **Antes da Tarefa 6:** decidir aparelho de comparação — edge 60 neo (baseline existente) ou baseline novo no Redmi
+- [x] **Antes da Tarefa 6:** baseline novo no Redmi Note 10 — decisão do usuário; ver [`baseline/redmi-note-10/`](baseline/redmi-note-10/README.md)
+- [ ] Q-06 (`aspect` defasado em `evt=bind`): corrigir em commit próprio depois da Tarefa 7, ou levar ao ROADMAP
 - [ ] Levar as armadilhas de medição do baseline para o CLAUDE.md na Tarefa 13
 - [ ] Levar o 1:1 para o ROADMAP.md, junto do ramo morto em `cameraXAspectRatio()`
 

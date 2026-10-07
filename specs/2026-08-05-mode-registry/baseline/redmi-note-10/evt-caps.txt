@@ -1,0 +1,1 @@
+evt=caps camera=0 eis_supported=true hdr_supported=true zoom=1,0x-10,0x options=[4K 30,FHD 30,HD 30] manual_sensor=true iso=100-3200 iso_analog_max=3200 exposure_ns=65424-30071705440

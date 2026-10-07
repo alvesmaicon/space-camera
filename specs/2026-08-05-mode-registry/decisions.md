@@ -1154,6 +1154,42 @@ A spec fala em `latency_ms` (Tarefa 1 e NFR-4); a telemetria emite **`elapsed_ms
 O baseline mediu `elapsed_ms`. Se a FR-13 introduzir `evt=mode` com um campo de latência,
 vale usar o mesmo nome já existente em vez de criar um terceiro.
 
+### Q-06: o `aspect` de `evt=bind` sai com a proporção **anterior**
+
+**Levantada por:** baseline novo no Redmi Note 10 (2026-10-07), antes da Tarefa 6.
+**Status:** registrada — **não corrigir dentro da Tarefa 6**; ver encaminhamento.
+**Afeta:** NFR-1 (é um dos campos comparados), Tarefas 6, 7 e 13
+
+Com os toques localizados por rótulo, a defasagem é sistemática:
+
+| Toque na proporção | `evt=bind aspect=` | Proporção real (`takePhoto` e mídia salva) |
+|---|---|---|
+| 9:16 → 3:4 | `9:16` | 3:4 — 3264×2448 |
+| 3:4 → Full | `3:4` | Full — 1832×3840 |
+| Full → 9:16 | `Full` | 9:16 — 3840×2160 |
+
+E ao trocar Foto (em Full) → Vídeo, o bind do Vídeo reporta `aspect=Full`.
+
+**Mecanismo.** `CameraManager.setAspectRatio()` chama `bindCameraUseCases()` na hora, e
+o bind registra `previewAspectLabel`. Mas quem atualiza esse rótulo é um
+`LaunchedEffect(previewAspectLabel)` em `CameraScreen.kt`, que só roda **depois** da
+recomposição — ou seja, depois do bind. A captura está certa (a mídia prova); só a
+telemetria mente, e sempre por um passo.
+
+**Por que importa para esta spec.** É o instrumento do NFR-1. Se a Tarefa 6 mudar a ordem
+entre "trocar o modo/proporção" e "o rótulo chegar ao controller", o campo passa a sair
+certo — e a comparação acusa uma "regressão" que na verdade é correção. Ou o inverso.
+
+**Leitura de uma suspeita antiga.** O `baseline/README.md` de agosto registrou como erro
+de medição meu a hipótese de "`selectedAspectRatio` defasado do bind". O que estava errado
+ali era a coordenada fixa; a defasagem do **campo de telemetria** existe e é reprodutível.
+
+**Encaminhamento.** Para o NFR-1, `aspect` é comparado como **sequência observada** no
+mesmo roteiro, não como valor esperado por proporção. Corrigir (logar o rótulo no momento
+em que ele chega ao controller, ou passar a proporção junto com o pedido de bind) é
+mudança de comportamento observável da telemetria e fica fora do iso-comportamento das
+Tarefas 6 e 7 — candidata a commit próprio depois da Tarefa 7, ou ao ROADMAP.
+
 ---
 
 ## Bloqueios
