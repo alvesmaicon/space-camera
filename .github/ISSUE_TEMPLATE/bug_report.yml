@@ -1,0 +1,56 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Most camera bugs depend on the device. The two fields marked **device** below usually
+        say more than the description — please don't skip them. English or Portuguese is fine.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: And what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the camera in Photo mode
+        2. Switch the aspect ratio to 3:4
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version (device)
+      placeholder: e.g. Redmi Note 10, Android 12
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: App version and build
+      description: Settings → About shows the version and the build (a commit hash).
+      placeholder: e.g. 0.4.1 (41), build 1a2b3c4
+    validations:
+      required: true
+  - type: textarea
+    id: caps
+    attributes:
+      label: Camera capabilities (device)
+      description: |
+        With the device connected over USB and the app open:
+        `scripts/logcat.sh 'evt=caps'` — paste the line. It lists exactly what the camera
+        reported (EIS, HDR, zoom, resolutions, manual control), which is what the app offers.
+      render: text
+  - type: textarea
+    id: logs
+    attributes:
+      label: Other logs
+      description: "`scripts/logcat.sh 'evt='` while reproducing, if you can. The logs never include file paths or personal data."
+      render: text

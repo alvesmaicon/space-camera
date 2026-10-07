@@ -9,7 +9,7 @@ serão comparados na Tarefa 13.
 | Item | Valor |
 |---|---|
 | Commit | `3b3043e` — `GIT_SHA` conferido dentro do dex por `scripts/backup-apk.sh` |
-| Aparelho | Motorola edge 60 neo (`[serial omitido]`), Android 16, API 36 — **real, não emulador** |
+| Aparelho | Motorola edge 60 neo, Android 16, API 36 — **real, não emulador** |
 | Versão | 0.4.1-debug (versionCode 41) |
 | Data | 2026-08-05 |
 | Tela conferida | câmera, por `content-desc` no dump do `uiautomator` (`Flash`, `Trocar câmera`, `Timer desativado`), 32 nós |

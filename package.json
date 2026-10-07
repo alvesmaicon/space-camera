@@ -1,7 +1,7 @@
 {
   "name": "space-camera",
   "version": "1.0.0",
-  "description": "High-quality video recording app for Android with Full HD and 4K support",
+  "description": "Android camera app (video and photo) with manual quality control: resolution, bitrate, EIS, HDR and a Pro mode with manual ISO and shutter.",
   "scripts": {
     "generate:icons": "node scripts/generateIcons.js",
     "generate:notification-icons": "node scripts/generateNotificationIcons.js",
@@ -30,7 +30,7 @@
     "full-hd",
     "kotlin"
   ],
-  "author": "Space Camera Dev",
+  "author": "Maicon Alves",
   "license": "MIT",
   "devDependencies": {
     "sharp": "^0.33.0"

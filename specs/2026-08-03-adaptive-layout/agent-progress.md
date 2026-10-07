@@ -297,7 +297,7 @@ dumps sempre tiveram 49. Corrigido em `tasks.md`.
 ### Sessão 2026-08-05 — skill `dev`, primeiro aparelho físico
 
 - **Gates:** A, B, C, D · **Testes:** 67 (1 novo) · **Detekt e Lint:** limpos
-- **Aparelho:** Motorola edge 60 neo, Android 16 (API 36), 427×949dp, serial [serial omitido]
+- **Aparelho:** Motorola edge 60 neo, Android 16 (API 36), 427×949dp
 
 Objetivo era só gerar um APK de backup e instalar. Criado
 [`scripts/backup-apk.sh`](../../scripts/backup-apk.sh) — o repo não tinha nada disso, e

@@ -1,5 +1,12 @@
 # Guia de contribuição
 
+> **In English:** issues and pull requests are welcome in English or Portuguese. The code
+> uses English identifiers; comments, commit messages and internal docs are in Portuguese,
+> but you don't need to write Portuguese to contribute. Run
+> `./gradlew testDebugUnitTest lint detekt` before opening a PR — CI runs the same.
+> UI text never goes straight into Compose: add it to `res/values/strings.xml` (English)
+> **and** `res/values-pt/strings.xml` (Portuguese).
+
 ## Antes do primeiro commit
 
 Siga o [QUICKSTART.md](QUICKSTART.md) e confirme que o app sobe:
@@ -14,7 +21,7 @@ projeto num lugar só.
 ## Branches e commits
 
 `main` é a branch estável. Trabalhe em `feature/*`, `fix/*` ou `chore/*` e abra
-pull request no Bitbucket.
+pull request no GitHub. A CI roda build, testes, lint e detekt em todo PR.
 
 Commits seguem [Conventional Commits](https://www.conventionalcommits.org/):
 `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `build:`, `chore:`.

@@ -10,11 +10,12 @@ Tudo vem de `gradle/libs.versions.toml`. **Nunca** escreva versão literal num
 
 | Componente | Versão | Observação |
 |---|---|---|
-| AGP | 8.7.3 | não regrida abaixo de 8.2.1 — versões anteriores falham no JDK 21 |
-| Gradle | 8.9 | exigido pelo AGP 8.7 |
+| AGP | 8.13.2 | não regrida abaixo de 8.2.1 — versões anteriores falham no JDK 21 |
+| Gradle | 8.14.3 | |
 | Kotlin | 1.9.25 | última 1.9.x |
 | Compose Compiler | 1.5.15 | amarrado ao Kotlin; trocar um obriga a trocar o outro |
-| compileSdk / targetSdk | 34 | |
+| compileSdk / targetSdk | 36 | |
+| CameraX | 1.4.0 | 1.5+ exige Kotlin 2.x — ver ADR-003 da spec de registro de modos |
 | minSdk | 24 | Android 7.0 |
 | JVM target | 17 | do bytecode, independente do JDK que roda o Gradle |
 
@@ -94,15 +95,16 @@ crescer.
 
 ## CI
 
-Ainda não há pipeline configurado. O mínimo útil seria, a cada push:
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda a cada push na `main` e em todo
+pull request:
 
 ```bash
 ./gradlew assembleDebug testDebugUnitTest lint detekt
 ```
 
-Um runner precisa de JDK 17+, o Android SDK com a plataforma 34 e as licenças
-aceitas. `scripts/smoke.sh` exige emulador, então normalmente fica num job
-separado e opcional.
+Usa JDK 21 e o Android SDK do runner, com a plataforma 36 instalada pelo próprio workflow.
+`scripts/smoke.sh` exige emulador e fica de fora; verificação em aparelho continua manual
+(ver as armadilhas no [CLAUDE.md](CLAUDE.md)).
 
 ## Cache e limpeza
 

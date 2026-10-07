@@ -1,0 +1,19 @@
+name: Feature request
+description: Suggest something the app doesn't do yet
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check `ROADMAP.md`, in the repository root, first — it may already be mapped.
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: What are you trying to shoot or record that the app doesn't let you?

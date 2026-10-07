@@ -12,7 +12,7 @@ Este guia explica como gerar ícones para o Space Camera app usando a imagem `sp
 ### 1. Instale as dependências
 
 ```bash
-cd /Users/SEU_USUARIO/projetos/space-camera
+cd space-camera
 npm install
 ```
 
@@ -115,7 +115,7 @@ O script usa `space-cam.png` como imagem base. Para personalizar:
 
 ```bash
 # Copiar ou movimentar a imagem
-cp /caminho/para/seu/icone.png /Users/SEU_USUARIO/projetos/space-camera/space-cam.png
+cp /caminho/para/seu/icone.png space-cam.png
 ```
 
 ### 3. Regenere os ícones

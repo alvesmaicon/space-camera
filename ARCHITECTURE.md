@@ -29,7 +29,15 @@ conhece a interface do controller, que não conhece ninguém acima.
 | `CameraController.kt` | interface que o ViewModel enxerga, mais `CameraControllerFactory` |
 | `CameraManager.kt` | implementação real sobre CameraX e Camera2 interop |
 | `CameraTelemetry.kt` | eventos estruturados dos momentos decisivos |
-| `CameraMode.kt` | `VIDEO` \| `PHOTO` |
+| `ModeSession.kt` | modo pedido × modo ligado na sessão; recusa de bind religa o anterior |
+| `ManualExposure*.kt` | ISO e obturador do modo Pro |
+| `SensorCharacteristicsReader.kt` | leitura do HAL: controle manual, EIS, HDR |
+| `mode/` | **registro de modos**: cada modo (`VideoMode`, `PhotoMode`, `ProMode`) declara use cases, capacidade exigida, controles, proporção, EIS, disparador e flash; `ModeRegistry` é a lista |
+
+**Modos são declarações, não ramificações.** Tela, ViewModel e controller leem a definição
+do modo em vez de perguntar "que modo é este?". Um modo novo custa um arquivo e uma linha
+no registro — ver "Como adicionar um modo" no [CLAUDE.md](CLAUDE.md) e a spec em
+[specs/2026-08-05-mode-registry/](specs/2026-08-05-mode-registry/).
 
 `CameraController` existe por testabilidade. Enquanto o ViewModel instanciava o
 `CameraManager` diretamente, nenhuma lógica dele podia ser exercitada sem sensor

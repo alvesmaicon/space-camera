@@ -5,7 +5,7 @@ Do clone ao app rodando.
 ## Pré-requisitos
 
 - **JDK 17 ou superior** (o projeto roda no 21)
-- **Android SDK** com a plataforma 34
+- **Android SDK** com a plataforma 36
 - Aparelho com API 24+ ou emulador rodando
 
 Node **não** é necessário para compilar — os ícones já vêm versionados. Só
@@ -59,7 +59,7 @@ scripts/logcat.sh              # logs só do app
 **`sdk.dir not found`** — o passo 1 não foi feito ou o caminho está errado.
 
 **Falha em `JdkImageTransform` ou `jlink`** — JDK incompatível com a versão do
-AGP. O projeto está em AGP 8.7.3, que funciona no JDK 21; se você baixou a versão
+AGP. O projeto está em AGP 8.13.2, que funciona no JDK 21; se você baixou a versão
 do AGP, volte atrás.
 
 **`sharp not found`** — só afeta a geração de ícones. `npm install`.
