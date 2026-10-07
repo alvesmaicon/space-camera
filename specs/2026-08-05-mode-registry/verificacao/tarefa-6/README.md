@@ -3,7 +3,7 @@
 Redmi Note 10 (API 31), 2026-10-07, contra o [baseline do mesmo aparelho](../../baseline/redmi-note-10/README.md).
 APK conferido por dex antes de cada medição (`evt=mode ` presente no novo, ausente no antigo).
 Como o código ainda não estava commitado, o `GIT_SHA` dos dois APKs é o mesmo
-(`f896a2d`); quem distingue um do outro é o `evt=mode` no primeiro bind.
+(`17832b6`); quem distingue um do outro é o `evt=mode` no primeiro bind.
 
 ## Iso-comportamento (NFR-1)
 
@@ -45,8 +45,8 @@ serial (NFR-7).
 
 | Medição | p95 | mediana | condições |
 |---|---:|---:|---|
-| Baseline registrado (`494efc4`) | 57 ms | 51 ms | bateria 31% |
-| **Antes, re-medido agora** (`f896a2d` em `git worktree`) | **43 ms** | 40,5 ms | bateria 36%, 34,8 °C |
+| Baseline registrado (`7903b4f`) | 57 ms | 51 ms | bateria 31% |
+| **Antes, re-medido agora** (`17832b6` em `git worktree`) | **43 ms** | 40,5 ms | bateria 36%, 34,8 °C |
 | **Depois** (Tarefa 6) | **41 ms** | 39,5 ms | bateria 36%, 34,9 °C |
 
 O "depois" saiu 28% mais rápido que o baseline registrado, o que **não** se explica por

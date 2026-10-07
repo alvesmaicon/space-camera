@@ -287,7 +287,7 @@ funcionando.
         título do app bar alinhado à lista
   - [x] `wc -l CameraScreen.kt` = **2.141**, teto do NFR-5 = 2.240
   - [x] Manual: telefone reconferido em 2026-08-04 **contra o APK pré-spec**
-        (`f5614cd`, construído em worktree separado para não repetir a armadilha do
+        (`b3494b0`, construído em worktree separado para não repetir a armadilha do
         `git stash`). Pixel_9_Pro API 36, 427×952dp. Cinco estados comparados por
         `uiautomator`, com os bounds normalizados e diferenciados:
 
@@ -300,10 +300,10 @@ funcionando.
         | Sobre | 49 | idênticas, exceto o rótulo do `GIT_SHA` |
 
         **233 caixas, nenhuma diferença de posicionamento.** A única divergência é o
-        texto `f5614cd` → `34783d9` na tela Sobre, 11px de largura de glifo — que é
+        texto `b3494b0` → `d5ddcf6` na tela Sobre, 11px de largura de glifo — que é
         justamente a prova de que os dois APKs eram os pretendidos. NFR-1 assinado.
   - [x] Manual: **repetido depois das Tasks 7 a 9** (2026-08-04), mesmos cinco estados
-        contra o mesmo baseline `f5614cd` — 233 caixas, novamente só o `GIT_SHA`
+        contra o mesmo baseline `b3494b0` — 233 caixas, novamente só o `GIT_SHA`
         divergindo. Confirma que a mudança de alfa da Task 8 não move bounds e que a
         rolagem da Task 9 não entra em retrato
 - **_Requirements: FR-7, FR-8, NFR-1, NFR-5_**

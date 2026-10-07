@@ -81,14 +81,14 @@
 antes de escolher tarefa:
 
 1. **Árvore suja com a Wave 3 da adaptive-layout.** Comitada primeiro, a pedido do usuário,
-   em três commits (`17d4685` código, `1bd6105` ROADMAP.md, `3b3043e` esta spec). Sem isso o
+   em três commits (`d419ebf` código, `d4e6cd3` ROADMAP.md, `f09c091` esta spec). Sem isso o
    baseline não teria `GIT_SHA` de referência e o `wc -l` sairia de código não comitado.
 2. **Lacuna de rastreabilidade na spec anterior.** `CameraPreviewSurface.kt` referenciava
    `Decisions: Q-05`, que nunca havia sido escrita. Redigida a partir das medições que
    estavam só no KDoc, antes de commitar.
 
 **Tarefa 1.** Todos os passos feitos em aparelho real. APK conferido por dex
-(`GIT_SHA 3b3043e` presente) antes de qualquer medição. Baseline em
+(`GIT_SHA f09c091` presente) antes de qualquer medição. Baseline em
 [`baseline/`](baseline/README.md).
 
 **Antecipado: o portão de viabilidade da Onda 2 está atendido.** O aparelho reporta
@@ -377,6 +377,31 @@ despacho do disparador, o coletor de recusa e a personalização; o agrupamento 
 **Documentos:** CLAUDE.md (estrutura, "Como adicionar um modo", três armadilhas novas,
 emulador por AVD), ROADMAP.md (R1 feito, R2–R4 parciais, B3 andamento, 1:1, exposição
 longa) e REFACTORING.md (tamanhos, o que já saiu de cada item, defeitos conhecidos).
+
+### 2026-10-07 — reescrita do histórico para publicação
+
+Antes de publicar no GitHub, o histórico foi reescrito com `git filter-repo`: o e-mail de
+autor de 7 commits foi trocado pelo pessoal, e o serial de um aparelho e caminhos da
+máquina local saíram do conteúdo. **Todos os hashes mudaram.** Os documentos `.md` foram
+atualizados; os **logs brutos** (`.txt` em `baseline/` e `verificacao/`) mantêm os hashes
+antigos de propósito, porque são o que o APK reportou na época. Correspondência dos
+citados:
+
+| Antes | Depois |
+|---|---|
+| `17d4685` | `d419ebf` |
+| `1bd6105` | `d4e6cd3` |
+| `2e2039c` | `0d77a97` |
+| `34783d9` | `d5ddcf6` |
+| `3b3043e` | `f09c091` |
+| `494efc4` | `7903b4f` |
+| `5c05e41` | `9f41855` |
+| `7946a06` | `6810a13` |
+| `892d131` | `f5bcc8c` |
+| `8caf152` | `4d9e7e0` |
+| `9d8e30d` | `a581f0d` |
+| `f5614cd` | `b3494b0` |
+| `f896a2d` | `17832b6` |
 
 ## Situação das tarefas
 

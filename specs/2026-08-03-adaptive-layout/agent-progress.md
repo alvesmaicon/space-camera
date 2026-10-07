@@ -202,7 +202,7 @@ não foi remedido depois da Task 6.
 **Três pendências de verificação fechadas, uma delas virando defeito.**
 
 **1. NFR-1 no telefone — assinado.** A comparação foi feita contra o APK **pré-spec**
-(`f5614cd`), construído num `git worktree` separado em vez de `git stash`: o stash é
+(`b3494b0`), construído num `git worktree` separado em vez de `git stash`: o stash é
 exatamente o que confundiu o cálculo de atualidade do Gradle duas vezes nesta base, e o
 worktree tem diretório de build próprio. Os dois APKs foram conferidos no dex antes de
 instalar — o baseline **não** tem `readingGutterDp`, `isWideWindow` nem
@@ -277,7 +277,7 @@ exercitável**: `wm size 2560x700` devolve `sw263dp`, o Android volta a honrar
 não comportamento novo.
 
 **NFR-1 reconferido depois de tudo:** os mesmos cinco estados contra o mesmo baseline
-`f5614cd`, 233 caixas, só o `GIT_SHA` divergindo. Confirma que alfa não move bounds e
+`b3494b0`, 233 caixas, só o `GIT_SHA` divergindo. Confirma que alfa não move bounds e
 que a rolagem não entra em retrato.
 
 **Correção de registro.** A sessão anterior anotou "223 caixas" com Sobre em 39. A
@@ -401,11 +401,11 @@ Este só apareceu porque outra spec foi ler a árvore antes de começar.
 
 - [x] Iniciar a Wave 0
 - [x] Decidir Q-01 — usuário escolheu dividir em duas grandezas
-- [x] Commit da Task 1 (`8caf152`)
-- [x] Commit da Task 5 (`2e2039c`)
+- [x] Commit da Task 1 (`4d9e7e0`)
+- [x] Commit da Task 5 (`0d77a97`)
 - [x] Emenda do FR-6 / criação do FR-9 em `requirements.md`
-- [x] Commit da Wave 1 (`892d131`)
-- [x] Commit da Task 6 (`34783d9`)
+- [x] Commit da Wave 1 (`f5bcc8c`)
+- [x] Commit da Task 6 (`d5ddcf6`)
 - [x] Iniciar a Wave 1 (Tasks 2, 3, 4)
 - [x] Decidir as duas ressalvas da Task 4 — viraram Task 8 e Task 9
 - [x] Wave 2 — Task 6

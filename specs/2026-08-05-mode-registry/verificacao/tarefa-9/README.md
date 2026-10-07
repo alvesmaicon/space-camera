@@ -26,7 +26,7 @@ tem `MANUAL_SENSOR`" vale para o emulador de telefone usado antes, não para est
 é exercitável aqui, ainda que sem a física real do sensor.
 
 **Pré-visualização em retrato dentro da caixa 16:9:** é da câmera virtual deste emulador.
-O `evt=bind` reporta `aspect=16:9`, e o build de **antes da spec** (`f896a2d`), instalado no
+O `evt=bind` reporta `aspect=16:9`, e o build de **antes da spec** (`17832b6`), instalado no
 mesmo emulador, mostra a mesma imagem — não é regressão.
 
 ## Ressalva

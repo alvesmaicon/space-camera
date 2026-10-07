@@ -27,7 +27,7 @@ vírgula final. A segunda tentativa, do zero, é a acima.
 
 ## NFR-1 — iso-comportamento ponta a ponta
 
-Mesmo roteiro (`../roteiros/roteiro-t7.sh`) no build de **antes da spec** (`f896a2d`) e no
+Mesmo roteiro (`../roteiros/roteiro-t7.sh`) no build de **antes da spec** (`17832b6`) e no
 final, na mesma sessão, aparelho na mesma posição:
 
 | Comparação | Resultado |

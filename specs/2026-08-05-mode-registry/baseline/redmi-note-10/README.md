@@ -9,7 +9,7 @@ continua valendo como registro histórico e para o NFR-3.
 
 | Item | Valor |
 |---|---|
-| Commit | `494efc4` (Tarefa 5) — `GIT_SHA` conferido dentro do dex por `scripts/backup-apk.sh` |
+| Commit | `7903b4f` (Tarefa 5) — `GIT_SHA` conferido dentro do dex por `scripts/backup-apk.sh` |
 | Por que este commit serve de "antes" | a Tarefa 5 só **acrescentou** campos ao fim de `evt=caps`; nenhum use case, modo ou bind mudou |
 | Aparelho | Xiaomi Redmi Note 10 (M2101K7AG), Android 12 / API 31, MIUI — **real** |
 | Versão | 0.4.1-debug (versionCode 41) |
@@ -119,7 +119,7 @@ Luminância média da faixa central da captura de tela: **134,1** (desvio 38,7),
 real. É a referência para "tem imagem" nas Tarefas 6 e 7 — `evt=bind` com sucesso não
 prova isso.
 
-## Tamanho dos arquivos (NFR-3) em `494efc4`
+## Tamanho dos arquivos (NFR-3) em `7903b4f`
 
 | Arquivo | Linhas | Teto |
 |---|---:|---|

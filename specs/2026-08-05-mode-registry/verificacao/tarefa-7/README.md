@@ -1,7 +1,7 @@
 # Verificação da Tarefa 7 — Foto remigrado
 
 Redmi Note 10 (API 31), 2026-10-07. **Antes e depois na mesma sessão**, com o mesmo
-roteiro (`roteiro-t7.sh`) rodando primeiro no APK de `7946a06` (Tarefa 6, construído num
+roteiro (`roteiro-t7.sh`) rodando primeiro no APK de `6810a13` (Tarefa 6, construído num
 `git worktree`) e depois no APK desta tarefa — a lição de método da Tarefa 6. APKs
 distinguidos pelo dex (`NOISE_REDUCTION` aparece 1× no antigo, 4× no novo). Aparelho
 deitado, sem ser tocado entre as duas rodadas.

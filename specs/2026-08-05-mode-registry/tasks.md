@@ -40,7 +40,7 @@
   - **DADO** o baseline **QUANDO** for comparado no fim **ENTÃO** foi tirado em aparelho real, não em emulador (o emulador reporta EIS/HDR como não suportados e invalida a comparação)
 - **Verification:**
   - [x] Baseline existe: `ls specs/2026-08-05-mode-registry/baseline/`
-  - [x] APK conferido: `GIT_SHA 3b3043e` presente no dex, sem divergência
+  - [x] APK conferido: `GIT_SHA f09c091` presente no dex, sem divergência
   - [x] Conferência manual: a tela medida era a câmera — `content-desc` `Flash`/`Trocar câmera`/`Timer desativado`, 32 nós
 - **_Requirements: NFR-1, NFR-3, NFR-4_**
 
@@ -112,7 +112,7 @@
 - **_Requirements: NFR-5_**
 - **_Decisions: ADR-006_**
 
-### Checkpoint da Onda 1 — **PASSOU** (2026-08-06, commit `9d8e30d`)
+### Checkpoint da Onda 1 — **PASSOU** (2026-08-06, commit `a581f0d`)
 - [x] Critérios de aceite das Tarefas 1–4 atendidos
 - [x] Verificação de cada tarefa passou (testes + build + conferência)
 - [x] Baseline capturado em **aparelho real** e registrado em `agent-progress.md`

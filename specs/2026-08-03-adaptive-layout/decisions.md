@@ -647,7 +647,7 @@ configuração.
 
 #### Medição 2 — não é regressão desta spec
 
-O mesmo roteiro no APK **pré-spec** (`f5614cd`, sem nenhum código desta spec e sem a
+O mesmo roteiro no APK **pré-spec** (`b3494b0`, sem nenhum código desta spec e sem a
 ponte no manifesto): 189,9 → **0,2** → **0,1**. Reproduz idêntico. O bug é
 pré-existente; o que esta spec faz é torná-lo **alcançável**, porque a remoção da ponte
 (FR-7) é o que permite o tablet girar.
@@ -755,8 +755,8 @@ Mesmo aparelho, dados do app limpos entre as rodadas:
 
 | Build | `eis_supported` | `eis` aplicado |
 |---|---|---|
-| `5c05e41` (com a Task 7) | true | **false** |
-| `34783d9` (pré-Task 7) | true | **true** |
+| `9f41855` (com a Task 7) | true | **false** |
+| `d5ddcf6` (pré-Task 7) | true | **true** |
 
 #### Correção
 
