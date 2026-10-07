@@ -2,10 +2,13 @@
 
 **English** · [Português](README.pt-BR.md)
 
-An Android camera app — video and photo — built around manual quality control. It
-exposes in the interface the parameters the stock camera hides: resolution and frame
-rate, bitrate, stabilization, HDR, noise reduction and, in **Pro** mode, ISO and shutter
-speed.
+A camera as it should be: simple and effective.
+
+The project began with one concrete need — recording video on a Motorola edge 60 neo
+without the automatic zoom the stock camera app forces on you. It grew into a video and
+photo app built around manual quality control, exposing in the interface what the stock
+camera hides: resolution and frame rate, bitrate, stabilization, HDR, noise reduction
+and, in **Pro** mode, ISO and shutter speed.
 
 Kotlin + Jetpack Compose + CameraX. Single module, Android 7.0 (API 24) and up,
 targeting API 36. The interface is available in English and Portuguese.
