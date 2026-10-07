@@ -44,7 +44,7 @@ app/src/main/java/com/spacecamera/
 ├── MainActivity.kt                host do Compose + NavHost (camera/settings/about)
 ├── camera/
 │   ├── CameraController.kt        interface que o ViewModel enxerga + factory
-│   ├── CameraManager.kt           implementação CameraX/Camera2  ⚠ 1.150 linhas
+│   ├── CameraManager.kt           implementação CameraX/Camera2
 │   ├── CameraTelemetry.kt         eventos evt=... (CameraTelemetry, ModeTelemetry, TelemetryFields)
 │   ├── ModeSession.kt             modo pedido × ligado; quando sai evt=mode
 │   ├── ManualExposure*.kt         ISO e obturador do Pro (regra pura + escrita no Camera2)
@@ -57,7 +57,7 @@ app/src/main/java/com/spacecamera/
 │       └── CapabilityProbe.kt     decide as capacidades a partir do HAL
 ├── presentation/
 │   ├── screens/
-│   │   ├── CameraScreen.kt        UI da câmera  ⚠ 1.830 linhas
+│   │   ├── CameraScreen.kt        UI da câmera
 │   │   ├── SettingsScreen.kt      configurações (Material 3 dinâmico)
 │   │   └── AboutScreen.kt
 │   ├── components/                seletor, gaveta, overlays e controles por identificador
@@ -66,7 +66,7 @@ app/src/main/java/com/spacecamera/
 │   │   ├── PreviewAspect.kt       proporção da caixa de pré-visualização
 │   │   └── DeviceRotation.kt      rotação de captura vs compensação da UI
 │   ├── viewmodels/
-│   │   ├── CameraViewModel.kt     ⚠ ~790 linhas, ~30 StateFlows
+│   │   ├── CameraViewModel.kt     ~30 StateFlows
 │   │   └── CameraModes.kt         estado de modos agrupado (puro)
 │   └── icons/TimerIcons.kt
 ├── data/
@@ -223,13 +223,11 @@ O prazo da Play Store (`targetSdk` 36 até **31/10/2026**) foi cumprido: o item 
 mudança de orientação do Android 16 exigiu — ver
 [specs/2026-08-03-adaptive-layout/](specs/2026-08-03-adaptive-layout/).
 
-O resto está mapeado em [REFACTORING.md](REFACTORING.md). A spec de registro de modos
-(2026-08-05) tirou dos três arquivos grandes o que tocou — seletor, gaveta, controles,
-overlays, bind por modo, sondagem de capacidade, estado de modos. Continua lá:
-`CameraScreen.kt` (1.830 linhas) com gestos e os overlays de grade, nível e foco;
-`CameraManager.kt` (1.150) com gravação, processamento de bitmap e EXIF; e o ViewModel
-(~790) com ~30 `StateFlow` soltos. Ao mexer nesses arquivos, prefira extrair a parte que
-você tocou a aumentá-los.
+O resto está mapeado em [REFACTORING.md](REFACTORING.md): `CameraScreen.kt` com gestos e
+os overlays de grade, nível e foco; `CameraManager.kt` com gravação, processamento de
+bitmap e EXIF; e o ViewModel com ~30 `StateFlow` soltos. A separação em módulos e
+arquivos menores é uma refatoração planejada à parte — **não** use contagem de linhas como
+meta nem como critério de aceite ao mexer nesses arquivos.
 
 `ARCHITECTURE.md`, `PROJECT_STRUCTURE.md` e `README.md` descreviam `usecase/`,
 `VideoProcessor.kt`, Hilt e Room, que nunca existiram. Foram corrigidos — se

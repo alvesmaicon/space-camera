@@ -80,17 +80,18 @@ Com a instrumentação no lugar, a checagem é direta: subir o target, rodar
 `scripts/smoke.sh` e comparar o `evt=caps` e o `evt=bind` antes e depois. Se o
 aparelho passar a reportar capacidades diferentes, aparece ali.
 
-## Tamanho atual
+## Onde está a dívida
 
-| Arquivo | Linhas | Problema |
-|---|---:|---|
-| `presentation/screens/CameraScreen.kt` | 1.830 | composable ainda grande: gestos, overlays de grade/nível/foco |
-| `camera/CameraManager.kt` | 1.150 | gravação, processamento de bitmap e EXIF no mesmo arquivo |
-| `presentation/viewmodels/CameraViewModel.kt` | ~790 | ~30 `StateFlow` soltos |
+| Arquivo | Problema |
+|---|---|
+| `presentation/screens/CameraScreen.kt` | composable ainda grande: gestos, overlays de grade/nível/foco |
+| `camera/CameraManager.kt` | gravação, processamento de bitmap e EXIF no mesmo arquivo |
+| `presentation/viewmodels/CameraViewModel.kt` | ~30 `StateFlow` soltos |
 
-Medido em 2026-10-07, ao fim da spec de registro de modos
-([specs/2026-08-05-mode-registry/](specs/2026-08-05-mode-registry/)), que tirou dos três
-arquivos o que tocou. O que saiu está anotado em cada item abaixo.
+A separação em módulos e arquivos menores será uma refatoração própria. Contagem de linhas
+não é meta: o que importa é a responsabilidade de cada pedaço. A spec de registro de modos
+([specs/2026-08-05-mode-registry/](specs/2026-08-05-mode-registry/)) tirou dos três
+arquivos o que tocou; o que saiu está anotado em cada item abaixo.
 
 ## 1. Quebrar `CameraScreen.kt`
 
