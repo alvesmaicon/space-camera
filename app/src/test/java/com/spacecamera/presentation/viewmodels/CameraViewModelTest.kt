@@ -16,6 +16,7 @@ import com.spacecamera.camera.VideoBitratePreset
 import com.spacecamera.camera.VideoOption
 import com.spacecamera.camera.mode.CapabilityProbe
 import com.spacecamera.camera.mode.Capability
+import com.spacecamera.camera.mode.ModeArrangement
 import com.spacecamera.camera.mode.ModeRegistry
 import com.spacecamera.camera.mode.SensorCharacteristics
 import com.spacecamera.camera.mode.modoDeTeste
@@ -833,5 +834,41 @@ class CameraViewModelTest {
 
         assertEquals(listOf<CameraModeDefinition>(PhotoMode), avisos)
         coleta.cancel()
+    }
+
+    // ── Personalização persistida (Tarefa 10) ───────────────────────────────
+    //
+    // Requirements: FR-7, FR-8, FR-16, AC-7.2, AC-16.1 · Decisions: ADR-004
+
+    @Test
+    fun `personalizacao e gravada e volta ao reabrir o app`() = teste {
+        // O roteiro manual da tarefa — reordenar, sair, reabrir — em JVM.
+        inicializar()
+        publicarCapacidadeManual()
+        advanceUntilIdle()
+        viewModel.setModePinned(ProMode, true)
+        viewModel.moveMode(ProMode, by = -2)
+
+        val reaberto = CameraViewModel(
+            controllerFactory = CameraControllerFactory { _, _ -> controller },
+            settingsStorageFactory = { SettingsStorage(context) }
+        )
+        reaberto.initializeCamera(context, mockk<LifecycleOwner>(relaxed = true), null)
+        advanceUntilIdle()
+
+        assertEquals(listOf(ProMode, VideoMode, PhotoMode), reaberto.arrangedModes.value.pinned)
+    }
+
+    @Test
+    fun `restaurar padrao tambem e gravado`() = teste {
+        // AC-16.1: "volta ao padrão e persiste assim".
+        inicializar()
+        publicarCapacidadeManual()
+        advanceUntilIdle()
+        viewModel.setModePinned(ProMode, true)
+
+        viewModel.restoreDefaultModes()
+
+        assertEquals(ModeArrangement.DEFAULT, storage.modeArrangement)
     }
 }

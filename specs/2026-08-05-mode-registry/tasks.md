@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 9 · **Em andamento:** 0 · **Pendentes:** 4
+- **Concluídas:** 10 · **Em andamento:** 0 · **Pendentes:** 3
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -286,7 +286,7 @@
 - **_Requirements: FR-14, NFR-3_**
 - **_Decisions: ADR-001_**
 
-#### [ ] 10. Personalização de modos em Configurações
+#### [x] 10. Personalização de modos em Configurações
 - **Size:** M
 - **Complexity:** medium
 - **Risk:** low
@@ -306,8 +306,9 @@
   - **DADO** preferência com Pro no plano e aparelho sem `MANUAL_SENSOR` **QUANDO** o seletor é montado **ENTÃO** Pro não aparece e a preferência permanece intacta (AC-5.3)
   - **DADO** ordem personalizada **QUANDO** restaurar padrão é acionado **ENTÃO** volta ao padrão e persiste assim (AC-16.1)
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest --tests '*ModePreference*' --tests '*ModeSettings*'`
-  - [ ] Conferência manual: reordenar, sair do app, reabrir e conferir que a ordem sobreviveu
+  - [x] Testes passam: `CameraModesTest`, `ModeSettingsSectionTest`, `SettingsStorageTest` (4 casos do NFR-8) e os do ViewModel
+  - [x] Conferência manual: reordenar, sair do app, reabrir e conferir que a ordem sobreviveu — e o "Restaurar padrão" também. Ver [`verificacao/tarefa-10/`](verificacao/tarefa-10/README.md)
+  - [x] Mutação: 7 mutações, todas mortas
 - **_Requirements: FR-7, FR-8, FR-16, NFR-8_**
 - **_Decisions: ADR-004, ADR-006_**
 

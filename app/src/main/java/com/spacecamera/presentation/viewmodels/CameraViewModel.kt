@@ -12,7 +12,6 @@ import androidx.camera.video.Quality
 import com.spacecamera.camera.CameraController
 import com.spacecamera.camera.CameraControllerFactory
 import com.spacecamera.camera.CameraManager
-import com.spacecamera.camera.ManualExposure
 import com.spacecamera.camera.PhotoQualityPreset
 import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoBitratePreset
@@ -154,25 +153,12 @@ class CameraViewModel(
     private val _lastPhotoUri = MutableStateFlow<Uri?>(null)
     val lastPhotoUri: StateFlow<Uri?> = _lastPhotoUri.asStateFlow()
 
-    /** O modo ativo, como definição do registro (FR-1). Começa no primeiro dele. */
-    private val _activeMode = MutableStateFlow(modeRegistry.first())
-    val activeMode: StateFlow<CameraModeDefinition> = _activeMode.asStateFlow()
-
-    /**
-     * Plano e gaveta do seletor (FR-6), filtrados pelo que o aparelho oferece (FR-5).
-     * Começa sem capacidade nenhuma — um modo exigente não aparece antes da sondagem.
-     * A preferência do usuário chega na Tarefa 10; até lá, o padrão do registro.
-     */
-    private val _arrangedModes = MutableStateFlow(ModeRegistry.arranged(ModeArrangement.DEFAULT, emptySet(), modeRegistry))
-    val arrangedModes: StateFlow<ArrangedModes> = _arrangedModes.asStateFlow()
-
-    /** Exposição manual do Pro (FR-9). Estado novo, então agrupado (Q-10). */
-    private val _manualExposure = MutableStateFlow(ManualExposureState())
-    val manualExposure: StateFlow<ManualExposureState> = _manualExposure.asStateFlow()
-
-    /** Faixas que a escala do Pro oferece — exatamente as do HAL (AC-5.2). */
-    private val _manualSensorRanges = MutableStateFlow<ManualSensorRanges?>(null)
-    val manualSensorRanges: StateFlow<ManualSensorRanges?> = _manualSensorRanges.asStateFlow()
+    /** Estado de modos — ativo, arranjo, preferência, exposição manual (Q-10). */
+    private val modes = CameraModes(modeRegistry)
+    val activeMode: StateFlow<CameraModeDefinition> = modes.active
+    val arrangedModes: StateFlow<ArrangedModes> = modes.arranged
+    val manualExposure: StateFlow<ManualExposureState> = modes.manualExposure
+    val manualSensorRanges: StateFlow<ManualSensorRanges?> = modes.manualRanges
 
     /** Modo que o aparelho recusou — a tela mostra um aviso (fluxo 4.2 do design). */
     private val _modeRejected = MutableSharedFlow<CameraModeDefinition>(extraBufferCapacity = 1)
@@ -273,6 +259,9 @@ class CameraViewModel(
                 // Carrega configurações persistidas antes de criar o CameraManager
                 if (settingsStorage == null) settingsStorage = settingsStorageFactory(ctx)
                 val storage = settingsStorage!!
+                // Personalização de modos vale sempre, mesmo com "manter configurações"
+                // desligado: é arranjo da tela, não ajuste de captura.
+                modes.loadPreference(storage.modeArrangement)
                 // isKeepSettings é sempre carregado
                 _isKeepSettingsEnabled.value = storage.isKeepSettingsEnabled
                 if (storage.isKeepSettingsEnabled) {
@@ -443,16 +432,12 @@ class CameraViewModel(
                 // O aparelho recusou o modo e o controller religou o anterior (fluxo
                 // 4.2 do design): o seletor e o EIS voltam para o que está na sessão.
                 launch {
-                    cameraManager!!.deviceCapabilities.collect { caps ->
-                        _arrangedModes.value = ModeRegistry.arranged(ModeArrangement.DEFAULT, caps.supported, modeRegistry)
-                        _manualSensorRanges.value = caps.manualSensor
-                    }
+                    cameraManager!!.deviceCapabilities.collect(modes::onCapabilities)
                 }
                 launch {
                     cameraManager!!.modeRejections.collect { recusa ->
-                        modeRegistry.firstOrNull { it.id == recusa.rejected }?.let { _modeRejected.tryEmit(it) }
-                        val restaurado = modeRegistry.first { it.id == recusa.active }
-                        _activeMode.value = restaurado
+                        val restaurado = modes.onRejection(recusa)
+                        modes.lastRejected?.let { _modeRejected.tryEmit(it) }
                         syncStabilizationWithMode(restaurado)
                     }
                 }
@@ -516,7 +501,7 @@ class CameraViewModel(
     }
 
     fun toggleFlash() {
-        when (_activeMode.value.flashBehavior()) {
+        when (modes.active.value.flashBehavior()) {
             FlashBehavior.Torch -> {
                 _isFlashOn.value = !_isFlashOn.value
                 cameraManager?.toggleFlash(_isFlashOn.value)
@@ -533,11 +518,17 @@ class CameraViewModel(
      * capacidade manual reportada, o pedido é ignorado — não há faixa para limitar.
      */
     fun setIso(iso: Int?) {
-        val faixa = _manualSensorRanges.value?.iso ?: return
-        val aplicado = iso?.let { ManualExposure.clampIso(it, faixa) }
-        _manualExposure.value = ManualExposureState(iso = aplicado)
-        cameraManager?.applyManualIso(aplicado)
+        if (modes.manualRanges.value == null) return
+        cameraManager?.applyManualIso(modes.requestIso(iso))
     }
+
+    // ── Personalização dos modos (FR-7, FR-16) — persiste a cada mudança ─────
+
+    fun isModeRemovable(mode: CameraModeDefinition) = modes.isRemovable(mode)
+    fun moveMode(mode: CameraModeDefinition, by: Int) = persistModes(modes.move(mode, by))
+    fun setModePinned(mode: CameraModeDefinition, pinned: Boolean) = persistModes(modes.setPinned(mode, pinned))
+    fun restoreDefaultModes() = persistModes(modes.restoreDefault())
+    private fun persistModes(preference: ModeArrangement) { settingsStorage?.modeArrangement = preference }
 
     /** Cicla OFF → AUTO → ON → OFF, sem tocha contínua. */
     private fun cyclePhotoFlash() {
@@ -554,14 +545,10 @@ class CameraViewModel(
 
     fun selectMode(mode: CameraModeDefinition) {
         if (_recordingState.value != RecordingState.Idle) return
-        _activeMode.value = mode
-        resetFlash()
         // Nenhum outro modo tem escala de ISO: valor manual que sobrevivesse à troca
         // travaria a exposição de um modo sem controle para destravar.
-        if (_manualExposure.value.iso != null) {
-            _manualExposure.value = ManualExposureState()
-            cameraManager?.applyManualIso(null)
-        }
+        if (modes.select(mode)) cameraManager?.applyManualIso(null)
+        resetFlash()
         syncStabilizationWithMode(mode)
         cameraManager?.applyMode(mode)
     }
@@ -594,7 +581,7 @@ class CameraViewModel(
             recording = _recordingState.value != RecordingState.Idle,
             countdownActive = _countdownSeconds.value > 0
         )
-        val acao = _activeMode.value.shutterAction(estado)
+        val acao = modes.active.value.shutterAction(estado)
         when (acao) {
             ShutterAction.StartRecording -> startRecordingWithDelay(targetRotation)
             ShutterAction.StopRecording -> stopRecording()

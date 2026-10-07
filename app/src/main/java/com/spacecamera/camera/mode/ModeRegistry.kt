@@ -24,6 +24,12 @@ object ModeRegistry {
     )
 
     /**
+     * Os modos que nunca saem do plano: a função principal do app (premissa P2,
+     * AC-7.1). Valem mesmo contra uma preferência corrompida que os deixasse de fora.
+     */
+    val essential: Set<CameraModeId> = setOf(VideoMode.id, PhotoMode.id)
+
+    /**
      * Os modos que **este** aparelho oferece (FR-5).
      *
      * Modo cuja capacidade exigida não veio do HAL não aparece em superfície
@@ -81,9 +87,10 @@ object ModeRegistry {
         val semPreferenciaUtil = naOrdemGravada.isEmpty() && preference.pinned.none { it in porId }
 
         val (plano, gaveta) = ordenados.partition { modo ->
-            if (semPreferenciaUtil) modo.pinnedByDefault else modo.id.value in preference.pinned
+            modo.id in essential ||
+                if (semPreferenciaUtil) modo.pinnedByDefault else modo.id.value in preference.pinned
         }
 
-        return ArrangedModes(pinned = plano, drawer = gaveta)
+        return ArrangedModes(pinned = plano, drawer = gaveta, ordered = ordenados)
     }
 }

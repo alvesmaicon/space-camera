@@ -170,7 +170,9 @@ data class ModeArrangement(
  */
 data class ArrangedModes(
     val pinned: List<CameraModeDefinition>,
-    val drawer: List<CameraModeDefinition>
+    val drawer: List<CameraModeDefinition>,
+    /** Todos os disponíveis na ordem do usuário, plano e gaveta intercalados — a lista da personalização. */
+    val ordered: List<CameraModeDefinition> = pinned + drawer
 ) {
     /**
      * O que o carrossel do seletor mostra: o plano — mais o modo ativo, se ele veio

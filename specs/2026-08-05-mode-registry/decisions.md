@@ -1335,6 +1335,34 @@ são extensão dele e valem ser acrescentados à tabela.
     abriu o espaço do NFR-3 (1.150 linhas). A entrada `VariableNaming` correspondente do
     baseline de detekt ficou órfã; some no reencolhimento da Tarefa 13.
 
+### Q-12: decisões da Tarefa 10 (personalização)
+
+**Status:** registradas, nenhuma bloqueante. A 2 foi tomada com o usuário ausente e é
+fácil de trocar.
+
+1. **Estado de modos agrupado em `CameraModes`** (pendência da Q-10): modo ativo, arranjo,
+   preferência, exposição manual e faixas saíram do ViewModel para uma classe que **só
+   guarda estado e decide** — testável em JVM pura. O ViewModel fica com os efeitos
+   (gravar a preferência, avisar o controller). Efeito no tamanho: 792 → 779 linhas, porque
+   o ViewModel ganhou ao mesmo tempo as quatro funções de personalização.
+2. **Reordenar por setas, não por arrastar.** O Compose 1.5 não tem arrastar em lista
+   pronto; setas são acessíveis e testáveis. Decidido com o usuário ausente — trocar por
+   arrastar é mudança só em `ModeSettingsSection`.
+3. **Mover troca com o vizinho _disponível_.** Modos que este aparelho não oferece, ou que
+   esta versão não conhece, ficam exatamente na posição gravada — trocar de aparelho
+   devolve o Pro à posição configurada (AC-5.3), mesmo depois de reordenar sem ele.
+4. **Vídeo e Foto são `ModeRegistry.essential`**: ficam no plano mesmo contra uma
+   preferência que os deixe de fora (corrompida, ou de outra versão), e o pedido de
+   tirá-los é ignorado. Um teste da Tarefa 2 usava a Foto como exemplo de "modo na
+   gaveta", o que contradiz P2 — o exemplo foi trocado por um modo removível, e um teste
+   novo cobre o essencial.
+5. **Personalização vale com "manter configurações" desligado.** É arranjo da tela, não
+   ajuste de captura; resetá-la a cada abertura apagaria a escolha do usuário.
+6. **Seção no topo de Configurações**, para o "Editar" da gaveta cair direto nela (FR-17).
+7. **Persistência em duas chaves de texto** (`mode_order`, `mode_pinned`), separadas por
+   vírgula; tipo errado gravado por outra versão cai no padrão com log, sem exceção
+   (NFR-8).
+
 ---
 
 ## Bloqueios

@@ -1,8 +1,10 @@
 package com.spacecamera.data.storage
 
+import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.spacecamera.camera.PhotoQualityPreset
 import com.spacecamera.camera.VideoBitratePreset
+import com.spacecamera.camera.mode.ModeArrangement
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -101,5 +103,45 @@ class SettingsStorageTest {
         val recarregado = SettingsStorage(ApplicationProvider.getApplicationContext())
         assertEquals(VideoBitratePreset.MEDIUM, recarregado.bitratePreset)
         assertEquals(PhotoQualityPreset.MAXIMA, recarregado.photoQualityPreset)
+    }
+
+    // ── Preferência de modos (Tarefa 10) ────────────────────────────────────
+    //
+    // Requirements: FR-8, NFR-8, AC-8.1, AC-8.2 · Decisions: ADR-004
+    //
+    // Os quatro casos de compatibilidade do fluxo 4.5 do design, com SharedPreferences
+    // de verdade: o que importa é o que sobrevive a outra versão do app.
+
+    @Test
+    fun `modos sem preferencia gravada caem no padrao`() {
+        // AC-8.2.
+        assertEquals(ModeArrangement.DEFAULT, storage.modeArrangement)
+    }
+
+    @Test
+    fun `preferencia de modos sobrevive por identificador e na ordem`() {
+        // FR-8: texto, nunca ordinal.
+        val gravada = ModeArrangement(order = listOf("pro", "video", "photo"), pinned = setOf("pro", "video", "photo"))
+        storage.modeArrangement = gravada
+
+        assertEquals(gravada, SettingsStorage(ApplicationProvider.getApplicationContext()).modeArrangement)
+    }
+
+    @Test
+    fun `identificador desconhecido volta intacto da leitura`() {
+        // AC-8.1: quem descarta é o registro, na hora de mostrar. A preferência guarda
+        // o que o usuário gravou — inclusive o que esta versão não conhece.
+        storage.modeArrangement = ModeArrangement(order = listOf("sepia_antigo", "video"), pinned = setOf("video"))
+
+        assertEquals(listOf("sepia_antigo", "video"), storage.modeArrangement.order)
+    }
+
+    @Test
+    fun `preferencia de modos corrompida degrada para o padrao sem excecao`() {
+        // NFR-8: outra versão gravou outro tipo na mesma chave.
+        ApplicationProvider.getApplicationContext<Context>().getSharedPreferences("space_camera_settings", Context.MODE_PRIVATE)
+            .edit().putInt("mode_order", 42).putInt("mode_pinned", 7).commit()
+
+        assertEquals(ModeArrangement.DEFAULT, storage.modeArrangement)
     }
 }

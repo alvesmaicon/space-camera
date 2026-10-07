@@ -2,8 +2,11 @@ package com.spacecamera.data.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import com.spacecamera.camera.PhotoQualityPreset
 import com.spacecamera.camera.VideoBitratePreset
+import com.spacecamera.camera.mode.ModeArrangement
+import timber.log.Timber
 
 class SettingsStorage(context: Context) {
 
@@ -66,6 +69,30 @@ class SettingsStorage(context: Context) {
         get() = prefs.getBoolean(KEY_IMAGE_ENHANCEMENT, false)
         set(value) = prefs.edit().putBoolean(KEY_IMAGE_ENHANCEMENT, value).apply()
 
+    /**
+     * Requirements: FR-8, NFR-8 · Decisions: ADR-004
+     *
+     * Ordem e plano dos modos, por **identificador estável** — nunca `ordinal`. Guarda
+     * tudo o que o usuário gravou, inclusive modos que esta versão não conhece ou que
+     * este aparelho não oferece: quem filtra é o registro, na hora de mostrar (AC-5.3).
+     * Valor de outro tipo (gravado por outra versão) cai no padrão, sem exceção.
+     */
+    var modeArrangement: ModeArrangement
+        get() = try {
+            val ordem = prefs.getString(KEY_MODE_ORDER, null)
+            if (ordem == null) ModeArrangement.DEFAULT
+            else ModeArrangement(order = ordem.toIds(), pinned = prefs.getString(KEY_MODE_PINNED, "").orEmpty().toIds().toSet())
+        } catch (e: ClassCastException) {
+            Timber.w(e, "preferência de modos ilegível, usando o padrão")
+            ModeArrangement.DEFAULT
+        }
+        set(value) = prefs.edit {
+            putString(KEY_MODE_ORDER, value.order.joinToString(","))
+            putString(KEY_MODE_PINNED, value.pinned.joinToString(","))
+        }
+
+    private fun String.toIds() = split(',').filter { it.isNotBlank() }
+
     companion object {
         private const val KEY_EIS = "eis_enabled"
         private const val KEY_NR = "nr_enabled"
@@ -80,5 +107,7 @@ class SettingsStorage(context: Context) {
         private const val KEY_HDR = "hdr_enabled"
         private const val KEY_PHOTO_QUALITY = "photo_quality_preset"
         private const val KEY_IMAGE_ENHANCEMENT = "image_enhancement_enabled"
+        private const val KEY_MODE_ORDER = "mode_order"
+        private const val KEY_MODE_PINNED = "mode_pinned"
     }
 }

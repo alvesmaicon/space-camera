@@ -120,11 +120,22 @@ class ModeRegistryTest {
 
     @Test
     fun `modo fora do plano vai para a gaveta`() {
-        // AC-6.1
+        // AC-6.1. O exemplo era a Foto, escrito antes de a regra de essenciais existir
+        // (Tarefa 10); Foto não sai do plano (P2, AC-7.1), então o exemplo é um modo
+        // removível — e o teste ao lado cobre o essencial.
+        val noturno = modoDeTeste("noturno")
+        val pref = ModeArrangement(order = listOf("video", "photo", "noturno"), pinned = setOf("video", "photo"))
+        val arranjo = ModeRegistry.arranged(pref, semNada, listOf(VideoMode, PhotoMode, noturno))
+        assertEquals(listOf("video", "photo"), arranjo.pinned.map { it.id.value })
+        assertEquals(listOf("noturno"), arranjo.drawer.map { it.id.value })
+    }
+
+    @Test
+    fun `Vídeo e Foto ficam no plano mesmo se a preferência os deixar de fora`() {
+        // P2 contra preferência corrompida ou de outra versão.
         val pref = ModeArrangement(order = listOf("video", "photo"), pinned = setOf("video"))
         val arranjo = ModeRegistry.arranged(pref, semNada)
-        assertEquals(listOf("video"), arranjo.pinned.map { it.id.value })
-        assertEquals(listOf("photo"), arranjo.drawer.map { it.id.value })
+        assertEquals(listOf("video", "photo"), arranjo.pinned.map { it.id.value })
     }
 
     @Test

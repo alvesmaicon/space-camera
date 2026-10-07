@@ -306,6 +306,25 @@ obturador da Tarefa 12. `evt=ae_frozen` ficou como diagnóstico permanente.
 **Ainda a pagar:** o ViewModel está em ~800 linhas. O agrupamento do estado de modos (Q-10)
 é o primeiro passo da Tarefa 10.
 
+### Sessão: 2026-10-07 — Tarefa 10 (personalização)
+
+- **Agente:** skill `dev`
+- **Gate:** D concluído · Tarefa 10 **concluída** (Checkpoint da Onda 6 depende da Tarefa 9)
+- **Verificação em aparelho:** [`verificacao/tarefa-10/`](verificacao/tarefa-10/README.md)
+
+**Agrupamento (Q-10) feito.** O estado de modos foi para `CameraModes` — puro, testado em
+JVM. Reordenar troca com o vizinho **disponível**, para não deslocar o que este aparelho
+não oferece (AC-5.3). Vídeo e Foto viraram `ModeRegistry.essential`. Detalhes na Q-12,
+incluindo a escolha de setas em vez de arrastar, feita com o usuário ausente.
+
+**No aparelho:** "Editar" da gaveta cai na seção; Pro no plano e no topo aparece primeiro
+no seletor; a ordem sobrevive a fechar, reabrir e reinstalar; "Restaurar padrão" também
+persiste. Um defeito visual (setas desalinhadas nas linhas sem interruptor) foi pego na
+captura de tela e corrigido na mesma rodada.
+
+**ViewModel:** 779 linhas — o agrupamento tirou 13 e as funções de personalização
+devolveram 8. A meta "não crescer" (694) não será atingida nesta spec; registrado.
+
 ## Situação das tarefas
 
 | Onda | Tarefa | Status | Observações |
@@ -319,7 +338,7 @@ obturador da Tarefa 12. `evt=ae_frozen` ficou como diagnóstico permanente.
 | 4 | 7. Foto remigrado | **Concluída** | UI, mídia, binds e flash idênticos ao commit anterior na mesma sessão |
 | 5 | 8. Seletor + gaveta | **Concluída** | item "Mais" + gaveta; `CameraMode` removido; carrossel rolável |
 | 6 | 9. Janela larga com N modos | Pendente | folga 4 |
-| 6 | 10. Personalização em Configurações | Pendente | folga 4 |
+| 6 | 10. Personalização em Configurações | **Concluída** | estado de modos agrupado em `CameraModes`; persistência conferida em aparelho |
 | 6 | 11. Pro com ISO manual | **Concluída** | ISO muda o brilho em aparelho; EXIF com o ISO manual |
 | 7 | 12. Obturador manual | Pendente | caminho crítico |
 | 8 | 13. Recibo do NFR-2 e fechamento | Pendente | prova que a spec entregou o que prometeu |
@@ -371,7 +390,7 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] Tarefa 7 — Foto remigrado; Checkpoint da Onda 4
 - [x] Tarefa 8 — seletor + gaveta; Checkpoint da Onda 5
 - [x] Tarefa 11 — Pro com ISO manual (verificada em aparelho)
-- [ ] Agrupar o estado de modos do ViewModel na Tarefa 10 (Q-10)
+- [x] Tarefa 10 — personalização; estado de modos agrupado (Q-10 resolvida)
 - [ ] Q-06 (`aspect` defasado em `evt=bind`): corrigir em commit próprio depois da Tarefa 7, ou levar ao ROADMAP
 - [ ] Q-08 (modo não reaplicado ao recriar o controller): verificar em aparelho e corrigir depois da Tarefa 7
 - [ ] Aviso visual da recusa de modo — na Tarefa 11 (Q-07)

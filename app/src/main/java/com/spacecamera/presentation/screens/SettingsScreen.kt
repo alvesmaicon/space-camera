@@ -1,5 +1,6 @@
 package com.spacecamera.presentation.screens
 
+import com.spacecamera.presentation.components.ModeSettingsSection
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.LocalIndication
@@ -66,6 +67,7 @@ fun SettingsScreen(
     val photoQualityOptions = PhotoQualityPreset.entries
     var showPhotoQualityDialog by remember { mutableStateOf(false) }
     val isImageEnhancementEnabled by viewModel.isImageEnhancementEnabled.collectAsState()
+    val arrangedModes by viewModel.arrangedModes.collectAsState()
 
     MaterialTheme(colorScheme = colorScheme) {
         val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -103,7 +105,20 @@ fun SettingsScreen(
                     .padding(horizontal = readingGutter),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
+                // ── Modos da câmera (FR-7) — no topo, onde o "Editar" da gaveta cai ──
+                item { SectionHeader("Modos da câmera") }
+                item {
+                    ModeSettingsSection(
+                        modes = arrangedModes.ordered,
+                        pinned = arrangedModes.pinned.toSet(),
+                        isRemovable = viewModel::isModeRemovable,
+                        onMove = viewModel::moveMode,
+                        onPinnedChange = viewModel::setModePinned,
+                        onRestoreDefault = viewModel::restoreDefaultModes
+                    )
+                }
                 // ── Câmera ────────────────────────────────────────────────
+                item { Spacer(Modifier.height(8.dp)) }
                 item { SectionHeader("Câmera") }
                 item {
                     SettingsToggleRow(
