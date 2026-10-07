@@ -1,19 +1,24 @@
 package com.spacecamera.presentation.viewmodels
 
 import android.content.Context
+import android.hardware.camera2.CameraCharacteristics
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.video.Quality
 import androidx.lifecycle.LifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import com.spacecamera.camera.CameraControllerFactory
-import com.spacecamera.camera.CameraMode
 import com.spacecamera.camera.FakeCameraController
 import com.spacecamera.camera.ModeRejection
 import com.spacecamera.camera.PhotoQualityPreset
 import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoBitratePreset
 import com.spacecamera.camera.VideoOption
+import com.spacecamera.camera.mode.CapabilityProbe
+import com.spacecamera.camera.mode.Capability
+import com.spacecamera.camera.mode.ModeRegistry
+import com.spacecamera.camera.mode.SensorCharacteristics
+import com.spacecamera.camera.mode.modoDeTeste
 import com.spacecamera.camera.mode.PhotoMode
 import com.spacecamera.camera.mode.ShutterAction
 import com.spacecamera.camera.mode.VideoMode
@@ -123,7 +128,7 @@ class CameraViewModelTest {
     @Test
     fun `estado inicial antes de inicializar a camera`() = teste {
         assertEquals(RecordingState.Idle, viewModel.recordingState.value)
-        assertEquals(CameraMode.VIDEO, viewModel.cameraMode.value)
+        assertEquals(VideoMode, viewModel.activeMode.value)
         assertEquals(RecordingDelay.OFF, viewModel.recordingDelay.value)
         assertEquals(0, viewModel.recordingSeconds.value)
         assertFalse(viewModel.cameraInitialized.value)
@@ -221,7 +226,7 @@ class CameraViewModelTest {
     @Test
     fun `contagem regressiva vale tambem para foto`() = teste {
         inicializar()
-        viewModel.setCameraMode(CameraMode.PHOTO)
+        viewModel.selectMode(PhotoMode)
         viewModel.cycleRecordingDelay() // 3s
 
         viewModel.takePhotoWithDelay()
@@ -280,7 +285,7 @@ class CameraViewModelTest {
     @Test
     fun `no modo foto o flash cicla off auto on`() = teste {
         inicializar()
-        viewModel.setCameraMode(CameraMode.PHOTO)
+        viewModel.selectMode(PhotoMode)
 
         viewModel.toggleFlash()
         assertEquals(PhotoFlashMode.AUTO, viewModel.photoFlashMode.value)
@@ -301,7 +306,7 @@ class CameraViewModelTest {
         viewModel.toggleFlash()
         assertTrue(viewModel.isFlashOn.value)
 
-        viewModel.setCameraMode(CameraMode.PHOTO)
+        viewModel.selectMode(PhotoMode)
 
         assertFalse(viewModel.isFlashOn.value, "tocha acesa não pode atravessar a troca de modo")
         assertEquals(false, controller.lastTorchEnabled)
@@ -316,10 +321,10 @@ class CameraViewModelTest {
         assertTrue(viewModel.isStabilizationEnabled.value)
 
         // EIS não se aplica a captura de imagem.
-        viewModel.setCameraMode(CameraMode.PHOTO)
+        viewModel.selectMode(PhotoMode)
         assertFalse(viewModel.isStabilizationEnabled.value)
 
-        viewModel.setCameraMode(CameraMode.VIDEO)
+        viewModel.selectMode(VideoMode)
         assertTrue(viewModel.isStabilizationEnabled.value, "deve voltar ao que estava persistido")
 
         // O desligamento em foto é temporário: não pode ter sido gravado.
@@ -360,9 +365,9 @@ class CameraViewModelTest {
         advanceTimeBy(100)
         assertEquals(RecordingState.Recording, viewModel.recordingState.value)
 
-        viewModel.setCameraMode(CameraMode.PHOTO)
+        viewModel.selectMode(PhotoMode)
 
-        assertEquals(CameraMode.VIDEO, viewModel.cameraMode.value)
+        assertEquals(VideoMode, viewModel.activeMode.value)
     }
 
     // ── Persistência dos toggles ────────────────────────────────────────────
@@ -645,7 +650,7 @@ class CameraViewModelTest {
     @Test
     fun `disparador na foto captura`() = teste {
         inicializar()
-        viewModel.setCameraMode(CameraMode.PHOTO)
+        viewModel.selectMode(PhotoMode)
 
         val acao = viewModel.onShutter(targetRotation = 0)
         advanceTimeBy(50)
@@ -659,10 +664,10 @@ class CameraViewModelTest {
     fun `trocar de modo entrega a definicao ao controller`() = teste {
         inicializar()
 
-        viewModel.setCameraMode(CameraMode.PHOTO)
+        viewModel.selectMode(PhotoMode)
         assertEquals(PhotoMode, controller.lastAppliedMode)
 
-        viewModel.setCameraMode(CameraMode.VIDEO)
+        viewModel.selectMode(VideoMode)
         assertEquals(VideoMode, controller.lastAppliedMode)
     }
 
@@ -672,13 +677,60 @@ class CameraViewModelTest {
         // ViewModel só precisa parar de mostrar o modo que não existe na sessão.
         storage.isStabilizationEnabled = true
         inicializar()
-        viewModel.setCameraMode(CameraMode.PHOTO)
+        viewModel.selectMode(PhotoMode)
         assertFalse(viewModel.isStabilizationEnabled.value)
 
         controller.modeRejectionsFlow.emit(ModeRejection(rejected = PhotoMode.id, active = VideoMode.id))
         advanceUntilIdle()
 
-        assertEquals(CameraMode.VIDEO, viewModel.cameraMode.value)
+        assertEquals(VideoMode, viewModel.activeMode.value)
         assertTrue(viewModel.isStabilizationEnabled.value, "o EIS do vídeo precisa voltar junto")
+    }
+
+    // ── Modos vindos do registro (Tarefa 8) ─────────────────────────────────
+    //
+    // Requirements: FR-1, FR-6 · Decisions: ADR-001, ADR-004
+
+    @Test
+    fun `modo inicial e o primeiro do registro`() = teste {
+        assertEquals(ModeRegistry.all.first(), viewModel.activeMode.value)
+    }
+
+    @Test
+    fun `arranjo de modos comeca no padrao do registro`() = teste {
+        // AC-8.2: sem preferência gravada (a persistência chega na Tarefa 10).
+        inicializar()
+
+        assertEquals(listOf(VideoMode, PhotoMode), viewModel.arrangedModes.value.pinned)
+        assertTrue(viewModel.arrangedModes.value.drawer.isEmpty())
+    }
+
+    @Test
+    fun `modo exigente entra na gaveta quando o aparelho reporta a capacidade`() = teste {
+        // FR-5 na ponta do ViewModel: antes da sondagem nada exigente aparece; quando
+        // o controller publica MANUAL_SENSOR, o arranjo se refaz. O registro de
+        // produção ainda não tem modo exigente (o Pro é a Tarefa 11), então o teste
+        // injeta um.
+        val exigente = modoDeTeste("exigente", capability = Capability.MANUAL_SENSOR)
+        val vm = CameraViewModel(
+            controllerFactory = CameraControllerFactory { _, _ -> controller },
+            settingsStorageFactory = { storage },
+            modeRegistry = listOf(VideoMode, PhotoMode, exigente)
+        )
+        vm.initializeCamera(context, mockk<LifecycleOwner>(relaxed = true), null)
+        advanceUntilIdle()
+        assertTrue(exigente !in vm.arrangedModes.value.drawer, "sem sondagem, o modo não pode aparecer")
+
+        controller.deviceCapabilitiesFlow.value = CapabilityProbe.decide(
+            SensorCharacteristics(
+                requestCapabilities = listOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR),
+                sensitivityRange = 100..3200,
+                exposureTimeRangeNs = 65_424L..30_071_705_440L,
+                maxAnalogSensitivity = 3200
+            )
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf(exigente), vm.arrangedModes.value.drawer)
     }
 }

@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 7 · **Em andamento:** 0 · **Pendentes:** 6
+- **Concluídas:** 8 · **Em andamento:** 0 · **Pendentes:** 5
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -232,7 +232,7 @@
 
 ### Onda 5 — Seletor orientado ao registro
 
-#### [ ] 8. Seletor orientado ao registro, com gaveta
+#### [x] 8. Seletor orientado ao registro, com gaveta
 - **Size:** M
 - **Complexity:** medium
 - **Risk:** medium
@@ -249,19 +249,20 @@
   - **DADO** a gaveta aberta **QUANDO** o usuário aciona o atalho **ENTÃO** a tela de personalização abre
   - **DADO** `wc -l` de `CameraScreen.kt` **QUANDO** medido **ENTÃO** diminuiu em relação ao baseline
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest --tests '*ModeSelector*'`
-  - [ ] Tamanho: `wc -l app/src/main/java/com/spacecamera/presentation/screens/CameraScreen.kt` menor que o baseline
-  - [ ] Conferência manual: abrir a gaveta, trocar de modo, voltar
+  - [x] Testes passam: `./gradlew testDebugUnitTest` — 165, 0 falhas (`ModeSelectorTest`, `ModeDrawerTest`, `ArrangedModesTest`)
+  - [x] Tamanho: `CameraScreen.kt` 2.144 — menor que o baseline (2.220)
+  - [x] Conferência manual: abrir a gaveta, fechar por toque fora e por "voltar", "Editar" → Configurações, trocar de modo pelo seletor e pelo gesto — ver [`verificacao/tarefa-8/`](verificacao/tarefa-8/README.md)
+  - [x] Mutação: 7 mutações, todas mortas (a 7ª só depois de injetar o registro no ViewModel)
 - **_Requirements: FR-6, FR-17, NFR-3_**
 - **_Decisions: ADR-001, ADR-004, ADR-006_**
 
-### Checkpoint da Onda 5
-- [ ] Critérios de aceite da Tarefa 8 atendidos
-- [ ] Seletor lê do registro; nenhuma referência a `CameraMode.entries` na UI
-- [ ] `CameraScreen.kt` **menor** que o baseline, apesar da gaveta nova
-- [ ] Trocar de modo pela gaveta conferido em aparelho
-- [ ] Cross-onda: Vídeo e Foto seguem iso-comportamento após a troca de fonte do seletor
-- [ ] Pronto para a Onda 6
+### Checkpoint da Onda 5 — **PASSOU** (2026-10-07)
+- [x] Critérios de aceite da Tarefa 8 atendidos
+- [x] Seletor lê do registro; o enum `CameraMode` **deixou de existir**
+- [x] `CameraScreen.kt` **menor** que o baseline (2.144), apesar da gaveta nova
+- [x] Gaveta conferida em aparelho — vazia até o Pro, então "trocar de modo pela gaveta" só tem como ser exercitado na Tarefa 11; coberto aqui por teste Compose
+- [x] Cross-onda: Vídeo e Foto seguem iso-comportamento — árvore de UI difere da Tarefa 7 **só** pelo item "Mais"
+- [x] Pronto para a Onda 6
 
 ### Onda 6 — Superfícies que dependem do seletor
 

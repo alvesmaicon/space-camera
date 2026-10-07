@@ -171,4 +171,23 @@ data class ModeArrangement(
 data class ArrangedModes(
     val pinned: List<CameraModeDefinition>,
     val drawer: List<CameraModeDefinition>
-)
+) {
+    /**
+     * O que o carrossel do seletor mostra: o plano — mais o modo ativo, se ele veio
+     * da gaveta. O modo ativo nunca some da tela (FR-14).
+     */
+    fun carousel(active: CameraModeDefinition): List<CameraModeDefinition> =
+        if (active in pinned) pinned else pinned + active
+
+    /**
+     * O modo vizinho no gesto de deslizar: anda pelo plano e dá a volta, como o
+     * `CameraMode.next()` fazia. Não entra na gaveta; a partir de um modo dela, volta
+     * ao começo (ou ao fim) do plano.
+     */
+    fun step(active: CameraModeDefinition, by: Int): CameraModeDefinition {
+        if (pinned.isEmpty()) return active
+        val i = pinned.indexOf(active)
+        if (i < 0) return if (by > 0) pinned.first() else pinned.last()
+        return pinned[((i + by) % pinned.size + pinned.size) % pinned.size]
+    }
+}

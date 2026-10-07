@@ -1267,6 +1267,43 @@ ADR prometeu ("migração que quebra o build em vez de compilar calada").
 *Para quem reabrir a spec:* o design §3 lista o contrato da Tarefa 2; estes quatro membros
 são extensão dele e valem ser acrescentados à tabela.
 
+### Q-10: decisões da Tarefa 8
+
+**Status:** registradas; a 1 foi do usuário, as demais na implementação.
+
+1. **Gaveta como item "Mais" no fim do carrossel** (decisão do usuário, 2026-10-07), sempre
+   visível — mesmo com a gaveta vazia, porque é ali que mora o atalho da personalização
+   (FR-17). Vazia, mostra "Todos os modos já estão no seletor."
+2. **O carrossel passou a rolar.** Com o modo ativo centralizado, o "Mais" fica dois itens
+   à direita (176dp) e sai da vista em telas de 360dp — o teste em janela de 320dp pegou.
+   Rolar mantém todo item alcançável e reproduz a centralização de antes (posições de
+   Vídeo e Foto idênticas no aparelho). Resolve também o retrato com N modos; a janela
+   larga é a Tarefa 9.
+3. **A gaveta abre dentro da coluna de controles**, acima do seletor, em vez de flutuar com
+   deslocamento fixo — acompanha retrato e janela larga sem número mágico. Um véu
+   transparente fecha ao tocar fora; o "voltar" do sistema também fecha.
+4. **O enum `CameraMode` foi removido.** O ViewModel guarda a definição
+   (`activeMode`/`selectMode`); o arranjo (`arrangedModes`) se refaz quando o controller
+   publica as capacidades. O gesto de deslizar usa `ArrangedModes.step`, cíclico como o
+   `next()` do enum.
+5. **Testes anteriores à spec tocados — mecanicamente.** O NFR-1 pede "nenhuma asserção
+   alterada". Duas classes precisaram mudar porque o tipo testado deixou de existir:
+   - `CameraViewModelTest`: `setCameraMode(CameraMode.X)` → `selectMode(XMode)` e
+     `cameraMode` → `activeMode`, troca de nome um a um (15 linhas, nenhuma asserção
+     removida ou enfraquecida).
+   - `PresetCyclingTest`: o ciclo de modos saiu de `CameraMode.next()/previous()` para
+     `ArrangedModes.step`. Mesmos nomes de teste, mesmos valores esperados, mesmos riscos
+     protegidos (volta no último item, índice negativo no primeiro).
+   O comportamento verificado é o mesmo; a forma da chamada mudou porque a API mudou.
+6. **O ViewModel recebe o registro por construtor** (padrão `ModeRegistry.all`), como os
+   outros colaboradores. Sem isso, a mutação "arranjo ignora capacidades" sobrevivia: o
+   registro de produção ainda não tem modo exigente.
+7. **Agrupar o estado de modos fica para a Tarefa 10.** O ViewModel está em 752 linhas
+   (+58 sobre o baseline). `activeMode`, `arrangedModes` e a preferência que chega na
+   Tarefa 10 são estado novo, que a própria spec manda agrupar ("esta spec só introduz
+   estado agrupado para o que é novo"). Fazer isso junto com a preferência evita agrupar
+   duas vezes.
+
 ---
 
 ## Bloqueios

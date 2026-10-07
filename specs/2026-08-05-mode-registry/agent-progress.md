@@ -2,9 +2,9 @@
 
 ## Estado atual
 
-- **Fase:** Implementação — Onda 5
-- **Gate atual:** **Checkpoint da Onda 4 passou** — pronto para a Onda 5
-- **Status:** em andamento — próxima é a Tarefa 8 (seletor + gaveta, primeira mudança visível)
+- **Fase:** Implementação — Onda 6
+- **Gate atual:** **Checkpoint da Onda 5 passou** — pronto para a Onda 6
+- **Status:** em andamento — próximas: Tarefas 9, 10 e 11 (independentes entre si)
 - **Confiança:** 92%
 - **Última atualização:** 2026-10-07
 
@@ -267,6 +267,25 @@ baseline. A regra de EIS encolheu só uma linha; o crescimento é o despacho do 
 coletor de recusa da Tarefa 6. Não é teto do NFR-3 (que fixa só tela e controller), mas a
 meta "não crescer" do progresso fica registrada como não atingida até aqui.
 
+### Sessão: 2026-10-07 — Tarefa 8 (seletor + gaveta)
+
+- **Agente:** skill `dev`
+- **Gate:** D concluído · Tarefa 8 **concluída** · Checkpoint da Onda 5 **passou**
+- **Testes:** 165 passando
+- **Decisão do usuário:** gaveta como item "Mais" no carrossel, sempre visível
+- **Verificação em aparelho:** [`verificacao/tarefa-8/`](verificacao/tarefa-8/README.md)
+
+**Primeira mudança visível.** O seletor saiu da `CameraScreen` para
+`components/ModeSelector.kt` e lê do registro; a gaveta é `components/ModeDrawer.kt`. O enum
+`CameraMode` deixou de existir. No aparelho, a árvore de UI difere da Tarefa 7 **só** pelo
+nó "Mais" — Vídeo e Foto nas mesmas posições.
+
+**O teste pegou um problema de layout real.** Em janela de 320dp o "Mais" ficava fora da
+vista (176dp à direita do centro com Vídeo ativo); em celulares de 360dp sairia cortado. O
+carrossel passou a rolar mantendo a centralização. Detalhes e as demais decisões em Q-10,
+inclusive os dois testes anteriores à spec que mudaram de forma (não de asserção) porque o
+tipo que testavam deixou de existir.
+
 ## Situação das tarefas
 
 | Onda | Tarefa | Status | Observações |
@@ -278,7 +297,7 @@ meta "não crescer" do progresso fica registrada como não atingida até aqui.
 | 2 | 5. Sondagem de capacidade + `evt=caps` | **Concluída** | 12 testes JVM; `evt=caps` = `dumpsys` nas 2 câmeras do Redmi Note 10 |
 | 3 | 6. Vídeo remigrado | **Concluída** | iso-comportamento conferido no Redmi; `CameraManager` 1.153 |
 | 4 | 7. Foto remigrado | **Concluída** | UI, mídia, binds e flash idênticos ao commit anterior na mesma sessão |
-| 5 | 8. Seletor + gaveta | Pendente | **primeira mudança visível ao usuário** |
+| 5 | 8. Seletor + gaveta | **Concluída** | item "Mais" + gaveta; `CameraMode` removido; carrossel rolável |
 | 6 | 9. Janela larga com N modos | Pendente | folga 4 |
 | 6 | 10. Personalização em Configurações | Pendente | folga 4 |
 | 6 | 11. Pro com ISO manual | Pendente | caminho crítico |
@@ -291,9 +310,9 @@ Preencher conforme as tarefas forem feitas — são a evidência dos NFRs:
 
 | Medida | Baseline (Tarefa 1) | Final (Tarefa 13) | Limite |
 |---|---|---|---|
-| `CameraScreen.kt` (linhas) | **2.220** ✓ | 2.215 após T6 · **2.173** após T7 | ≤ 2.100 |
+| `CameraScreen.kt` (linhas) | **2.220** ✓ | 2.215 após T6 · 2.173 após T7 · **2.144** após T8 | ≤ 2.100 |
 | `CameraManager.kt` (linhas) | **1.158** ✓ | 1.163 após T5 · 1.153 após T6 · **1.154** após T7 | ≤ 1.158 |
-| `CameraViewModel.kt` (linhas) | **694** ✓ | 733 após T6 · **732** após T7 (+38) | não crescer |
+| `CameraViewModel.kt` (linhas) | **694** ✓ | 733 após T6 · 732 após T7 · **752** após T8 — agrupar na T10 (Q-10) | não crescer |
 | Maior arquivo novo (linhas) | — | | ≤ 400 |
 | p95 de `elapsed_ms` na troca de modo | ~~38 ms~~ edge 60 neo · **57 ms** Redmi Note 10 (20 amostras) | | **≤ 68,4 ms** (Redmi) |
 | Tempo da suíte `testDebugUnitTest` | **5,9 s** | 7 s (Onda 1) · 10 s (Tarefa 5, 114 testes) | ≤ 90 s |
@@ -330,6 +349,8 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] **Antes da Tarefa 6:** baseline novo no Redmi Note 10 — decisão do usuário; ver [`baseline/redmi-note-10/`](baseline/redmi-note-10/README.md)
 - [x] Tarefa 6 — Vídeo remigrado; Checkpoint da Onda 3
 - [x] Tarefa 7 — Foto remigrado; Checkpoint da Onda 4
+- [x] Tarefa 8 — seletor + gaveta; Checkpoint da Onda 5
+- [ ] Agrupar o estado de modos do ViewModel na Tarefa 10 (Q-10)
 - [ ] Q-06 (`aspect` defasado em `evt=bind`): corrigir em commit próprio depois da Tarefa 7, ou levar ao ROADMAP
 - [ ] Q-08 (modo não reaplicado ao recriar o controller): verificar em aparelho e corrigir depois da Tarefa 7
 - [ ] Aviso visual da recusa de modo — na Tarefa 11 (Q-07)

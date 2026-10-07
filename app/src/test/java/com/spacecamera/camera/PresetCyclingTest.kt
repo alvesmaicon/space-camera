@@ -1,5 +1,9 @@
 package com.spacecamera.camera
 
+import com.spacecamera.camera.mode.ModeArrangement
+import com.spacecamera.camera.mode.ModeRegistry
+import com.spacecamera.camera.mode.PhotoMode
+import com.spacecamera.camera.mode.VideoMode
 import com.spacecamera.presentation.viewmodels.RecordingDelay
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,16 +24,21 @@ import kotlin.test.assertEquals
 @Config(sdk = [34])
 class PresetCyclingTest {
 
+    // O ciclo de modos saiu do enum `CameraMode` para o arranjo do registro
+    // (Tarefa 8, Q-10). Mesmos valores esperados, mesmos riscos: a volta no último
+    // item e o índice negativo no primeiro.
+    private val modos = ModeRegistry.arranged(ModeArrangement.DEFAULT, emptySet())
+
     @Test
     fun `modo da camera alterna entre video e foto`() {
-        assertEquals(CameraMode.PHOTO, CameraMode.VIDEO.next())
-        assertEquals(CameraMode.VIDEO, CameraMode.PHOTO.next())
+        assertEquals(PhotoMode, modos.step(VideoMode, by = +1))
+        assertEquals(VideoMode, modos.step(PhotoMode, by = +1))
     }
 
     @Test
     fun `passo para tras no primeiro item vai para o ultimo`() {
-        // Sem o `+ entries.size` antes do módulo isto daria índice -1.
-        assertEquals(CameraMode.PHOTO, CameraMode.VIDEO.previous())
+        // Sem o `+ size` antes do módulo isto daria índice -1.
+        assertEquals(PhotoMode, modos.step(VideoMode, by = -1))
     }
 
     @Test

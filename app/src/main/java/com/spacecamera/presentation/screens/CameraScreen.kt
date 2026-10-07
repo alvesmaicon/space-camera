@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Size
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.Preview
@@ -74,12 +75,13 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.spacecamera.camera.CameraMode
 import com.spacecamera.camera.mode.CameraModeDefinition
 import com.spacecamera.camera.mode.CaptureOutput
 import com.spacecamera.camera.mode.ControlId
 import com.spacecamera.camera.mode.FlashBehavior
 import com.spacecamera.camera.mode.ShutterAction
+import com.spacecamera.presentation.components.ModeDrawer
+import com.spacecamera.presentation.components.ModeSelector
 import com.spacecamera.presentation.layout.previewAspect
 import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoOption
@@ -186,7 +188,9 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
     val recordingDelay by viewModel.recordingDelay.collectAsState()
     val countdownSeconds by viewModel.countdownSeconds.collectAsState()
     val isSaveLocationEnabled by viewModel.isSaveLocationEnabled.collectAsState()
-    val cameraMode by viewModel.cameraMode.collectAsState()
+    val activeMode by viewModel.activeMode.collectAsState()
+    val arrangedModes by viewModel.arrangedModes.collectAsState()
+    var showModeDrawer by remember { mutableStateOf(false) }
     val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
     val photoFlashMode by viewModel.photoFlashMode.collectAsState()
     val photoQualityPreset by viewModel.photoQualityPreset.collectAsState()
@@ -204,13 +208,13 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
     // para que o preview de revisão exiba na orientação correta.
     var reviewIconRotation by remember { mutableStateOf(0f) }
 
-    val switchMode: (CameraMode) -> Unit = { mode ->
+    val switchMode: (CameraModeDefinition) -> Unit = { mode ->
         val snapshot = previewView?.bitmap
         if (snapshot != null) {
             transitionBitmap = snapshot
             coroutineScope.launch {
                 transitionAlpha.snapTo(1f)
-                viewModel.setCameraMode(mode)
+                viewModel.selectMode(mode)
                 // Aguarda isCameraReady=false (bind iniciou) depois isCameraReady=true
                 // (SurfaceProvider chamado + 350ms = câmera ativa com frames chegando)
                 viewModel.isCameraReady.filter { !it }.first()
@@ -220,7 +224,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 transitionBitmap = null
             }
         } else {
-            viewModel.setCameraMode(mode)
+            viewModel.selectMode(mode)
         }
     }
 
@@ -436,9 +440,14 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
     }
 
     // Fecha menus ao trocar de modo
-    LaunchedEffect(cameraMode) {
+    LaunchedEffect(activeMode) {
         showResolutionMenu = false
     }
+    // A gaveta some junto com o seletor quando a gravação ou a contagem começa.
+    LaunchedEffect(isRecording, countdownSeconds) {
+        if (isRecording || countdownSeconds > 0) showModeDrawer = false
+    }
+    BackHandler(enabled = showModeDrawer) { showModeDrawer = false }
 
     LaunchedEffect(showZoomDial, zoomDialInteractionTick) {
         if (!showZoomDial) return@LaunchedEffect
@@ -535,7 +544,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
 
     // Em janela larga a proporção retrato vira paisagem (FR-3). O 3:4 do modo foto
     // acompanha pelo mesmo motivo: uma caixa alta numa janela larga desperdiça a tela.
-    val previewAspect = previewAspect(cameraMode.definition.aspectRatio, selectedAspectRatio, isWide)
+    val previewAspect = previewAspect(activeMode.aspectRatio, selectedAspectRatio, isWide)
     val previewAspectLabel = previewAspect.label
     val previewSizeModifier: Modifier = when {
         previewAspect.fillsScreen -> Modifier.fillMaxSize()
@@ -763,9 +772,10 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 }
             }
             AnimatedContent(
-                targetState = cameraMode,
+                targetState = activeMode,
                 transitionSpec = {
-                    val toRight = CameraMode.entries.indexOf(targetState) > CameraMode.entries.indexOf(initialState)
+                    val ordem = arrangedModes.pinned + arrangedModes.drawer
+                    val toRight = ordem.indexOf(targetState) > ordem.indexOf(initialState)
                     if (toRight) {
                         (fadeIn(tween(220)) + slideInHorizontally(tween(220)) { it / 4 }) togetherWith
                         (fadeOut(tween(180)) + slideOutHorizontally(tween(180)) { -it / 4 })
@@ -787,7 +797,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                         .background(controlScrimColor, RoundedCornerShape(28.dp))
                         .padding(if (isWide) PaddingValues(vertical = 6.dp) else PaddingValues())
                 ) {
-                    mode.definition.controls.forEach { id -> TopBarSlot { controleDaBarra(id, mode.definition) } }
+                    mode.controls.forEach { id -> TopBarSlot { controleDaBarra(id, mode) } }
                 }
             }
 
@@ -808,13 +818,13 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                         .background(Color(0xFF1C1C1E).copy(alpha = 0.97f), RoundedCornerShape(12.dp))
                         .padding(horizontal = 8.dp, vertical = 6.dp)
                 ) {
-                    cameraMode.definition.moreControls.forEach { controleDaBarra(it, cameraMode.definition) }
+                    activeMode.moreControls.forEach { controleDaBarra(it, activeMode) }
                 }
             }
 
             // Barra horizontal: Resolução
             AnimatedVisibility(
-                visible = showResolutionMenu && ControlId.RESOLUTION in cameraMode.definition.controls,
+                visible = showResolutionMenu && ControlId.RESOLUTION in activeMode.controls,
                 enter = fadeIn() + slideInVertically(),
                 exit = fadeOut() + slideOutVertically()
             ) {
@@ -865,7 +875,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                     focusPoint = offset
                 }
             }
-            .pointerInput("exposureDrag", showZoomDial, isTapToFocusEnabled, cameraMode, isRecording, countdownSeconds) {
+            .pointerInput("exposureDrag", showZoomDial, isTapToFocusEnabled, activeMode, arrangedModes, isRecording, countdownSeconds) {
                 if (showZoomDial) return@pointerInput
                 var dragStartPos = Offset.Zero
                 var isVertical = false
@@ -912,8 +922,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                                 focusPoint = null
                                 showExposureSlider = false
                                 exposureAnchor = null
-                                if (cumulativeX < 0) switchMode(cameraMode.next())
-                                else switchMode(cameraMode.previous())
+                                switchMode(arrangedModes.step(activeMode, by = if (cumulativeX < 0) +1 else -1))
                             }
                         }
                     }
@@ -1095,6 +1104,17 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
             }
         }
 
+        // Véu da gaveta: um toque fora dela fecha, sem focar nem trocar de modo.
+        if (showModeDrawer) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {
+                        showModeDrawer = false
+                    }
+            )
+        }
+
         // ── Controles inferiores ─────────────────────────────────────
         // Em janela larga vão para o bordo direito, empilhados (FR-2). O eixo do
         // grupo não inverte: continua empilhando zoom, modo e botões na ordem de
@@ -1153,18 +1173,31 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 )
             }
 
-            // Seletor de modo (Vídeo / Foto)
+            // Gaveta "mais modos" (FR-6, FR-17): abre acima do seletor, na mesma coluna,
+            // para acompanhar retrato e janela larga sem deslocamento fixo.
+            AnimatedVisibility(visible = showModeDrawer, enter = fadeIn(), exit = fadeOut()) {
+                ModeDrawer(
+                    modes = arrangedModes.drawer,
+                    active = activeMode,
+                    onModeSelect = { showModeDrawer = false; switchMode(it) },
+                    onEdit = { showModeDrawer = false; onOpenSettings() },
+                    modifier = if (isWide) Modifier.width(280.dp) else Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                )
+            }
+
+            // Seletor de modo — os modos vêm do registro (AC-1.1)
             AnimatedVisibility(
                 visible = !isRecording && countdownSeconds == 0,
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
                 ModeSelector(
-                    modes = CameraMode.entries.toList(),
-                    selectedMode = cameraMode,
+                    modes = arrangedModes,
+                    active = activeMode,
                     vertical = isWide,
                     scrimColor = controlScrimColor,
-                    onModeSelect = { switchMode(it) }
+                    onModeSelect = { switchMode(it) },
+                    onOpenDrawer = { showModeDrawer = true }
                 )
             }
 
@@ -1207,7 +1240,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 contentAlignment = Alignment.Center
             ) {
                 when {
-                    cameraMode.definition.output == CaptureOutput.PHOTO -> {
+                    activeMode.output == CaptureOutput.PHOTO -> {
                         Box(
                             modifier = Modifier
                                 .size(64.dp)
@@ -1237,7 +1270,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
             // Pausa/thumb (vídeo) ou thumb da foto
             val controleFinal: @Composable () -> Unit = {
             Box {
-                if (cameraMode.definition.output == CaptureOutput.VIDEO) {
+                if (activeMode.output == CaptureOutput.VIDEO) {
                     PauseOrThumbnailControl(
                         isRecording = isRecording,
                         isPaused = recordingState == RecordingState.Paused,
@@ -1787,68 +1820,6 @@ private fun LastVideoThumbnail(uri: Uri, onClick: () -> Unit) {
 
 
 // Resolution two-line button
-@Composable
-internal fun ModeSelector(
-    modes: List<CameraMode>,
-    selectedMode: CameraMode,
-    vertical: Boolean,
-    scrimColor: Color,
-    onModeSelect: (CameraMode) -> Unit
-) {
-    val selectedIndex = modes.indexOf(selectedMode).coerceAtLeast(0)
-    // Cada item ocupa 88dp; o offset anima o Row para centralizar o modo ativo
-    val itemWidthDp = 88f
-    val targetOffsetDp = itemWidthDp * ((modes.size - 1) / 2f - selectedIndex)
-    val animatedOffset by animateFloatAsState(
-        targetValue = targetOffsetDp,
-        animationSpec = tween(durationMillis = 300),
-        label = "modeSelectorOffset"
-    )
-    val itens: @Composable AxisScope.() -> Unit = {
-        modes.forEach { mode ->
-            val isSelected = mode == selectedMode
-            Box(
-                modifier = Modifier.width(itemWidthDp.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = mode.label,
-                    color = if (isSelected) Color.White else Color.White.copy(alpha = OFF_CONTROL_ALPHA),
-                    fontSize = if (isSelected) 15.sp else 14.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    modifier = Modifier
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }
-                        ) { onModeSelect(mode) }
-                        .padding(vertical = 8.dp)
-                )
-            }
-        }
-    }
-    if (vertical) {
-        // Sem o viewport de largura total e sem o deslizamento: com dois modos, os
-        // dois cabem empilhados e não há o que revelar. O `fillMaxWidth` do viewport
-        // era o que impedia o grupo de controles de encostar no bordo direito.
-        AxisContainer(
-            vertical = true,
-            modifier = Modifier.background(scrimColor, RoundedCornerShape(12.dp)),
-            content = itens
-        )
-    } else {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            AxisContainer(
-                vertical = false,
-                modifier = Modifier.offset(x = animatedOffset.dp),
-                content = itens
-            )
-        }
-    }
-}
-
 @Composable
 private fun LastPhotoThumbnail(uri: Uri, onClick: () -> Unit) {
     val context = LocalContext.current

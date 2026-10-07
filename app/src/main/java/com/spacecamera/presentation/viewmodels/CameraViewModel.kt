@@ -12,12 +12,15 @@ import androidx.camera.video.Quality
 import com.spacecamera.camera.CameraController
 import com.spacecamera.camera.CameraControllerFactory
 import com.spacecamera.camera.CameraManager
-import com.spacecamera.camera.CameraMode
 import com.spacecamera.camera.PhotoQualityPreset
 import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoBitratePreset
 import com.spacecamera.camera.VideoOption
+import com.spacecamera.camera.mode.ArrangedModes
+import com.spacecamera.camera.mode.CameraModeDefinition
 import com.spacecamera.camera.mode.CaptureState
+import com.spacecamera.camera.mode.ModeArrangement
+import com.spacecamera.camera.mode.ModeRegistry
 import com.spacecamera.camera.mode.FlashBehavior
 import com.spacecamera.camera.mode.ShutterAction
 import com.spacecamera.camera.mode.StabilizationRule
@@ -49,6 +52,8 @@ enum class PhotoFlashMode(val imageCaptureMode: Int) {
  *   [CameraManager]; no teste, um dublê — é o que permite exercitar countdown,
  *   ciclo de flash e EIS por modo na JVM, sem device.
  * @param settingsStorageFactory idem para a persistência.
+ * @param modeRegistry os modos que o app conhece. Em produção, [ModeRegistry.all];
+ *   no teste, um registro com modo exigente para exercitar o gate de capacidade.
  *
  * Todos os parâmetros têm default, então o Kotlin gera o construtor sem
  * argumentos que `viewModel()` precisa para instanciar por reflexão.
@@ -56,7 +61,8 @@ enum class PhotoFlashMode(val imageCaptureMode: Int) {
 class CameraViewModel(
     private val controllerFactory: CameraControllerFactory =
         CameraControllerFactory { context, lifecycleOwner -> CameraManager(context, lifecycleOwner) },
-    private val settingsStorageFactory: (Context) -> SettingsStorage = { SettingsStorage(it) }
+    private val settingsStorageFactory: (Context) -> SettingsStorage = { SettingsStorage(it) },
+    private val modeRegistry: List<CameraModeDefinition> = ModeRegistry.all
 ) : ViewModel() {
 
     private var cameraManager: CameraController? = null
@@ -141,8 +147,17 @@ class CameraViewModel(
     private val _lastPhotoUri = MutableStateFlow<Uri?>(null)
     val lastPhotoUri: StateFlow<Uri?> = _lastPhotoUri.asStateFlow()
 
-    private val _cameraMode = MutableStateFlow(CameraMode.entries.first())  // o primeiro do registro
-    val cameraMode: StateFlow<CameraMode> = _cameraMode.asStateFlow()
+    /** O modo ativo, como definição do registro (FR-1). Começa no primeiro dele. */
+    private val _activeMode = MutableStateFlow(modeRegistry.first())
+    val activeMode: StateFlow<CameraModeDefinition> = _activeMode.asStateFlow()
+
+    /**
+     * Plano e gaveta do seletor (FR-6), filtrados pelo que o aparelho oferece (FR-5).
+     * Começa sem capacidade nenhuma — um modo exigente não aparece antes da sondagem.
+     * A preferência do usuário chega na Tarefa 10; até lá, o padrão do registro.
+     */
+    private val _arrangedModes = MutableStateFlow(ModeRegistry.arranged(ModeArrangement.DEFAULT, emptySet(), modeRegistry))
+    val arrangedModes: StateFlow<ArrangedModes> = _arrangedModes.asStateFlow()
 
     private val _availableZoomLevels = MutableStateFlow<List<Float>>(listOf(1f))
     val availableZoomLevels: StateFlow<List<Float>> = _availableZoomLevels.asStateFlow()
@@ -409,9 +424,14 @@ class CameraViewModel(
                 // O aparelho recusou o modo e o controller religou o anterior (fluxo
                 // 4.2 do design): o seletor e o EIS voltam para o que está na sessão.
                 launch {
+                    cameraManager!!.deviceCapabilities.collect { caps ->
+                        _arrangedModes.value = ModeRegistry.arranged(ModeArrangement.DEFAULT, caps.supported, modeRegistry)
+                    }
+                }
+                launch {
                     cameraManager!!.modeRejections.collect { recusa ->
-                        val restaurado = CameraMode.entries.first { it.definition.id == recusa.active }
-                        _cameraMode.value = restaurado
+                        val restaurado = modeRegistry.first { it.id == recusa.active }
+                        _activeMode.value = restaurado
                         syncStabilizationWithMode(restaurado)
                     }
                 }
@@ -475,7 +495,7 @@ class CameraViewModel(
     }
 
     fun toggleFlash() {
-        when (_cameraMode.value.definition.flashBehavior()) {
+        when (_activeMode.value.flashBehavior()) {
             FlashBehavior.Torch -> {
                 _isFlashOn.value = !_isFlashOn.value
                 cameraManager?.toggleFlash(_isFlashOn.value)
@@ -498,20 +518,20 @@ class CameraViewModel(
         }
     }
 
-    fun setCameraMode(mode: CameraMode) {
+    fun selectMode(mode: CameraModeDefinition) {
         if (_recordingState.value != RecordingState.Idle) return
-        _cameraMode.value = mode
+        _activeMode.value = mode
         resetFlash()
         syncStabilizationWithMode(mode)
-        cameraManager?.applyMode(mode.definition)
+        cameraManager?.applyMode(mode)
     }
 
     /**
      * O modo diz se o EIS vale (AC-4.1). Desligar não grava: a preferência é do
      * usuário, e voltar a um modo que a segue restaura o valor salvo.
      */
-    private fun syncStabilizationWithMode(mode: CameraMode) {
-        val desejado = when (mode.definition.stabilization) {
+    private fun syncStabilizationWithMode(mode: CameraModeDefinition) {
+        val desejado = when (mode.stabilization) {
             StabilizationRule.OFF -> false
             StabilizationRule.FOLLOWS_PREFERENCE -> settingsStorage?.isStabilizationEnabled ?: false
         }
@@ -534,7 +554,7 @@ class CameraViewModel(
             recording = _recordingState.value != RecordingState.Idle,
             countdownActive = _countdownSeconds.value > 0
         )
-        val acao = _cameraMode.value.definition.shutterAction(estado)
+        val acao = _activeMode.value.shutterAction(estado)
         when (acao) {
             ShutterAction.StartRecording -> startRecordingWithDelay(targetRotation)
             ShutterAction.StopRecording -> stopRecording()
