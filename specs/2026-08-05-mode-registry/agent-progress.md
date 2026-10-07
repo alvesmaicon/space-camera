@@ -325,6 +325,21 @@ captura de tela e corrigido na mesma rodada.
 **ViewModel:** 779 linhas — o agrupamento tirou 13 e as funções de personalização
 devolveram 8. A meta "não crescer" (694) não será atingida nesta spec; registrado.
 
+### Sessão: 2026-10-07 — Tarefa 12 (obturador manual)
+
+- **Agente:** skill `dev`
+- **Gate:** D concluído · Tarefa 12 **concluída** · Checkpoint da Onda 7 passou (Onda 8 espera a Tarefa 9)
+- **Decisão do usuário:** obturador limitado a 1/4 s
+- **Verificação em aparelho:** [`verificacao/tarefa-12/`](verificacao/tarefa-12/README.md)
+
+**Medir antes de oferecer.** O sensor aceita até 30 s; no aparelho, 1 s levou 23 s para
+capturar e 28,8 s falhou depois de ~4 min. Em vez de oferecer um botão que não funciona,
+os números foram ao usuário, que escolheu o teto de 1/4 s. Exposição longa fica como
+item de ROADMAP, com a hipótese registrada na Q-13.
+
+**Telemetria corrigida:** arrastar a escala gerava ~60 `evt=manual` por segundo; agora sai
+o valor final.
+
 ## Situação das tarefas
 
 | Onda | Tarefa | Status | Observações |
@@ -340,7 +355,7 @@ devolveram 8. A meta "não crescer" (694) não será atingida nesta spec; regist
 | 6 | 9. Janela larga com N modos | Pendente | folga 4 |
 | 6 | 10. Personalização em Configurações | **Concluída** | estado de modos agrupado em `CameraModes`; persistência conferida em aparelho |
 | 6 | 11. Pro com ISO manual | **Concluída** | ISO muda o brilho em aparelho; EXIF com o ISO manual |
-| 7 | 12. Obturador manual | Pendente | caminho crítico |
+| 7 | 12. Obturador manual | **Concluída** | teto de 1/4 s após medir exposição longa (Q-13) |
 | 8 | 13. Recibo do NFR-2 e fechamento | Pendente | prova que a spec entregou o que prometeu |
 
 ## Medições a registrar durante a execução
@@ -350,7 +365,7 @@ Preencher conforme as tarefas forem feitas — são a evidência dos NFRs:
 | Medida | Baseline (Tarefa 1) | Final (Tarefa 13) | Limite |
 |---|---|---|---|
 | `CameraScreen.kt` (linhas) | **2.220** ✓ | 2.215 após T6 · 2.173 após T7 · 2.144 após T8 · **2.153** após T11 | ≤ 2.100 |
-| `CameraManager.kt` (linhas) | **1.158** ✓ | 1.163 após T5 · 1.153 após T6 · 1.154 após T7 · **1.150** após T11 | ≤ 1.158 |
+| `CameraManager.kt` (linhas) | **1.158** ✓ | 1.163 após T5 · 1.153 após T6 · 1.154 após T7 · 1.150 após T11 · **1.154** após T12 | ≤ 1.158 |
 | `CameraViewModel.kt` (linhas) | **694** ✓ | 733 após T6 · 732 após T7 · **752** após T8 — agrupar na T10 (Q-10) | não crescer |
 | Maior arquivo novo (linhas) | — | | ≤ 400 |
 | p95 de `elapsed_ms` na troca de modo | ~~38 ms~~ edge 60 neo · **57 ms** Redmi Note 10 (20 amostras) | | **≤ 68,4 ms** (Redmi) |
@@ -391,6 +406,8 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] Tarefa 8 — seletor + gaveta; Checkpoint da Onda 5
 - [x] Tarefa 11 — Pro com ISO manual (verificada em aparelho)
 - [x] Tarefa 10 — personalização; estado de modos agrupado (Q-10 resolvida)
+- [x] Tarefa 12 — obturador manual, com teto de 1/4 s
+- [ ] Tarefa 13: levar ao ROADMAP a exposição longa (Q-13), o 1:1 (Q-01), a defasagem de `aspect` (Q-06) e o modo não reaplicado ao recriar o controller (Q-08)
 - [ ] Q-06 (`aspect` defasado em `evt=bind`): corrigir em commit próprio depois da Tarefa 7, ou levar ao ROADMAP
 - [ ] Q-08 (modo não reaplicado ao recriar o controller): verificar em aparelho e corrigir depois da Tarefa 7
 - [ ] Aviso visual da recusa de modo — na Tarefa 11 (Q-07)

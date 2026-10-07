@@ -800,6 +800,38 @@ class CameraViewModelTest {
     }
 
     @Test
+    fun `obturador pedido fora da faixa e limitado antes de chegar ao controller`() = teste {
+        // AC-10.1, na ponta do ViewModel. O sensor aceita até ~30 s, mas a escala vai
+        // até 1/4 s: acima disso a captura demora dezenas de segundos ou falha (Q-13).
+        inicializar()
+        publicarCapacidadeManual()
+        advanceUntilIdle()
+        viewModel.selectMode(ProMode)
+
+        viewModel.setShutter(60_000_000_000L)
+
+        assertEquals(250_000_000L, viewModel.manualExposure.value.exposureNs)
+        assertEquals(250_000_000L, controller.lastManualExposureNs)
+    }
+
+    @Test
+    fun `ISO e obturador em automatico devolvem o AE`() = teste {
+        // AC-11.1: só com os dois em AUTO o pedido some e o AE volta.
+        inicializar()
+        publicarCapacidadeManual()
+        advanceUntilIdle()
+        viewModel.selectMode(ProMode)
+        viewModel.setIso(800)
+        viewModel.setShutter(10_000_000L)
+
+        viewModel.setIso(null)
+        assertEquals(null to 10_000_000L, controller.manualCalls.last(), "obturador ainda manual")
+
+        viewModel.setShutter(null)
+        assertEquals(null to null, controller.manualCalls.last())
+    }
+
+    @Test
     fun `sem capacidade manual o ISO pedido e ignorado`() = teste {
         inicializar()
 

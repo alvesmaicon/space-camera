@@ -8,6 +8,7 @@ import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Preview
+import com.spacecamera.camera.mode.ManualSensorRanges
 
 /**
  * Requirements: FR-9, FR-11, NFR-3
@@ -45,6 +46,21 @@ internal class ManualExposureControls {
     /** O pedido em vigor; `null` é exposição automática. */
     private var request: ManualRequest? = null
 
+    /** O pedido em vigor, para a telemetria. */
+    val current: ManualRequest? get() = request
+
+    companion object {
+        /** Quanto o arraste precisa parar para `evt=manual` registrar o valor final. */
+        const val LOG_SETTLE_MS = 400L
+    }
+
+    /**
+     * O AE congelado ao entrar no manual. Fica fixo até os dois voltarem ao AUTO:
+     * voltar só o obturador ao AUTO com o ISO manual usa o tempo do AE, não o último
+     * tempo manual.
+     */
+    private var frozen: AutoExposure? = null
+
     /**
      * Acompanha o tempo de exposição do AE a cada quadro. É só um ouvinte de
      * resultado — não fixa nenhuma chave, então não tem o problema de prioridade do
@@ -68,17 +84,22 @@ internal class ManualExposureControls {
     }
 
     /**
-     * Troca o ISO. Ao sair do automático congela o último tempo do AE; trocando de um
-     * ISO manual para outro, mantém o tempo já congelado.
+     * Troca ISO e obturador; `null` em cada um é "automático". Ao sair do automático
+     * congela o que o AE usava; com os dois em automático, devolve o AE.
      *
      * @return o pedido em vigor, para a telemetria.
      */
-    fun setIso(iso: Int?, exposureRange: LongRange?): ManualRequest? {
-        if (request == null && iso != null) {
+    fun set(iso: Int?, exposureNs: Long?, ranges: ManualSensorRanges?): ManualRequest? {
+        if (ranges == null || (iso == null && exposureNs == null)) {
+            request = null
+            frozen = null
+            return null
+        }
+        val base = frozen ?: AutoExposure(lastAutoExposureNs, lastAutoIso).also {
+            frozen = it
             ModeTelemetry.autoExposureFrozen(lastAutoExposureNs, lastAutoIso, lastAutoBoost)
         }
-        val congelado = request?.exposureTimeNs ?: lastAutoExposureNs
-        request = if (exposureRange == null) null else ManualExposure.request(iso, congelado, exposureRange)
+        request = ManualExposure.request(iso, exposureNs, base, ranges.iso, ranges.exposureTimeNs)
         return request
     }
 

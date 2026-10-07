@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 10 · **Em andamento:** 0 · **Pendentes:** 3
+- **Concluídas:** 11 · **Em andamento:** 0 · **Pendentes:** 2
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -351,7 +351,7 @@
 
 ### Onda 7 — Obturador manual
 
-#### [ ] 12. Obturador manual e retorno ao automático
+#### [x] 12. Obturador manual e retorno ao automático
 - **Size:** S
 - **Complexity:** medium
 - **Risk:** medium
@@ -365,8 +365,8 @@
   - **DADO** faixa de exposição de 1/8000 s a 1/4 s **QUANDO** 1 s é solicitado **ENTÃO** o máximo da faixa é aplicado (AC-10.1)
   - **DADO** Pro com ISO e obturador manuais **QUANDO** os dois são marcados como automáticos **ENTÃO** a exposição automática volta a ficar ativa (AC-11.1)
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest --tests '*ProMode*'`
-  - [ ] Conferência manual em aparelho real: obturador longo em cena escura produz foto visivelmente mais clara; voltar ao automático recupera a exposição da cena
+  - [x] Testes passam: `ManualExposureTest`, `CameraModesTest` e os do ViewModel
+  - [x] Conferência manual em aparelho real: 1/30 → 1/4 → 1 s leva a luminância de 55 a 154 a 229; foto a 1/4 s com EXIF `1/4 s`; os dois em AUTO devolvem o AE. Exposição longa medida e limitada a 1/4 s (Q-13) — ver [`verificacao/tarefa-12/`](verificacao/tarefa-12/README.md)
 - **_Requirements: FR-10, FR-11_**
 - **_Decisions: ADR-007_**
 

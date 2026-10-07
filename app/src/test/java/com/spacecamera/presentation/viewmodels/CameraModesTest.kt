@@ -141,8 +141,28 @@ class CameraModesTest {
 
     @Test
     fun `ISO é limitado à faixa e ignorado sem capacidade`() {
-        assertEquals(3200, modos().requestIso(6400))
+        assertEquals(3200, modos().requestIso(6400)?.iso)
         assertNull(CameraModes(registro).apply { onCapabilities(DeviceCapabilities.UNKNOWN) }.requestIso(800))
+    }
+
+    @Test
+    fun `obturador é limitado à faixa e convive com o ISO`() {
+        val m = modos()
+        m.requestIso(800)
+
+        val estado = m.requestShutter(5_000_000_000L)!!
+
+        assertEquals(800, estado.iso)
+        assertEquals(250_000_000L, estado.exposureNs, "teto prático de 1/4 s (Q-13)")
+    }
+
+    @Test
+    fun `trocar de modo zera o obturador manual também`() {
+        val m = modos()
+        m.requestShutter(10_000_000L)
+
+        assertTrue(m.select(PhotoMode))
+        assertEquals(ManualExposureState(), m.manualExposure.value)
     }
 
     @Test

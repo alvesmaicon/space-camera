@@ -111,6 +111,7 @@ class CameraManager(
     private val lifecycleOwner: LifecycleOwner
 ) : CameraController {
     private val manual = ManualExposureControls()
+    private val manualLog = Runnable { ModeTelemetry.manualExposure(manual.current) }
 
     // Handler para debounce do rebind (evita race condition em toggles rápidos)
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -699,8 +700,11 @@ class CameraManager(
         scheduleBind()
     }
 
-    override fun applyManualIso(iso: Int?) {
-        ModeTelemetry.manualExposure(manual.setIso(iso, _deviceCapabilities.value.manualSensor?.exposureTimeNs))
+    override fun applyManualExposure(iso: Int?, exposureNs: Long?) {
+        manual.set(iso, exposureNs, _deviceCapabilities.value.manualSensor)
+        // Arrastar a escala chama isto a cada quadro: a telemetria registra só o valor final.
+        mainHandler.removeCallbacks(manualLog)
+        mainHandler.postDelayed(manualLog, ManualExposureControls.LOG_SETTLE_MS)
         applyEisNrImmediate()
     }
 

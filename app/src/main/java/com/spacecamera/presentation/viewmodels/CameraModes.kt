@@ -72,14 +72,14 @@ class CameraModes(private val registry: List<CameraModeDefinition>) {
     // ── Modo ativo ──────────────────────────────────────────────────────────
 
     /**
-     * Ativa [mode]. Nenhum outro modo tem escala de ISO, então o ISO manual volta ao
-     * automático.
+     * Ativa [mode]. Nenhum outro modo tem escalas de exposição, então ISO e obturador
+     * manuais voltam ao automático.
      *
-     * @return `true` se havia ISO manual a desfazer — o ViewModel avisa o controller.
+     * @return `true` se havia exposição manual a desfazer — o ViewModel avisa o controller.
      */
     fun select(mode: CameraModeDefinition): Boolean {
         _active.value = mode
-        if (_manualExposure.value.iso == null) return false
+        if (_manualExposure.value == ManualExposureState()) return false
         _manualExposure.value = ManualExposureState()
         return true
     }
@@ -93,14 +93,23 @@ class CameraModes(private val registry: List<CameraModeDefinition>) {
     /**
      * ISO pedido, limitado à faixa do aparelho (AC-9.1); `null` volta ao automático.
      *
-     * @return o ISO em vigor depois do pedido — `null` também quando não há capacidade
+     * @return a exposição em vigor depois do pedido, ou `null` quando não há capacidade
      *   manual e o pedido é ignorado.
      */
-    fun requestIso(iso: Int?): Int? {
-        val faixa = _manualRanges.value?.iso ?: return null
-        val aplicado = iso?.let { ManualExposure.clampIso(it, faixa) }
-        _manualExposure.value = ManualExposureState(iso = aplicado)
-        return aplicado
+    fun requestIso(iso: Int?): ManualExposureState? =
+        updateManual { estado, faixas -> estado.copy(iso = iso?.let { ManualExposure.clampIso(it, faixas.iso) }) }
+
+    /** Tempo de exposição pedido, limitado à faixa com teto de 1/4 s (AC-10.1, Q-13); `null` volta ao automático. */
+    fun requestShutter(exposureNs: Long?): ManualExposureState? =
+        updateManual { estado, faixas ->
+            estado.copy(exposureNs = exposureNs?.coerceIn(ManualExposure.userShutterRange(faixas.exposureTimeNs)))
+        }
+
+    private fun updateManual(
+        muda: (ManualExposureState, ManualSensorRanges) -> ManualExposureState
+    ): ManualExposureState? {
+        val faixas = _manualRanges.value ?: return null
+        return muda(_manualExposure.value, faixas).also { _manualExposure.value = it }
     }
 
     // ── Personalização (FR-7, FR-16) ────────────────────────────────────────

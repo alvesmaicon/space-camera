@@ -43,8 +43,8 @@ enum class RecordingDelay(val seconds: Int) {
     fun next() = entries[(ordinal + 1) % entries.size]
 }
 
-/** Exposição manual do Pro. `iso == null` é automático. */
-data class ManualExposureState(val iso: Int? = null)
+/** Exposição manual do Pro. `null` em cada valor é automático. */
+data class ManualExposureState(val iso: Int? = null, val exposureNs: Long? = null)
 
 /** Ciclo do flash em foto, na ordem em que o botão percorre. */
 enum class PhotoFlashMode(val imageCaptureMode: Int) {
@@ -514,12 +514,19 @@ class CameraViewModel(
     /**
      * Requirements: FR-9, AC-9.1 · Decisions: ADR-007
      *
-     * ISO manual do Pro, já limitado à faixa do aparelho; `null` devolve ao AE. Sem
-     * capacidade manual reportada, o pedido é ignorado — não há faixa para limitar.
+     * ISO manual do Pro, já limitado à faixa do aparelho; `null` volta o ISO ao
+     * automático (o AE só retoma se o obturador também estiver em AUTO). Sem capacidade
+     * manual reportada, o pedido é ignorado — não há faixa para limitar.
      */
-    fun setIso(iso: Int?) {
-        if (modes.manualRanges.value == null) return
-        cameraManager?.applyManualIso(modes.requestIso(iso))
+    fun setIso(iso: Int?) = applyManual(modes.requestIso(iso))
+
+    /** Tempo de exposição do Pro, limitado à faixa (AC-10.1); `null` volta ao AE. */
+    fun setShutter(exposureNs: Long?) = applyManual(modes.requestShutter(exposureNs))
+
+    /** Sem capacidade manual o pedido é ignorado; com os dois em AUTO, o AE volta (AC-11.1). */
+    private fun applyManual(estado: ManualExposureState?) {
+        estado ?: return
+        cameraManager?.applyManualExposure(estado.iso, estado.exposureNs)
     }
 
     // ── Personalização dos modos (FR-7, FR-16) — persiste a cada mudança ─────
@@ -547,7 +554,7 @@ class CameraViewModel(
         if (_recordingState.value != RecordingState.Idle) return
         // Nenhum outro modo tem escala de ISO: valor manual que sobrevivesse à troca
         // travaria a exposição de um modo sem controle para destravar.
-        if (modes.select(mode)) cameraManager?.applyManualIso(null)
+        if (modes.select(mode)) cameraManager?.applyManualExposure(null, null)
         resetFlash()
         syncStabilizationWithMode(mode)
         cameraManager?.applyMode(mode)

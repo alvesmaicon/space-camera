@@ -1363,6 +1363,25 @@ fácil de trocar.
    vírgula; tipo errado gravado por outra versão cai no padrão com log, sem exceção
    (NFR-8).
 
+### Q-13: decisões da Tarefa 12 (obturador)
+
+**Status:** registradas; a 2 foi do usuário.
+
+1. **Mesma escala vertical do ISO**, lado a lado na lateral direita (obturador, ISO junto
+   à borda). O `ProIsoSlider` virou `ProScaleSlider`, genérico: só conhece posições de 0 a
+   1; quem converte para ISO ou tempo, sempre em escala logarítmica, é `ModeOverlays`.
+2. **Teto de 1/4 s para o obturador manual** (usuário, 2026-10-07). O sensor aceita até
+   ~30 s, mas no aparelho 1 s levou 23 s para capturar, 4 s levou 34 s e 28,8 s falhou
+   (`ERROR_CAPTURE_FAILED`) depois de ~4 min. O teto vale só para o que o usuário escolhe;
+   o tempo congelado do AE continua limitado pela faixa do aparelho. **Hipótese não
+   verificada** para quem retomar exposição longa: o CameraX, em `CAPTURE_MODE_MAXIMIZE_QUALITY`,
+   faz varredura de foco antes da foto, e com quadros longos ela custa dezenas de quadros.
+3. **Congelado do AE fica fixo enquanto houver algo manual.** Voltar só o obturador ao
+   AUTO com o ISO manual usa o tempo do AE, não o último tempo manual; o ISO automático
+   também é congelado (com o boost pós-RAW de fora, ver Q-11).
+4. **`evt=manual` registra o valor final**, 400 ms depois de o arraste parar — antes saía
+   ~60 vezes por segundo e expulsava a telemetria do anel do logcat (Q-03).
+
 ---
 
 ## Bloqueios

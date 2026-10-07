@@ -111,7 +111,7 @@ interface CameraController {
      * ISO manual já limitado à faixa do aparelho, ou `null` para devolver a exposição
      * ao automático. Aplicado por `Camera2CameraControl`, nunca pelo `Extender`.
      */
-    fun applyManualIso(iso: Int?)
+    fun applyManualExposure(iso: Int?, exposureNs: Long?)
     fun setStabilization(enabled: Boolean)
     fun setNoiseReduction(enabled: Boolean)
     fun setHdr(enabled: Boolean)

@@ -4,7 +4,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -21,6 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import com.spacecamera.camera.ManualExposure
+import com.spacecamera.camera.mode.ManualSensorRanges
 import com.spacecamera.camera.mode.OverlayId
 import com.spacecamera.presentation.viewmodels.CameraViewModel
 
@@ -49,19 +53,18 @@ internal fun BoxScope.ModeOverlay(
             val faixas by viewModel.manualSensorRanges.collectAsState()
             val exposicao by viewModel.manualExposure.collectAsState()
             faixas?.let {
-                ProIsoSlider(
-                    range = it.iso,
-                    analogMax = it.maxAnalogIso,
-                    iso = exposicao.iso,
-                    enabled = enabled,
-                    rotationDeg = rotationDeg,
-                    onIsoChange = viewModel::setIso,
-                    // Na lateral direita. Em janela larga a coluna de controles ocupa
-                    // essa borda, então o slider se afasta dela (a Tarefa 9 revê o eixo).
+                // Na lateral direita: obturador e ISO lado a lado, ISO junto à borda.
+                // Em janela larga a coluna de controles ocupa essa borda, então as
+                // escalas se afastam dela (a Tarefa 9 revê o eixo).
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .padding(end = if (isWide) 112.dp else 12.dp)
-                )
+                ) {
+                    EscalaDoObturador(it, exposicao.exposureNs, enabled, rotationDeg, viewModel::setShutter)
+                    EscalaDeIso(it, exposicao.iso, enabled, rotationDeg, viewModel::setIso)
+                }
             }
         }
     }
@@ -98,4 +101,40 @@ internal fun BoxScope.ModeRejectedNotice(viewModel: CameraViewModel) {
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         )
     }
+}
+
+@Composable
+private fun EscalaDeIso(faixas: ManualSensorRanges, iso: Int?, enabled: Boolean, rotationDeg: Float, onIso: (Int?) -> Unit) {
+    val faixa = faixas.iso
+    ProScaleSlider(
+        valueLabel = iso?.toString() ?: "ISO",
+        minLabel = faixa.first.toString(),
+        position = iso?.let { ManualExposure.positionOf(it, faixa) },
+        stops = generateSequence(faixa.first) { it * 2 }.takeWhile { it <= faixa.last }
+            .map { ManualExposure.positionOf(it, faixa) }.toList(),
+        digitalFrom = faixas.maxAnalogIso?.let { ManualExposure.positionOf(it, faixa) },
+        description = "Escala de ISO",
+        enabled = enabled,
+        rotationDeg = rotationDeg,
+        onPosition = { onIso(ManualExposure.isoAt(it, faixa)) },
+        onAuto = { onIso(null) }
+    )
+}
+
+@Composable
+private fun EscalaDoObturador(faixas: ManualSensorRanges, ns: Long?, enabled: Boolean, rotationDeg: Float, onNs: (Long?) -> Unit) {
+    val faixa = ManualExposure.userShutterRange(faixas.exposureTimeNs)
+    ProScaleSlider(
+        valueLabel = ns?.let(ManualExposure::shutterLabel) ?: "OBT",
+        minLabel = ManualExposure.shutterLabel(faixa.first),
+        position = ns?.let { ManualExposure.positionOfExposure(it, faixa) },
+        stops = generateSequence(faixa.first) { it * 2 }.takeWhile { it <= faixa.last }
+            .map { ManualExposure.positionOfExposure(it, faixa) }.toList(),
+        digitalFrom = null,
+        description = "Escala do obturador",
+        enabled = enabled,
+        rotationDeg = rotationDeg,
+        onPosition = { onNs(ManualExposure.exposureAt(it, faixa)) },
+        onAuto = { onNs(null) }
+    )
 }
