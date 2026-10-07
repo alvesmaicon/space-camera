@@ -1304,6 +1304,37 @@ são extensão dele e valem ser acrescentados à tabela.
    estado agrupado para o que é novo"). Fazer isso junto com a preferência evita agrupar
    duas vezes.
 
+### Q-11: decisões da Tarefa 11 (modo Pro)
+
+**Status:** registradas; 1 e 2 do usuário, as demais na implementação.
+
+1. **Slider vertical na lateral direita, sempre visível no Pro** (usuário, 2026-10-07),
+   "AUTO" no topo, escala logarítmica, trecho acima do ganho analógico em âmbar.
+2. **Pro vem na gaveta** (`pinnedByDefault = false`, usuário, 2026-10-07).
+3. **Um escritor só para as opções do Camera2.** `applyEisNrImmediate` **substitui** as
+   opções a cada bind; o ISO aplicado à parte seria apagado meio segundo depois. O
+   `ManualExposureControls` só *contribui* para o mesmo construtor, por último — e força
+   `CONTROL_MODE_AUTO`, porque o scene mode HDR anularia o AE manual.
+4. **"Só ISO manual" não existe no Camera2.** Desligar o AE exige fixar também o tempo; ele
+   é congelado no último valor do AE (design §4.3), lido de um ouvinte de resultado de
+   captura (não fixa chave — sem o problema de prioridade do `Extender`). Sem leitura,
+   1/60 s dentro da faixa.
+5. **Sem flash e sem HDR no Pro.** Com o AE desligado o flash automático do CameraX não
+   dispara de forma confiável; o HDR anula o ISO.
+6. **Overlay resolvido em `components/ModeOverlays.kt`, não na tela.** Um `when` na
+   `CameraScreen` faria o próximo modo com overlay editar a tela, furando o NFR-2.
+7. **Aviso de modo recusado** (pendência da Q-07) entregue: `ModeRejectedNotice`, também
+   fora da tela. Não exercitável em aparelho — o Redmi aceita o conjunto do Pro.
+8. **Telemetria `evt=ae_frozen`** com o que o AE usava (tempo, ISO, boost pós-RAW). Nasceu
+   de uma investigação: o ISO manual máximo dava imagem 4× mais escura que o AUTO. Não era
+   defeito — o AE usava ISO 6400 + boost 4×, acima da faixa declarada do sensor. O
+   evento responde a esse relato sem precisar do aparelho.
+9. **Eventos do registro de modos em `ModeTelemetry`**, separado de `CameraTelemetry` (que
+   bateu o limite de funções do detekt). Mesmo arquivo, mesmo formato `evt=`.
+10. **`EXIF_CAMERA_TAGS` saiu do `CameraManager`** para `ExifCameraTags.kt`, sem mudança —
+    abriu o espaço do NFR-3 (1.150 linhas). A entrada `VariableNaming` correspondente do
+    baseline de detekt ficou órfã; some no reencolhimento da Tarefa 13.
+
 ---
 
 ## Bloqueios

@@ -48,21 +48,6 @@ internal object CameraTelemetry {
         )
     }
 
-    /**
-     * Requirements: FR-13
-     *
-     * Troca de modo efetivada na sessão. Só sai quando o modo **ligado** muda — um
-     * rebind por proporção ou resolução não é troca de modo.
-     */
-    fun modeChanged(from: CameraModeId?, to: CameraModeId, useCases: Set<AppUseCase>, elapsedMs: Long) {
-        Timber.i("evt=mode %s", TelemetryFields.modeFields(from, to, useCases, elapsedMs))
-    }
-
-    /** O aparelho recusou o conjunto de [rejected]; o de [restored] foi religado no lugar. */
-    fun modeRejected(rejected: CameraModeId, restored: CameraModeId, error: Throwable) {
-        Timber.w(error, "evt=mode_failed to=%s restored=%s", rejected.value, restored.value)
-    }
-
     fun bindFailed(error: Throwable) {
         Timber.e(error, "evt=bind_failed")
     }
@@ -131,6 +116,10 @@ internal object CameraTelemetry {
  */
 internal object TelemetryFields {
 
+    /** Campos de `evt=manual`. `iso=auto` quando a exposição está com o AE. */
+    fun manualFields(request: ManualRequest?): String =
+        if (request == null) "iso=auto" else "iso=%d exposure_ns=%d".format(request.sensitivity, request.exposureTimeNs)
+
     /**
      * Requirements: NFR-1
      *
@@ -165,5 +154,44 @@ internal object TelemetryFields {
             faixas.maxAnalogIso?.toString() ?: "-",
             faixas.exposureTimeNs.first, faixas.exposureTimeNs.last
         )
+    }
+}
+
+/**
+ * Requirements: FR-9, FR-13, NFR-7
+ *
+ * Os eventos do registro de modos: troca efetiva de modo, modo recusado pelo aparelho
+ * e exposição manual do Pro. Separados de [CameraTelemetry] por assunto, no mesmo
+ * arquivo e no mesmo formato `evt=`.
+ */
+internal object ModeTelemetry {
+
+    /**
+     * Requirements: FR-13
+     *
+     * Troca de modo efetivada na sessão. Só sai quando o modo **ligado** muda — um
+     * rebind por proporção ou resolução não é troca de modo.
+     */
+    fun modeChanged(from: CameraModeId?, to: CameraModeId, useCases: Set<AppUseCase>, elapsedMs: Long) {
+        Timber.i("evt=mode %s", TelemetryFields.modeFields(from, to, useCases, elapsedMs))
+    }
+
+    /**
+     * O que o AE usava no instante em que o ISO virou manual. Responde "por que o Pro
+     * sai mais escuro que o automático": o AE soma ganho digital pós-RAW (`ae_boost`,
+     * 100 = nenhum) que o modo manual não tem.
+     */
+    fun autoExposureFrozen(exposureNs: Long?, iso: Int?, boost: Int?) {
+        Timber.i("evt=ae_frozen exposure_ns=%s ae_iso=%s ae_boost=%s", exposureNs ?: "-", iso ?: "-", boost ?: "-")
+    }
+
+    /** Exposição manual aplicada (FR-9): o que de fato foi pedido ao sensor. */
+    fun manualExposure(request: ManualRequest?) {
+        Timber.i("evt=manual %s", TelemetryFields.manualFields(request))
+    }
+
+    /** O aparelho recusou o conjunto de [rejected]; o de [restored] foi religado no lugar. */
+    fun modeRejected(rejected: CameraModeId, restored: CameraModeId, error: Throwable) {
+        Timber.w(error, "evt=mode_failed to=%s restored=%s", rejected.value, restored.value)
     }
 }

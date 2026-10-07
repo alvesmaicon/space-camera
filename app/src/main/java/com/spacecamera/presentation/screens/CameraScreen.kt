@@ -81,6 +81,8 @@ import com.spacecamera.camera.mode.ControlId
 import com.spacecamera.camera.mode.FlashBehavior
 import com.spacecamera.camera.mode.ShutterAction
 import com.spacecamera.presentation.components.ModeDrawer
+import com.spacecamera.presentation.components.ModeOverlay
+import com.spacecamera.presentation.components.ModeRejectedNotice
 import com.spacecamera.presentation.components.ModeSelector
 import com.spacecamera.presentation.layout.previewAspect
 import com.spacecamera.camera.RecordingState
@@ -1103,6 +1105,13 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 )
             }
         }
+
+        // Overlay próprio do modo (ADR-001) — resolvido fora da tela, em ModeOverlays.
+        activeMode.overlay?.let { overlay ->
+            ModeOverlay(overlay, viewModel, isWide, enabled = countdownSeconds == 0, rotationDeg = iconRotation)
+        }
+
+        ModeRejectedNotice(viewModel)
 
         // Véu da gaveta: um toque fora dela fecha, sem focar nem trocar de modo.
         if (showModeDrawer) {

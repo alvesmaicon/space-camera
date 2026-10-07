@@ -26,6 +26,9 @@ import com.spacecamera.camera.mode.OverlayId
  */
 object ModeSurfaces {
 
+    /** Escalas de ISO (e obturador, na Tarefa 12) do modo Pro. */
+    val PRO_SCALES = OverlayId("pro_scales")
+
     /**
      * Overlays com composable registrado.
      *
@@ -33,7 +36,7 @@ object ModeSurfaces {
      * habitante é o `PRO_SCALES` da Tarefa 11 — e é a partir dali que o teste de
      * completude deixa de passar vazio e passa a valer de fato.
      */
-    val overlays: Set<OverlayId> = emptySet()
+    val overlays: Set<OverlayId> = setOf(PRO_SCALES)
 
     /** Controles da barra superior com composable registrado. */
     val controls: Set<ControlId> = setOf(

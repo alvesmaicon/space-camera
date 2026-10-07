@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 8 · **Em andamento:** 0 · **Pendentes:** 5
+- **Concluídas:** 9 · **Em andamento:** 0 · **Pendentes:** 4
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -311,7 +311,7 @@
 - **_Requirements: FR-7, FR-8, FR-16, NFR-8_**
 - **_Decisions: ADR-004, ADR-006_**
 
-#### [ ] 11. Modo Pro com ISO manual
+#### [x] 11. Modo Pro com ISO manual
 - **Size:** M
 - **Complexity:** high
 - **Risk:** medium
@@ -329,9 +329,10 @@
   - **DADO** aparelho com faixa de ISO 50–3200 **QUANDO** 6400 é solicitado **ENTÃO** 3200 é aplicado (AC-9.1)
   - **DADO** o modo Pro com valores manuais **QUANDO** o usuário dispara **ENTÃO** a foto é salva com o mesmo padrão de nome e EXIF do modo Foto e a miniatura atualiza (AC-12.1)
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest --tests '*ProMode*'`
-  - [ ] Conferência de APK antes de acreditar em qualquer teste manual: `grep -ac ProMode` nos dex
-  - [ ] Conferência manual **obrigatoriamente em aparelho real**: variar o ISO em cena escura e confirmar mudança visível de brilho. No emulador, sem `MANUAL_SENSOR`, o comportamento correto e o defeituoso coincidem
+  - [x] Testes passam: `./gradlew testDebugUnitTest` (`ProModeTest`, `ManualExposureTest` e os do ViewModel)
+  - [x] Conferência de APK: `evt=manual` no dex antes de qualquer teste manual
+  - [x] Conferência manual **em aparelho real** (Redmi Note 10): ISO 104 → 564 → 3057 dá luminância 2,3 → 6,3 → 24,5; foto com EXIF `ISO=564`; volta ao AE ao sair do Pro — ver [`verificacao/tarefa-11/`](verificacao/tarefa-11/README.md)
+  - [x] Mutação: 8 mutações, todas mortas
 - **_Requirements: FR-2, FR-5, FR-9, FR-12_**
 - **_Decisions: ADR-001, ADR-005, ADR-007_**
 

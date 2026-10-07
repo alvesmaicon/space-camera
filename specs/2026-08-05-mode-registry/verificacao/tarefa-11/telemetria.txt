@@ -1,0 +1,29 @@
+10-07 12:06:54.499 I/SpaceCam(22862): [CameraTelemetry] evt=bind mode=VIDEO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=true nr=true hdr=false front=false elapsed_ms=202
+10-07 12:06:54.499 I/SpaceCam(22862): [ModeTelemetry] evt=mode from=- to=video use_cases=preview,video_capture,image_capture elapsed_ms=202
+10-07 12:06:54.501 I/SpaceCam(22862): [CameraTelemetry] evt=caps camera=0 eis_supported=true hdr_supported=true zoom=1,0x-10,0x options=[4K 30,FHD 30,HD 30] manual_sensor=true iso=100-3200 iso_analog_max=3200 exposure_ns=65424-30071705440
+10-07 12:06:54.934 I/SpaceCam(22862): [CameraTelemetry] evt=bind mode=VIDEO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=true nr=true hdr=false front=false elapsed_ms=47
+10-07 12:06:54.935 I/SpaceCam(22862): [CameraTelemetry] evt=caps camera=0 eis_supported=true hdr_supported=true zoom=1,0x-10,0x options=[4K 30,FHD 30,HD 30] manual_sensor=true iso=100-3200 iso_analog_max=3200 exposure_ns=65424-30071705440
+10-07 12:07:09.763 I/SpaceCam(22862): [CameraTelemetry] evt=bind mode=PRO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=false nr=true hdr=false front=false elapsed_ms=29
+10-07 12:07:09.764 I/SpaceCam(22862): [ModeTelemetry] evt=mode from=video to=pro use_cases=preview,image_capture elapsed_ms=29
+10-07 12:07:09.764 I/SpaceCam(22862): [CameraTelemetry] evt=caps camera=0 eis_supported=true hdr_supported=true zoom=1,0x-10,0x options=[4K 30,FHD 30,HD 30] manual_sensor=true iso=100-3200 iso_analog_max=3200 exposure_ns=65424-30071705440
+10-07 12:08:23.940 I/SpaceCam(22862): [ModeTelemetry] evt=manual iso=104 exposure_ns=33333332
+10-07 12:08:27.538 I/SpaceCam(22862): [ModeTelemetry] evt=manual iso=564 exposure_ns=33333332
+10-07 12:08:31.245 I/SpaceCam(22862): [ModeTelemetry] evt=manual iso=3057 exposure_ns=33333332
+10-07 12:09:10.234 I/SpaceCam(22862): [ModeTelemetry] evt=manual iso=auto
+10-07 12:09:58.691 I/SpaceCam(23635): [CameraTelemetry] evt=bind mode=VIDEO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=true nr=true hdr=false front=false elapsed_ms=115
+10-07 12:09:58.691 I/SpaceCam(23635): [ModeTelemetry] evt=mode from=- to=video use_cases=preview,video_capture,image_capture elapsed_ms=115
+10-07 12:09:58.692 I/SpaceCam(23635): [CameraTelemetry] evt=caps camera=0 eis_supported=true hdr_supported=true zoom=1,0x-10,0x options=[4K 30,FHD 30,HD 30] manual_sensor=true iso=100-3200 iso_analog_max=3200 exposure_ns=65424-30071705440
+10-07 12:09:59.069 I/SpaceCam(23635): [CameraTelemetry] evt=bind mode=VIDEO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=true nr=true hdr=false front=false elapsed_ms=62
+10-07 12:09:59.069 I/SpaceCam(23635): [CameraTelemetry] evt=caps camera=0 eis_supported=true hdr_supported=true zoom=1,0x-10,0x options=[4K 30,FHD 30,HD 30] manual_sensor=true iso=100-3200 iso_analog_max=3200 exposure_ns=65424-30071705440
+10-07 12:10:11.372 I/SpaceCam(23635): [CameraTelemetry] evt=bind mode=PRO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=false nr=true hdr=false front=false elapsed_ms=38
+10-07 12:10:11.372 I/SpaceCam(23635): [ModeTelemetry] evt=mode from=video to=pro use_cases=preview,image_capture elapsed_ms=38
+10-07 12:10:11.373 I/SpaceCam(23635): [CameraTelemetry] evt=caps camera=0 eis_supported=true hdr_supported=true zoom=1,0x-10,0x options=[4K 30,FHD 30,HD 30] manual_sensor=true iso=100-3200 iso_analog_max=3200 exposure_ns=65424-30071705440
+10-07 12:10:17.502 I/SpaceCam(23635): [ModeTelemetry] evt=ae_frozen exposure_ns=32801068 ae_iso=6400 ae_boost=400
+10-07 12:10:17.503 I/SpaceCam(23635): [ModeTelemetry] evt=manual iso=3057 exposure_ns=32801068
+10-07 12:10:35.968 I/SpaceCam(23635): [ModeTelemetry] evt=manual iso=564 exposure_ns=32801068
+10-07 12:10:44.558 I/SpaceCam(23635): [CameraTelemetry] evt=photo preset=MAXIMA size=0x0 elapsed_ms=679
+10-07 12:11:10.799 I/SpaceCam(23635): [ModeTelemetry] evt=manual iso=104 exposure_ns=32801068
+10-07 12:11:17.599 I/SpaceCam(23635): [ModeTelemetry] evt=manual iso=auto
+10-07 12:11:17.752 I/SpaceCam(23635): [CameraTelemetry] evt=bind mode=PHOTO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=false nr=true hdr=false front=false elapsed_ms=34
+10-07 12:11:17.752 I/SpaceCam(23635): [ModeTelemetry] evt=mode from=pro to=photo use_cases=preview,video_capture,image_capture elapsed_ms=34
+10-07 12:11:17.753 I/SpaceCam(23635): [CameraTelemetry] evt=caps camera=0 eis_supported=true hdr_supported=true zoom=1,0x-10,0x options=[4K 30,FHD 30,HD 30] manual_sensor=true iso=100-3200 iso_analog_max=3200 exposure_ns=65424-30071705440

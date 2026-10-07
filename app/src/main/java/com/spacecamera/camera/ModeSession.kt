@@ -40,7 +40,7 @@ internal class ModeSession(initial: CameraModeDefinition) {
     val rejections: SharedFlow<ModeRejection> = _rejections
 
     /** Para onde vai o anúncio da troca. Trocável só para teste. */
-    var onModeChanged: (CameraModeId?, CameraModeId, Set<AppUseCase>, Long) -> Unit = CameraTelemetry::modeChanged
+    var onModeChanged: (CameraModeId?, CameraModeId, Set<AppUseCase>, Long) -> Unit = ModeTelemetry::modeChanged
 
     /** @return `false` se [mode] já é o pedido — nada a religar. */
     fun request(mode: CameraModeDefinition): Boolean {
@@ -61,7 +61,7 @@ internal class ModeSession(initial: CameraModeDefinition) {
             is ModeBinder.Outcome.Bound -> r.camera.also { bound = r.mode }
             is ModeBinder.Outcome.Failed -> throw r.cause
             is ModeBinder.Outcome.Restored -> r.camera.also {
-                CameraTelemetry.modeRejected(r.rejected.id, r.mode.id, r.cause)
+                ModeTelemetry.modeRejected(r.rejected.id, r.mode.id, r.cause)
                 bound = r.mode
                 current = r.mode
                 _rejections.tryEmit(ModeRejection(r.rejected.id, r.mode.id))

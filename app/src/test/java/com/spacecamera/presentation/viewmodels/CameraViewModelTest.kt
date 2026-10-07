@@ -19,13 +19,16 @@ import com.spacecamera.camera.mode.Capability
 import com.spacecamera.camera.mode.ModeRegistry
 import com.spacecamera.camera.mode.SensorCharacteristics
 import com.spacecamera.camera.mode.modoDeTeste
+import com.spacecamera.camera.mode.CameraModeDefinition
 import com.spacecamera.camera.mode.PhotoMode
+import com.spacecamera.camera.mode.ProMode
 import com.spacecamera.camera.mode.ShutterAction
 import com.spacecamera.camera.mode.VideoMode
 import com.spacecamera.data.storage.SettingsStorage
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -42,6 +45,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -732,5 +736,102 @@ class CameraViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf(exigente), vm.arrangedModes.value.drawer)
+    }
+
+    // ── Modo Pro: ISO manual (Tarefa 11) ────────────────────────────────────
+    //
+    // Requirements: FR-9, FR-12, AC-9.1 · Decisions: ADR-007, Q-11
+
+    /** O que o Redmi Note 10 reportou na câmera traseira. */
+    private fun publicarCapacidadeManual(iso: IntRange = 100..3200) {
+        controller.deviceCapabilitiesFlow.value = CapabilityProbe.decide(
+            SensorCharacteristics(
+                requestCapabilities = listOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR),
+                sensitivityRange = iso,
+                exposureTimeRangeNs = 65_424L..30_071_705_440L,
+                maxAnalogSensitivity = iso.last
+            )
+        )
+    }
+
+    @Test
+    fun `ISO pedido fora da faixa e limitado antes de chegar ao controller`() = teste {
+        // AC-9.1, na ponta do ViewModel.
+        inicializar()
+        publicarCapacidadeManual(iso = 50..3200)
+        advanceUntilIdle()
+        viewModel.selectMode(ProMode)
+
+        viewModel.setIso(6400)
+
+        assertEquals(3200, viewModel.manualExposure.value.iso)
+        assertEquals(3200, controller.lastManualIso)
+    }
+
+    @Test
+    fun `ISO automatico devolve o controle ao AE`() = teste {
+        inicializar()
+        publicarCapacidadeManual()
+        advanceUntilIdle()
+        viewModel.selectMode(ProMode)
+        viewModel.setIso(800)
+
+        viewModel.setIso(null)
+
+        assertNull(viewModel.manualExposure.value.iso)
+        assertEquals(1, controller.manualIsoCalls.count { it == null })
+    }
+
+    @Test
+    fun `sair do Pro volta o ISO ao automatico`() = teste {
+        // Nenhum outro modo tem escala de ISO: se o valor manual sobrevivesse à troca,
+        // a Foto sairia com exposição travada e sem controle para destravar.
+        inicializar()
+        publicarCapacidadeManual()
+        advanceUntilIdle()
+        viewModel.selectMode(ProMode)
+        viewModel.setIso(800)
+
+        viewModel.selectMode(PhotoMode)
+
+        assertNull(viewModel.manualExposure.value.iso)
+        assertNull(controller.lastManualIso)
+    }
+
+    @Test
+    fun `sem capacidade manual o ISO pedido e ignorado`() = teste {
+        inicializar()
+
+        viewModel.setIso(800)
+
+        assertNull(viewModel.manualExposure.value.iso)
+        assertTrue(controller.manualIsoCalls.isEmpty())
+    }
+
+    @Test
+    fun `faixas do aparelho chegam a tela`() = teste {
+        // A escala mostra exatamente o que o HAL reportou (AC-5.2).
+        inicializar()
+        publicarCapacidadeManual(iso = 100..3200)
+        advanceUntilIdle()
+
+        assertEquals(100..3200, viewModel.manualSensorRanges.value?.iso)
+    }
+
+    @Test
+    fun `modo recusado vira aviso para a tela`() = teste {
+        // Fluxo 4.2 do design, o "aviso discreto" que a Q-07 deixou para a Tarefa 11.
+        inicializar()
+        val avisos = mutableListOf<CameraModeDefinition>()
+        val coleta = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.modeRejected.collect { avisos += it }
+        }
+        viewModel.selectMode(PhotoMode)
+
+        controller.modeRejectionsFlow.emit(ModeRejection(rejected = PhotoMode.id, active = VideoMode.id))
+        advanceUntilIdle()
+
+        assertEquals(listOf<CameraModeDefinition>(PhotoMode), avisos)
+        coleta.cancel()
     }
 }

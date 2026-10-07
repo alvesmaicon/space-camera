@@ -286,6 +286,26 @@ carrossel passou a rolar mantendo a centralização. Detalhes e as demais decis�
 inclusive os dois testes anteriores à spec que mudaram de forma (não de asserção) porque o
 tipo que testavam deixou de existir.
 
+### Sessão: 2026-10-07 — Tarefa 11 (Pro com ISO manual)
+
+- **Agente:** skill `dev`
+- **Gate:** D concluído · Tarefa 11 **concluída** (Checkpoint da Onda 6 depende ainda das Tarefas 9 e 10)
+- **Decisões do usuário:** slider vertical lateral; Pro na gaveta por padrão
+- **Verificação em aparelho:** [`verificacao/tarefa-11/`](verificacao/tarefa-11/README.md)
+
+**O Pro entrou pela costura**: `ProMode.kt` + uma linha no registro, mais o overlay em
+`components/` e a exposição manual em `ManualExposureControls` — nada de ramificação nova
+na tela, no ViewModel ou no controller. Os detalhes técnicos (um escritor só para as
+opções do Camera2, tempo congelado do AE, sem flash/HDR) estão na Q-11.
+
+**Investigação que virou telemetria.** No aparelho, o ISO máximo manual dava imagem 4× mais
+escura que o AUTO. Antes de chamar de defeito, instrumentei: o AE usava ISO 6400 com boost
+pós-RAW de 4× — acima da faixa que o sensor declara. O manual está certo; a cena pede o
+obturador da Tarefa 12. `evt=ae_frozen` ficou como diagnóstico permanente.
+
+**Ainda a pagar:** o ViewModel está em ~800 linhas. O agrupamento do estado de modos (Q-10)
+é o primeiro passo da Tarefa 10.
+
 ## Situação das tarefas
 
 | Onda | Tarefa | Status | Observações |
@@ -300,7 +320,7 @@ tipo que testavam deixou de existir.
 | 5 | 8. Seletor + gaveta | **Concluída** | item "Mais" + gaveta; `CameraMode` removido; carrossel rolável |
 | 6 | 9. Janela larga com N modos | Pendente | folga 4 |
 | 6 | 10. Personalização em Configurações | Pendente | folga 4 |
-| 6 | 11. Pro com ISO manual | Pendente | caminho crítico |
+| 6 | 11. Pro com ISO manual | **Concluída** | ISO muda o brilho em aparelho; EXIF com o ISO manual |
 | 7 | 12. Obturador manual | Pendente | caminho crítico |
 | 8 | 13. Recibo do NFR-2 e fechamento | Pendente | prova que a spec entregou o que prometeu |
 
@@ -310,8 +330,8 @@ Preencher conforme as tarefas forem feitas — são a evidência dos NFRs:
 
 | Medida | Baseline (Tarefa 1) | Final (Tarefa 13) | Limite |
 |---|---|---|---|
-| `CameraScreen.kt` (linhas) | **2.220** ✓ | 2.215 após T6 · 2.173 após T7 · **2.144** após T8 | ≤ 2.100 |
-| `CameraManager.kt` (linhas) | **1.158** ✓ | 1.163 após T5 · 1.153 após T6 · **1.154** após T7 | ≤ 1.158 |
+| `CameraScreen.kt` (linhas) | **2.220** ✓ | 2.215 após T6 · 2.173 após T7 · 2.144 após T8 · **2.153** após T11 | ≤ 2.100 |
+| `CameraManager.kt` (linhas) | **1.158** ✓ | 1.163 após T5 · 1.153 após T6 · 1.154 após T7 · **1.150** após T11 | ≤ 1.158 |
 | `CameraViewModel.kt` (linhas) | **694** ✓ | 733 após T6 · 732 após T7 · **752** após T8 — agrupar na T10 (Q-10) | não crescer |
 | Maior arquivo novo (linhas) | — | | ≤ 400 |
 | p95 de `elapsed_ms` na troca de modo | ~~38 ms~~ edge 60 neo · **57 ms** Redmi Note 10 (20 amostras) | | **≤ 68,4 ms** (Redmi) |
@@ -350,6 +370,7 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] Tarefa 6 — Vídeo remigrado; Checkpoint da Onda 3
 - [x] Tarefa 7 — Foto remigrado; Checkpoint da Onda 4
 - [x] Tarefa 8 — seletor + gaveta; Checkpoint da Onda 5
+- [x] Tarefa 11 — Pro com ISO manual (verificada em aparelho)
 - [ ] Agrupar o estado de modos do ViewModel na Tarefa 10 (Q-10)
 - [ ] Q-06 (`aspect` defasado em `evt=bind`): corrigir em commit próprio depois da Tarefa 7, ou levar ao ROADMAP
 - [ ] Q-08 (modo não reaplicado ao recriar o controller): verificar em aparelho e corrigir depois da Tarefa 7

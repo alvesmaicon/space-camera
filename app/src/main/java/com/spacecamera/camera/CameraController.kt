@@ -104,6 +104,14 @@ interface CameraController {
      * por [modeRejections] — a sessão nunca fica sem bind (fluxo 4.2 do design).
      */
     fun applyMode(definition: CameraModeDefinition)
+
+    /**
+     * Requirements: FR-9, FR-11 · Decisions: ADR-007
+     *
+     * ISO manual já limitado à faixa do aparelho, ou `null` para devolver a exposição
+     * ao automático. Aplicado por `Camera2CameraControl`, nunca pelo `Extender`.
+     */
+    fun applyManualIso(iso: Int?)
     fun setStabilization(enabled: Boolean)
     fun setNoiseReduction(enabled: Boolean)
     fun setHdr(enabled: Boolean)

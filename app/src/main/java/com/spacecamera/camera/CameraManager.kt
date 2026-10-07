@@ -110,18 +110,7 @@ class CameraManager(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner
 ) : CameraController {
-    private val EXIF_CAMERA_TAGS = listOf(
-        ExifInterface.TAG_MAKE, ExifInterface.TAG_MODEL,
-        ExifInterface.TAG_F_NUMBER, ExifInterface.TAG_APERTURE_VALUE,
-        ExifInterface.TAG_EXPOSURE_TIME, ExifInterface.TAG_ISO_SPEED_RATINGS,
-        ExifInterface.TAG_FOCAL_LENGTH, ExifInterface.TAG_FOCAL_LENGTH_IN_35MM_FILM,
-        ExifInterface.TAG_WHITE_BALANCE, ExifInterface.TAG_FLASH,
-        ExifInterface.TAG_EXPOSURE_BIAS_VALUE, ExifInterface.TAG_EXPOSURE_PROGRAM,
-        ExifInterface.TAG_METERING_MODE, ExifInterface.TAG_SCENE_CAPTURE_TYPE,
-        ExifInterface.TAG_DATETIME_ORIGINAL, ExifInterface.TAG_DATETIME_DIGITIZED,
-        ExifInterface.TAG_SUBSEC_TIME_ORIGINAL, ExifInterface.TAG_BRIGHTNESS_VALUE,
-        ExifInterface.TAG_SUBJECT_DISTANCE, ExifInterface.TAG_LIGHT_SOURCE,
-    )
+    private val manual = ManualExposureControls()
 
     // Handler para debounce do rebind (evita race condition em toggles rápidos)
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -426,6 +415,7 @@ class CameraManager(
 
         val targetFps = selectedVideoOption.fps
         val previewBuilder = Preview.Builder().setTargetAspectRatio(aspectRatio)
+        manual.observe(previewBuilder)
         // Camera2Interop no Preview — apenas AE_TARGET_FPS_RANGE, pois precisa estar fixo
         // desde a criação da sessão.
         // IMPORTANTE: EIS e NR NÃO devem ser setados aqui. Camera2Interop tem prioridade
@@ -622,6 +612,7 @@ class CameraManager(
                 if (isHdrEnabled) CaptureRequest.TONEMAP_MODE_HIGH_QUALITY
                 else CaptureRequest.TONEMAP_MODE_FAST
             )
+        manual.contribute(builder)  // por último: vence o HDR (Q-11)
         Camera2CameraControl.from(cam.cameraControl)
             .setCaptureRequestOptions(builder.build())
             .addListener(
@@ -706,6 +697,11 @@ class CameraManager(
 
     override fun rebindWithCurrentSettings() {
         scheduleBind()
+    }
+
+    override fun applyManualIso(iso: Int?) {
+        ModeTelemetry.manualExposure(manual.setIso(iso, _deviceCapabilities.value.manualSensor?.exposureTimeNs))
+        applyEisNrImmediate()
     }
 
     override fun applyMode(definition: CameraModeDefinition) {

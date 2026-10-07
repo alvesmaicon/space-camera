@@ -19,7 +19,8 @@ object ModeRegistry {
      */
     val all: List<CameraModeDefinition> = listOf(
         VideoMode,
-        PhotoMode
+        PhotoMode,
+        ProMode
     )
 
     /**

@@ -12,6 +12,7 @@ import androidx.camera.video.Quality
 import com.spacecamera.camera.CameraController
 import com.spacecamera.camera.CameraControllerFactory
 import com.spacecamera.camera.CameraManager
+import com.spacecamera.camera.ManualExposure
 import com.spacecamera.camera.PhotoQualityPreset
 import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoBitratePreset
@@ -20,7 +21,10 @@ import com.spacecamera.camera.mode.ArrangedModes
 import com.spacecamera.camera.mode.CameraModeDefinition
 import com.spacecamera.camera.mode.CaptureState
 import com.spacecamera.camera.mode.ModeArrangement
+import com.spacecamera.camera.mode.ManualSensorRanges
 import com.spacecamera.camera.mode.ModeRegistry
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import com.spacecamera.camera.mode.FlashBehavior
 import com.spacecamera.camera.mode.ShutterAction
 import com.spacecamera.camera.mode.StabilizationRule
@@ -39,6 +43,9 @@ enum class RecordingDelay(val seconds: Int) {
     OFF(0), THREE(3), FIVE(5), TEN(10);
     fun next() = entries[(ordinal + 1) % entries.size]
 }
+
+/** Exposição manual do Pro. `iso == null` é automático. */
+data class ManualExposureState(val iso: Int? = null)
 
 /** Ciclo do flash em foto, na ordem em que o botão percorre. */
 enum class PhotoFlashMode(val imageCaptureMode: Int) {
@@ -158,6 +165,18 @@ class CameraViewModel(
      */
     private val _arrangedModes = MutableStateFlow(ModeRegistry.arranged(ModeArrangement.DEFAULT, emptySet(), modeRegistry))
     val arrangedModes: StateFlow<ArrangedModes> = _arrangedModes.asStateFlow()
+
+    /** Exposição manual do Pro (FR-9). Estado novo, então agrupado (Q-10). */
+    private val _manualExposure = MutableStateFlow(ManualExposureState())
+    val manualExposure: StateFlow<ManualExposureState> = _manualExposure.asStateFlow()
+
+    /** Faixas que a escala do Pro oferece — exatamente as do HAL (AC-5.2). */
+    private val _manualSensorRanges = MutableStateFlow<ManualSensorRanges?>(null)
+    val manualSensorRanges: StateFlow<ManualSensorRanges?> = _manualSensorRanges.asStateFlow()
+
+    /** Modo que o aparelho recusou — a tela mostra um aviso (fluxo 4.2 do design). */
+    private val _modeRejected = MutableSharedFlow<CameraModeDefinition>(extraBufferCapacity = 1)
+    val modeRejected: SharedFlow<CameraModeDefinition> = _modeRejected
 
     private val _availableZoomLevels = MutableStateFlow<List<Float>>(listOf(1f))
     val availableZoomLevels: StateFlow<List<Float>> = _availableZoomLevels.asStateFlow()
@@ -426,10 +445,12 @@ class CameraViewModel(
                 launch {
                     cameraManager!!.deviceCapabilities.collect { caps ->
                         _arrangedModes.value = ModeRegistry.arranged(ModeArrangement.DEFAULT, caps.supported, modeRegistry)
+                        _manualSensorRanges.value = caps.manualSensor
                     }
                 }
                 launch {
                     cameraManager!!.modeRejections.collect { recusa ->
+                        modeRegistry.firstOrNull { it.id == recusa.rejected }?.let { _modeRejected.tryEmit(it) }
                         val restaurado = modeRegistry.first { it.id == recusa.active }
                         _activeMode.value = restaurado
                         syncStabilizationWithMode(restaurado)
@@ -505,6 +526,19 @@ class CameraViewModel(
         }
     }
 
+    /**
+     * Requirements: FR-9, AC-9.1 · Decisions: ADR-007
+     *
+     * ISO manual do Pro, já limitado à faixa do aparelho; `null` devolve ao AE. Sem
+     * capacidade manual reportada, o pedido é ignorado — não há faixa para limitar.
+     */
+    fun setIso(iso: Int?) {
+        val faixa = _manualSensorRanges.value?.iso ?: return
+        val aplicado = iso?.let { ManualExposure.clampIso(it, faixa) }
+        _manualExposure.value = ManualExposureState(iso = aplicado)
+        cameraManager?.applyManualIso(aplicado)
+    }
+
     /** Cicla OFF → AUTO → ON → OFF, sem tocha contínua. */
     private fun cyclePhotoFlash() {
         _photoFlashMode.value = _photoFlashMode.value.next()
@@ -522,6 +556,12 @@ class CameraViewModel(
         if (_recordingState.value != RecordingState.Idle) return
         _activeMode.value = mode
         resetFlash()
+        // Nenhum outro modo tem escala de ISO: valor manual que sobrevivesse à troca
+        // travaria a exposição de um modo sem controle para destravar.
+        if (_manualExposure.value.iso != null) {
+            _manualExposure.value = ManualExposureState()
+            cameraManager?.applyManualIso(null)
+        }
         syncStabilizationWithMode(mode)
         cameraManager?.applyMode(mode)
     }

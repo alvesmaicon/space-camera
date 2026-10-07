@@ -141,6 +141,11 @@ class FakeCameraController : CameraController {
     override fun setAspectRatio(ratio: String) { lastAspectRatio = ratio }
     override fun applyMode(definition: CameraModeDefinition) { lastAppliedMode = definition }
 
+    /** Histórico de ISO manual pedido; `null` é "automático". */
+    val manualIsoCalls = mutableListOf<Int?>()
+    val lastManualIso: Int? get() = manualIsoCalls.lastOrNull()
+    override fun applyManualIso(iso: Int?) { manualIsoCalls += iso }
+
     override fun setStabilization(enabled: Boolean) {
         isStabilizationEnabled = enabled
         stabilizationCalls += enabled
