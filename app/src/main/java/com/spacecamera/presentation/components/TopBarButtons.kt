@@ -1,5 +1,7 @@
 package com.spacecamera.presentation.components
 
+import com.spacecamera.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -205,25 +207,25 @@ internal fun TopBarTimerButton(
         when (delay) {
             RecordingDelay.OFF -> Icon(
                 Icons.Outlined.TimerOff,
-                contentDescription = "Timer desativado",
+                contentDescription = stringResource(R.string.control_timer_off),
                 tint = iconTint,
                 modifier = Modifier.size(26.dp).rotate(rotationDeg)
             )
             RecordingDelay.THREE -> Icon(
                 TimerIcon3,
-                contentDescription = "Timer 3s",
+                contentDescription = stringResource(R.string.control_timer_3),
                 tint = iconTint,
                 modifier = Modifier.size(26.dp).rotate(rotationDeg)
             )
             RecordingDelay.FIVE -> Icon(
                 TimerIcon5,
-                contentDescription = "Timer 5s",
+                contentDescription = stringResource(R.string.control_timer_5),
                 tint = iconTint,
                 modifier = Modifier.size(26.dp).rotate(rotationDeg)
             )
             RecordingDelay.TEN -> Icon(
                 TimerIcon10,
-                contentDescription = "Timer 10s",
+                contentDescription = stringResource(R.string.control_timer_10),
                 tint = iconTint,
                 modifier = Modifier.size(26.dp).rotate(rotationDeg)
             )

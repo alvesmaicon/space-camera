@@ -108,7 +108,7 @@ class CapabilityProbeTest {
         // Passo 2 da tarefa: o formato publicado é o que available() consome.
         val exigente = object : CameraModeDefinition() {
             override val id = CameraModeId("exigente")
-            override val label = "Exigente"
+            override val label = ModeLabel.Literal("Exigente")
             override val useCases = setOf(AppUseCase.PREVIEW)
             override val requiredCapability = Capability.MANUAL_SENSOR
             override val controls = emptyList<ControlId>()

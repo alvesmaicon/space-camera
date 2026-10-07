@@ -65,7 +65,7 @@ class ModeRegistryTest {
         // modo de mentira, e assim este teste continua válido quando o Pro entrar.
         val exigente = object : CameraModeDefinition() {
             override val id = CameraModeId("exigente")
-            override val label = "Exigente"
+            override val label = ModeLabel.Literal("Exigente")
             override val useCases = setOf(AppUseCase.PREVIEW)
             override val requiredCapability = Capability.MANUAL_SENSOR
             override val controls = emptyList<ControlId>()
@@ -154,7 +154,7 @@ class ModeRegistryTest {
         )
         val exigente = object : CameraModeDefinition() {
             override val id = CameraModeId("exigente")
-            override val label = "Exigente"
+            override val label = ModeLabel.Literal("Exigente")
             override val useCases = setOf(AppUseCase.PREVIEW)
             override val requiredCapability = Capability.MANUAL_SENSOR
             override val controls = emptyList<ControlId>()

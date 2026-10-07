@@ -23,7 +23,7 @@ import kotlin.test.assertSame
  * personalização.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "pt-rBR")
 class ModeDrawerTest {
 
     @get:Rule

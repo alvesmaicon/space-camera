@@ -1,5 +1,6 @@
 package com.spacecamera.camera
 
+import com.spacecamera.camera.mode.ModeLabel
 import com.spacecamera.camera.mode.AppUseCase
 import com.spacecamera.camera.mode.CameraModeDefinition
 import com.spacecamera.camera.mode.CameraModeId
@@ -37,7 +38,7 @@ class ModeSessionTest {
 
     private val soFoto = object : CameraModeDefinition() {
         override val id = CameraModeId("so_foto")
-        override val label = "Só foto"
+        override val label = ModeLabel.Literal("Só foto")
         override val useCases = setOf(AppUseCase.PREVIEW, AppUseCase.IMAGE_CAPTURE)
         override val requiredCapability: Capability? = null
         override val controls = emptyList<ControlId>()

@@ -106,14 +106,15 @@ object ManualExposure {
 
     /**
      * O tempo como as câmeras escrevem: fração abaixo de ~1/3 s (`1/250`), segundos
-     * acima (`0,5″`, `2″`). Vírgula decimal, como o resto da interface.
+     * acima (`0,5″` em português, `0.5″` em inglês, `2″`). O separador decimal segue o
+     * idioma do aparelho.
      */
-    fun shutterLabel(ns: Long): String {
+    fun shutterLabel(ns: Long, locale: Locale = Locale.getDefault()): String {
         val s = ns / NANOS
         return when {
             s < FRACTION_LIMIT_S -> "1/${(1 / s).roundToInt()}"
             s >= WHOLE_SECONDS_FROM_S || abs(s - s.roundToInt()) < WHOLE_TOLERANCE_S -> "${s.roundToInt()}\""
-            else -> "%.1f\"".format(Locale("pt", "BR"), s)
+            else -> "%.1f\"".format(locale, s)
         }
     }
 }

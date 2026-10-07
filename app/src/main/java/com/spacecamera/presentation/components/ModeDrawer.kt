@@ -1,5 +1,7 @@
 package com.spacecamera.presentation.components
 
+import com.spacecamera.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -58,7 +60,7 @@ internal fun ModeDrawer(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Mais modos", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.mode_drawer_title), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.weight(1f))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -69,12 +71,12 @@ internal fun ModeDrawer(
             ) {
                 Icon(Icons.Default.Edit, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Editar", color = Color.White, fontSize = 14.sp)
+                Text(stringResource(R.string.mode_drawer_edit), color = Color.White, fontSize = 14.sp)
             }
         }
         if (modes.isEmpty()) {
             Text(
-                "Todos os modos já estão no seletor.",
+                stringResource(R.string.mode_drawer_empty),
                 color = Color.White.copy(alpha = 0.7f),
                 fontSize = 14.sp
             )
@@ -101,7 +103,7 @@ private fun BlocoDeModo(modo: CameraModeDefinition, ativo: Boolean, onClick: () 
             .clickable(onClick = onClick)
     ) {
         Text(
-            modo.label,
+            modo.label.text(),
             color = Color.White,
             fontSize = 14.sp,
             fontWeight = if (ativo) FontWeight.Bold else FontWeight.Normal

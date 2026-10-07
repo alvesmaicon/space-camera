@@ -1,5 +1,7 @@
 package com.spacecamera.presentation.components
 
+import com.spacecamera.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -75,12 +77,12 @@ internal fun ModeSelector(
     val itens: @Composable AxisScope.() -> Unit = {
         carrossel.forEach { modo ->
             ItemDoSeletor(
-                texto = modo.label,
+                texto = modo.label.text(),
                 selecionado = modo === active,
                 modifier = if (modo === active) Modifier.bringIntoViewRequester(ativoAVista) else Modifier
             ) { onModeSelect(modo) }
         }
-        ItemDoSeletor(texto = "Mais", selecionado = false, onClick = onOpenDrawer)
+        ItemDoSeletor(texto = stringResource(R.string.mode_more), selecionado = false, onClick = onOpenDrawer)
     }
     if (vertical) {
         // Janela larga (FR-14): coluna com altura máxima e rolagem própria, para N modos

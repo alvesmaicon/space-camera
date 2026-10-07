@@ -122,6 +122,10 @@ modos novos, não é. Só português limita o alcance na loja a uma fração.
 
 **Esforço** P agora, M depois do Grupo B · **Ordem** faça **antes** do Grupo B.
 
+**Feito** em 2026-10-07: inglês como idioma padrão, português em `values-pt/` (Brasil e
+Portugal), e `localeConfig` para o seletor de idioma por app do Android 13+. Outros
+idiomas entram como mais uma pasta `values-xx/`.
+
 ---
 
 ## Grupo B — o que as pessoas comparam

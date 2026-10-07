@@ -101,8 +101,14 @@ propósito: cada um precisa responder. Detalhes e decisões em
 
 ## Convenções
 
-- **Idioma:** comentários, mensagens de commit e rótulos de UI em **português**;
-  identificadores em inglês. Nomes de teste em português entre crases.
+- **Idioma:** comentários e mensagens de commit em **português**; identificadores em
+  inglês. Nomes de teste em português entre crases.
+- **Textos da interface:** nunca literais no Compose. Todo texto que aparece na tela —
+  inclusive `contentDescription` — vai para `res/values/strings.xml` (inglês, o padrão) **e**
+  `res/values-pt/strings.xml` (português). O lint `MissingTranslation` falha se faltar a
+  tradução. Texto igual em qualquer idioma ("AUTO", "HDR", "MAX") leva
+  `translatable="false"`. O nome de um modo é `ModeLabel.Resource(R.string.…)`. Os testes
+  Compose que conferem texto em português declaram `qualifiers = "pt-rBR"`.
 - **Versões:** só em `gradle/libs.versions.toml`. Nunca escreva versão literal
   num `build.gradle.kts`. `versionCode`/`versionName` também vêm de lá e chegam à
   tela Sobre via `BuildConfig`.

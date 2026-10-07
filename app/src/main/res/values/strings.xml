@@ -1,14 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Idioma padrão: inglês. A tradução em português está em values-pt/. -->
 <resources>
-    <string name="app_name">Space Camera</string>
-    <string name="start_recording">Iniciar Gravação</string>
-    <string name="stop_recording">Parar Gravação</string>
-    <string name="pause_recording">Pausar Gravação</string>
-    <string name="resume_recording">Retomar Gravação</string>
-    <string name="resolution_1080p">Full HD (1080p)</string>
-    <string name="resolution_4k">4K (2160p)</string>
-    <string name="resolution_720p">HD (720p)</string>
-    <string name="camera_permission_denied">Permissão de câmera negada</string>
-    <string name="recording_time">Tempo: %s</string>
-    <string name="file_size">Tamanho: %s</string>
+    <string name="app_name" translatable="false">Space Camera</string>
+
+    <!-- Modos -->
+    <string name="mode_video">Video</string>
+    <string name="mode_photo">Photo</string>
+    <string name="mode_pro">Pro</string>
+    <string name="mode_more">More</string>
+    <string name="mode_drawer_title">More modes</string>
+    <string name="mode_drawer_edit">Edit</string>
+    <string name="mode_drawer_empty">All modes are already in the selector.</string>
+    <string name="mode_unavailable">%1$s mode isn’t available on this device</string>
+
+    <!-- Escalas do Pro -->
+    <string name="scale_auto" translatable="false">AUTO</string>
+    <string name="scale_iso_title" translatable="false">ISO</string>
+    <string name="scale_iso">ISO scale</string>
+    <string name="scale_shutter_title">SS</string>
+    <string name="scale_shutter">Shutter speed scale</string>
+
+    <!-- Barra superior -->
+    <string name="control_flash">Flash</string>
+    <string name="control_timer_off">Timer off</string>
+    <string name="control_timer_3">3 s timer</string>
+    <string name="control_timer_5">5 s timer</string>
+    <string name="control_timer_10">10 s timer</string>
+    <string name="control_more_options">More options</string>
+    <string name="control_collapse">Collapse</string>
+    <string name="control_noise_reduction" translatable="false">NR</string>
+    <string name="control_enhancement">Enhancement</string>
+    <string name="control_hdr" translatable="false">HDR</string>
+    <string name="control_microphone">Microphone</string>
+    <string name="control_grid">Grid</string>
+    <string name="control_settings">Settings</string>
+
+    <!-- Câmera -->
+    <string name="camera_switch">Switch camera</string>
+    <string name="camera_pause_resume">Pause/Resume</string>
+    <string name="camera_last_video">Last video</string>
+    <string name="camera_last_photo">Last photo</string>
+    <string name="camera_exposure">Exposure</string>
+
+    <!-- Presets -->
+    <string name="preset_maximum">Maximum</string>
+    <string name="preset_high">High</string>
+    <string name="preset_medium">Medium</string>
+    <string name="preset_low">Low</string>
+
+    <!-- Configurações -->
+    <string name="settings_title">Camera settings</string>
+    <string name="action_back">Back</string>
+    <string name="settings_section_modes">Camera modes</string>
+    <string name="settings_modes_always">Always in the selector</string>
+    <string name="settings_modes_pinned">In the selector</string>
+    <string name="settings_modes_in_more">In More modes</string>
+    <string name="settings_modes_move_up">Move %1$s up</string>
+    <string name="settings_modes_move_down">Move %1$s down</string>
+    <string name="settings_modes_pin">%1$s in the selector</string>
+    <string name="settings_modes_restore">Restore default</string>
+    <string name="settings_section_camera">Camera</string>
+    <string name="settings_tap_focus">Tap to focus / brightness</string>
+    <string name="settings_tap_focus_summary">Tap the screen to adjust focus and exposure</string>
+    <string name="settings_mirror">Mirror front camera</string>
+    <string name="settings_mirror_summary">Mirrors video recorded with the front camera</string>
+    <string name="settings_section_photo">Photo</string>
+    <string name="settings_photo_quality">Photo quality</string>
+    <string name="settings_photo_quality_summary" translatable="false">%1$s (%2$s)</string>
+    <string name="settings_enhancement">Image enhancement</string>
+    <string name="settings_enhancement_summary">Adaptively boosts saturation and contrast after capture</string>
+    <string name="settings_section_video">Video</string>
+    <string name="settings_eis">EIS stabilization</string>
+    <string name="settings_eis_summary">Electronic image stabilization</string>
+    <string name="settings_not_supported">Not supported on this device</string>
+    <string name="settings_hdr" translatable="false">HDR</string>
+    <string name="settings_hdr_summary">High dynamic range for video</string>
+    <string name="settings_noise_reduction">Noise reduction</string>
+    <string name="settings_noise_reduction_summary">Reduces visible grain in video</string>
+    <string name="settings_video_quality">Video quality</string>
+    <string name="settings_section_interface">Interface</string>
+    <string name="settings_grid">Composition grid</string>
+    <string name="settings_grid_summary">Shows reference lines on the preview</string>
+    <string name="settings_level">Horizon level</string>
+    <string name="settings_level_summary">Level indicator on the preview</string>
+    <string name="settings_mic_muted">Mute microphone</string>
+    <string name="settings_mic_muted_summary">Starts recordings without audio</string>
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_location">Save location</string>
+    <string name="settings_location_summary">Remember location for photos and videos</string>
+    <string name="settings_section_app">App</string>
+    <string name="settings_keep">Keep settings</string>
+    <string name="settings_keep_summary">Remembers settings between sessions; when off, opens with the defaults</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_summary">Version and app information</string>
+
+    <!-- Sobre -->
+    <string name="about_title">About</string>
+    <string name="about_section_app">App</string>
+    <string name="about_app">App</string>
+    <string name="about_version">Version</string>
+    <string name="about_build">Build</string>
+    <string name="about_developer">Developer</string>
+    <string name="about_section_technical">Technical</string>
+    <string name="about_video_codec">Video codec</string>
+    <string name="about_audio_codec">Audio codec</string>
+    <string name="about_output_format">Output format</string>
+    <string name="about_min_api">Minimum API</string>
+    <string name="about_description">Space Camera is a camera app focused on manual quality control. Adjust resolution, bitrate, stabilization, HDR and noise reduction right in the interface — and, in Pro mode, ISO and shutter speed.</string>
 </resources>

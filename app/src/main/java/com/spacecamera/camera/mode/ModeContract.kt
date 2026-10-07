@@ -1,5 +1,7 @@
 package com.spacecamera.camera.mode
 
+import androidx.annotation.StringRes
+
 /**
  * Requirements: FR-1, FR-2, FR-5, FR-8
  * Decisions: ADR-001, ADR-002
@@ -19,6 +21,16 @@ package com.spacecamera.camera.mode
  */
 @JvmInline
 value class CameraModeId(val value: String)
+
+/**
+ * O nome do modo na tela. Os modos do app apontam para um recurso de texto (traduzido);
+ * os modos de teste usam um literal — é o que mantém o registro testável na JVM pura,
+ * sem `Context` para resolver o texto.
+ */
+sealed interface ModeLabel {
+    data class Resource(@StringRes val id: Int) : ModeLabel
+    data class Literal(val text: String) : ModeLabel
+}
 
 /**
  * Use case da sessão, no vocabulário do app — **não** o tipo do CameraX.

@@ -26,7 +26,7 @@ import kotlin.test.assertTrue
  * visível.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], qualifiers = "w960dp-h480dp")
+@Config(sdk = [34], qualifiers = "pt-rBR-w960dp-h480dp")
 class ModeSelectorWideWindowTest {
 
     @get:Rule

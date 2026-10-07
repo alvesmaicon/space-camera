@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Modos -->
+    <string name="mode_video">Vídeo</string>
+    <string name="mode_photo">Foto</string>
+    <string name="mode_pro">Pro</string>
+    <string name="mode_more">Mais</string>
+    <string name="mode_drawer_title">Mais modos</string>
+    <string name="mode_drawer_edit">Editar</string>
+    <string name="mode_drawer_empty">Todos os modos já estão no seletor.</string>
+    <string name="mode_unavailable">Modo %1$s indisponível neste aparelho</string>
+
+    <!-- Escalas do Pro -->
+    <string name="scale_iso">Escala de ISO</string>
+    <string name="scale_shutter_title">OBT</string>
+    <string name="scale_shutter">Escala do obturador</string>
+
+    <!-- Barra superior -->
+    <string name="control_flash">Flash</string>
+    <string name="control_timer_off">Timer desativado</string>
+    <string name="control_timer_3">Timer 3s</string>
+    <string name="control_timer_5">Timer 5s</string>
+    <string name="control_timer_10">Timer 10s</string>
+    <string name="control_more_options">Mais opções</string>
+    <string name="control_collapse">Recolher</string>
+    <string name="control_enhancement">Melhoria</string>
+    <string name="control_microphone">Microfone</string>
+    <string name="control_grid">Grade</string>
+    <string name="control_settings">Configurações</string>
+
+    <!-- Câmera -->
+    <string name="camera_switch">Trocar câmera</string>
+    <string name="camera_pause_resume">Pausar/Retomar</string>
+    <string name="camera_last_video">Último vídeo</string>
+    <string name="camera_last_photo">Última foto</string>
+    <string name="camera_exposure">Exposição</string>
+
+    <!-- Presets -->
+    <string name="preset_maximum">Máxima</string>
+    <string name="preset_high">Alta</string>
+    <string name="preset_medium">Média</string>
+    <string name="preset_low">Baixa</string>
+
+    <!-- Configurações -->
+    <string name="settings_title">Configurações da câmera</string>
+    <string name="action_back">Voltar</string>
+    <string name="settings_section_modes">Modos da câmera</string>
+    <string name="settings_modes_always">Sempre no seletor</string>
+    <string name="settings_modes_pinned">No seletor</string>
+    <string name="settings_modes_in_more">Em Mais modos</string>
+    <string name="settings_modes_move_up">Subir %1$s</string>
+    <string name="settings_modes_move_down">Descer %1$s</string>
+    <string name="settings_modes_pin">%1$s no seletor</string>
+    <string name="settings_modes_restore">Restaurar padrão</string>
+    <string name="settings_section_camera">Câmera</string>
+    <string name="settings_tap_focus">Toque para focar / brilho</string>
+    <string name="settings_tap_focus_summary">Toque na tela para ajustar foco e exposição</string>
+    <string name="settings_mirror">Espelhar câmera frontal</string>
+    <string name="settings_mirror_summary">Espelha o vídeo gravado pela câmera frontal</string>
+    <string name="settings_section_photo">Foto</string>
+    <string name="settings_photo_quality">Qualidade da foto</string>
+    <string name="settings_enhancement">Melhoria de imagem</string>
+    <string name="settings_enhancement_summary">Aumenta saturação e contraste de forma adaptativa após a captura</string>
+    <string name="settings_section_video">Vídeo</string>
+    <string name="settings_eis">Estabilização EIS</string>
+    <string name="settings_eis_summary">Estabilização eletrônica de imagem</string>
+    <string name="settings_not_supported">Não suportado neste dispositivo</string>
+    <string name="settings_hdr_summary">Alto alcance dinâmico para vídeo</string>
+    <string name="settings_noise_reduction">Redução de Ruído</string>
+    <string name="settings_noise_reduction_summary">Reduz grãos visuais no vídeo</string>
+    <string name="settings_video_quality">Qualidade do vídeo</string>
+    <string name="settings_section_interface">Interface</string>
+    <string name="settings_grid">Grade de composição</string>
+    <string name="settings_grid_summary">Exibe linhas de referência na pré-visualização</string>
+    <string name="settings_level">Nível horizontal</string>
+    <string name="settings_level_summary">Indicador de nivelamento na pré-visualização</string>
+    <string name="settings_mic_muted">Microfone silenciado</string>
+    <string name="settings_mic_muted_summary">Inicia gravações sem áudio</string>
+    <string name="settings_section_privacy">Privacidade</string>
+    <string name="settings_location">Salvar localização</string>
+    <string name="settings_location_summary">Lembrar localização para fotos e vídeos</string>
+    <string name="settings_section_app">App</string>
+    <string name="settings_keep">Manter configurações</string>
+    <string name="settings_keep_summary">Lembra as configurações entre sessões; quando desativado, usa os padrões ao abrir</string>
+    <string name="settings_about">Sobre</string>
+    <string name="settings_about_summary">Versão e informações do app</string>
+
+    <!-- Sobre -->
+    <string name="about_title">Sobre</string>
+    <string name="about_section_app">App</string>
+    <string name="about_app">Aplicativo</string>
+    <string name="about_version">Versão</string>
+    <string name="about_build">Build</string>
+    <string name="about_developer">Desenvolvedor</string>
+    <string name="about_section_technical">Técnico</string>
+    <string name="about_video_codec">Codec de vídeo</string>
+    <string name="about_audio_codec">Codec de áudio</string>
+    <string name="about_output_format">Formato de saída</string>
+    <string name="about_min_api">API mínima</string>
+    <!-- "Space Camera" é o nome do produto, não "câmera" mal escrito. -->
+    <string name="about_description" tools:ignore="Typos">Space Camera é um app de câmera focado em controle manual de qualidade. Permite ajustar resolução, bitrate, estabilização, HDR e redução de ruído direto na interface — e, no modo Pro, ISO e obturador.</string>
+</resources>

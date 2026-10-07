@@ -51,6 +51,8 @@ import androidx.camera.core.FocusMeteringAction
 import timber.log.Timber
 import com.spacecamera.camera.mode.CapabilityProbe
 import com.spacecamera.camera.mode.DeviceCapabilities
+import androidx.annotation.StringRes
+import com.spacecamera.R
 import com.spacecamera.camera.mode.AppUseCase.IMAGE_CAPTURE
 import com.spacecamera.camera.mode.AppUseCase.PREVIEW
 import com.spacecamera.camera.mode.AppUseCase.VIDEO_CAPTURE
@@ -83,20 +85,20 @@ data class VideoOption(val quality: Quality, val fps: Int) {
         get() = "$qualityLabel $fps"
 }
 
-enum class PhotoQualityPreset(val label: String, val displayLabel: String, val targetSize: android.util.Size?) {
-    MAXIMA("Máxima", "MAX", null),
-    ALTA("Alta", "12MP", android.util.Size(4032, 3024)),
-    MEDIA("Média", "5MP", android.util.Size(2560, 1920)),
-    BAIXA("Baixa", "2MP", android.util.Size(1600, 1200));
+enum class PhotoQualityPreset(@StringRes val labelRes: Int, val displayLabel: String, val targetSize: android.util.Size?) {
+    MAXIMA(R.string.preset_maximum, "MAX", null),
+    ALTA(R.string.preset_high, "12MP", android.util.Size(4032, 3024)),
+    MEDIA(R.string.preset_medium, "5MP", android.util.Size(2560, 1920)),
+    BAIXA(R.string.preset_low, "2MP", android.util.Size(1600, 1200));
 
     fun next() = entries[(ordinal + 1) % entries.size]
 }
 
-enum class VideoBitratePreset(val bpp: Float, val label: String) {
-    LOW(0.07f, "Baixa"),
-    MEDIUM(0.12f, "Média"),
-    HIGH(0.20f, "Alta"),
-    VERY_HIGH(0.40f, "Máxima");
+enum class VideoBitratePreset(val bpp: Float, @StringRes val labelRes: Int) {
+    LOW(0.07f, R.string.preset_low),
+    MEDIUM(0.12f, R.string.preset_medium),
+    HIGH(0.20f, R.string.preset_high),
+    VERY_HIGH(0.40f, R.string.preset_maximum);
 
     fun bitrateFor(option: VideoOption): Int {
         val bitsPerSecond = option.widthPx.toLong() * option.heightPx * option.fps * bpp

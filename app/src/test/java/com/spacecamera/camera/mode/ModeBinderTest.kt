@@ -26,7 +26,7 @@ class ModeBinderTest {
     /** Modo de foto sem gravação, como o Pro da Tarefa 11. */
     private val soFoto = object : CameraModeDefinition() {
         override val id = CameraModeId("so_foto")
-        override val label = "Só foto"
+        override val label = ModeLabel.Literal("Só foto")
         override val useCases = setOf(AppUseCase.PREVIEW, AppUseCase.IMAGE_CAPTURE)
         override val requiredCapability: Capability? = null
         override val controls = emptyList<ControlId>()

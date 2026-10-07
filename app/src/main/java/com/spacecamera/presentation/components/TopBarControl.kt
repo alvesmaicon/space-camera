@@ -3,6 +3,8 @@
 
 package com.spacecamera.presentation.components
 
+import com.spacecamera.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -146,7 +148,7 @@ private fun Flash(mode: CameraModeDefinition, c: TopBarContext) {
                 isOn = aceso,
                 iconOn = Icons.Default.FlashOn,
                 iconOff = Icons.Default.FlashOff,
-                desc = "Flash",
+                desc = stringResource(R.string.control_flash),
                 enabled = habilitado,
                 rotationDeg = c.rotationDeg,
                 onClick = { c.viewModel.toggleFlash() },
@@ -162,7 +164,7 @@ private fun Flash(mode: CameraModeDefinition, c: TopBarContext) {
                         PhotoFlashMode.ON -> Icons.Default.FlashOn
                         else -> Icons.Default.FlashOff
                     },
-                    contentDescription = "Flash",
+                    contentDescription = stringResource(R.string.control_flash),
                     tint = when {
                         !habilitado -> Color.White.copy(alpha = 0.2f)
                         ciclo != PhotoFlashMode.OFF -> Color.White
@@ -192,7 +194,7 @@ private fun MaisOpcoes(c: TopBarContext) {
     IconButton(onClick = c.onToggleExpanded, modifier = Modifier.size(46.dp)) {
         Icon(
             if (c.expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-            contentDescription = if (c.expanded) "Recolher" else "Mais opções",
+            contentDescription = stringResource(if (c.expanded) R.string.control_collapse else R.string.control_more_options),
             tint = if (c.expanded) Color.White else Color.White.copy(alpha = 0.6f),
             modifier = Modifier.size(24.dp).rotate(c.rotationDeg)
         )
@@ -203,7 +205,7 @@ private fun MaisOpcoes(c: TopBarContext) {
 private fun ReducaoDeRuido(c: TopBarContext) {
     val ligado by c.viewModel.isNoiseReductionEnabled.collectAsState()
     TopBarTextToggle(
-        label = "NR",
+        label = stringResource(R.string.control_noise_reduction),
         isOn = ligado,
         enabled = !c.barDisabled,
         rotationDeg = c.rotationDeg,
@@ -219,7 +221,7 @@ private fun Melhoria(c: TopBarContext) {
         isOn = ligado,
         iconOn = Icons.Default.AutoAwesome,
         iconOff = Icons.Default.AutoAwesome,
-        desc = "Melhoria",
+        desc = stringResource(R.string.control_enhancement),
         enabled = contagem == 0,
         rotationDeg = c.rotationDeg,
         onClick = { c.viewModel.toggleImageEnhancement() },
@@ -235,7 +237,7 @@ private fun Hdr(c: TopBarContext) {
         isOn = ligado,
         iconOn = Icons.Default.HdrOn,
         iconOff = Icons.Default.HdrOff,
-        desc = "HDR",
+        desc = stringResource(R.string.control_hdr),
         enabled = !c.barDisabled && suportado,
         rotationDeg = c.rotationDeg,
         onClick = { c.viewModel.toggleHdr() },
@@ -250,7 +252,7 @@ private fun Microfone(c: TopBarContext) {
         isOn = !mudo,
         iconOn = Icons.Default.Mic,
         iconOff = Icons.Default.MicOff,
-        desc = "Microfone",
+        desc = stringResource(R.string.control_microphone),
         enabled = !c.barDisabled,
         rotationDeg = c.rotationDeg,
         onClick = { c.viewModel.toggleMic() },
@@ -265,7 +267,7 @@ private fun Grade(c: TopBarContext) {
         isOn = ligada,
         iconOn = Icons.Default.GridOn,
         iconOff = Icons.Default.GridOff,
-        desc = "Grade",
+        desc = stringResource(R.string.control_grid),
         enabled = !c.barDisabled,
         rotationDeg = c.rotationDeg,
         onClick = { c.viewModel.toggleGrid() },
@@ -278,7 +280,7 @@ private fun Configuracoes(c: TopBarContext) {
     IconButton(onClick = c.onOpenSettings, modifier = Modifier.size(46.dp)) {
         Icon(
             Icons.Default.VideoSettings,
-            contentDescription = "Configurações",
+            contentDescription = stringResource(R.string.control_settings),
             tint = Color.White,
             modifier = Modifier.size(26.dp).rotate(c.rotationDeg)
         )

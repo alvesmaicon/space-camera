@@ -1,5 +1,7 @@
 package com.spacecamera.presentation.components
 
+import com.spacecamera.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -70,7 +72,7 @@ internal fun ProScaleSlider(
             .padding(vertical = 12.dp)
     ) {
         Text(
-            "AUTO",
+            stringResource(R.string.scale_auto),
             color = if (automatico) Color.White else Color.White.copy(alpha = INACTIVE_ALPHA),
             fontSize = 11.sp,
             fontWeight = if (automatico) FontWeight.Bold else FontWeight.Normal,

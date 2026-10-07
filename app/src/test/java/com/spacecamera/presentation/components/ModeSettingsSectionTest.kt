@@ -25,7 +25,7 @@ import kotlin.test.assertTrue
  * semântica.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "pt-rBR")
 class ModeSettingsSectionTest {
 
     @get:Rule

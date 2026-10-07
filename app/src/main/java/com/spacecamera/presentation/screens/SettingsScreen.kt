@@ -1,5 +1,7 @@
 package com.spacecamera.presentation.screens
 
+import com.spacecamera.R
+import androidx.compose.ui.res.stringResource
 import com.spacecamera.presentation.components.ModeSettingsSection
 import android.os.Build
 import androidx.activity.compose.BackHandler
@@ -82,10 +84,10 @@ fun SettingsScreen(
             topBar = {
                 LargeTopAppBar(
                     modifier = Modifier.padding(horizontal = readingGutter),
-                    title = { Text("Configurações da câmera") },
+                    title = { Text(stringResource(R.string.settings_title)) },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
                         }
                     },
                     scrollBehavior = scrollBehavior,
@@ -106,7 +108,7 @@ fun SettingsScreen(
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 // ── Modos da câmera (FR-7) — no topo, onde o "Editar" da gaveta cai ──
-                item { SectionHeader("Modos da câmera") }
+                item { SectionHeader(stringResource(R.string.settings_section_modes)) }
                 item {
                     ModeSettingsSection(
                         modes = arrangedModes.ordered,
@@ -119,89 +121,93 @@ fun SettingsScreen(
                 }
                 // ── Câmera ────────────────────────────────────────────────
                 item { Spacer(Modifier.height(8.dp)) }
-                item { SectionHeader("Câmera") }
+                item { SectionHeader(stringResource(R.string.settings_section_camera)) }
                 item {
                     SettingsToggleRow(
-                        title = "Toque para focar / brilho",
-                        subtitle = "Toque na tela para ajustar foco e exposição",
+                        title = stringResource(R.string.settings_tap_focus),
+                        subtitle = stringResource(R.string.settings_tap_focus_summary),
                         checked = isTapToFocusEnabled,
                         onToggle = { viewModel.toggleTapToFocus() }
                     )
                     SettingsToggleRow(
-                        title = "Espelhar câmera frontal",
-                        subtitle = "Espelha o vídeo gravado pela câmera frontal",
+                        title = stringResource(R.string.settings_mirror),
+                        subtitle = stringResource(R.string.settings_mirror_summary),
                         checked = isFrontCameraMirrorEnabled,
                         onToggle = { viewModel.toggleFrontCameraMirror() }
                     )
                 }
                 // ── Foto ────────────────────────────────────────────────────
                 item { Spacer(Modifier.height(8.dp)) }
-                item { SectionHeader("Foto") }
+                item { SectionHeader(stringResource(R.string.settings_section_photo)) }
                 item {
                     SettingsNavigationRow(
-                        title = "Qualidade da foto",
-                        subtitle = "${photoQualityPreset.label} (${photoQualityPreset.displayLabel})",
+                        title = stringResource(R.string.settings_photo_quality),
+                        subtitle = stringResource(
+                            R.string.settings_photo_quality_summary,
+                            stringResource(photoQualityPreset.labelRes),
+                            photoQualityPreset.displayLabel
+                        ),
                         onClick = { showPhotoQualityDialog = true }
                     )
                     SettingsToggleRow(
-                        title = "Melhoria de imagem",
-                        subtitle = "Aumenta saturação e contraste de forma adaptativa após a captura",
+                        title = stringResource(R.string.settings_enhancement),
+                        subtitle = stringResource(R.string.settings_enhancement_summary),
                         checked = isImageEnhancementEnabled,
                         onToggle = { viewModel.toggleImageEnhancement() }
                     )
                 }
                 // ── Vídeo ────────────────────────────────────────────────
                 item { Spacer(Modifier.height(8.dp)) }
-                item { SectionHeader("Vídeo") }
+                item { SectionHeader(stringResource(R.string.settings_section_video)) }
                 item {
                     SettingsToggleRow(
-                        title = "Estabilização EIS",
-                        subtitle = if (isEisSupported) "Estabilização eletrônica de imagem"
-                                    else "Não suportado neste dispositivo",
+                        title = stringResource(R.string.settings_eis),
+                        subtitle = if (isEisSupported) stringResource(R.string.settings_eis_summary)
+                                    else stringResource(R.string.settings_not_supported),
                         checked = isStabilizationEnabled,
                         onToggle = { viewModel.toggleStabilization() },
                         enabled = isEisSupported
                     )
                     SettingsToggleRow(
-                        title = "HDR",
-                        subtitle = if (isHdrSupported) "Alto alcance dinâmico para vídeo"
-                                    else "Não suportado neste dispositivo",
+                        title = stringResource(R.string.settings_hdr),
+                        subtitle = if (isHdrSupported) stringResource(R.string.settings_hdr_summary)
+                                    else stringResource(R.string.settings_not_supported),
                         checked = isHdrEnabled,
                         onToggle = { viewModel.toggleHdr() },
                         enabled = isHdrSupported
                     )
                     SettingsToggleRow(
-                        title = "Redução de Ruído",
-                        subtitle = "Reduz grãos visuais no vídeo",
+                        title = stringResource(R.string.settings_noise_reduction),
+                        subtitle = stringResource(R.string.settings_noise_reduction_summary),
                         checked = isNoiseReductionEnabled,
                         onToggle = { viewModel.toggleNoiseReduction() }
                     )
                     SettingsNavigationRow(
-                        title = "Qualidade do vídeo",
-                        subtitle = bitratePreset.label,
+                        title = stringResource(R.string.settings_video_quality),
+                        subtitle = stringResource(bitratePreset.labelRes),
                         onClick = { showBitrateDialog = true }
                     )
                 }
 
                 // ── Interface ────────────────────────────────────────────
                 item { Spacer(Modifier.height(8.dp)) }
-                item { SectionHeader("Interface") }
+                item { SectionHeader(stringResource(R.string.settings_section_interface)) }
                 item {
                     SettingsToggleRow(
-                        title = "Grade de composição",
-                        subtitle = "Exibe linhas de referência na pré-visualização",
+                        title = stringResource(R.string.settings_grid),
+                        subtitle = stringResource(R.string.settings_grid_summary),
                         checked = isGridEnabled,
                         onToggle = { viewModel.toggleGrid() }
                     )
                     SettingsToggleRow(
-                        title = "Nível horizontal",
-                        subtitle = "Indicador de nivelamento na pré-visualização",
+                        title = stringResource(R.string.settings_level),
+                        subtitle = stringResource(R.string.settings_level_summary),
                         checked = isLevelEnabled,
                         onToggle = { viewModel.toggleLevel() }
                     )
                     SettingsToggleRow(
-                        title = "Microfone silenciado",
-                        subtitle = "Inicia gravações sem áudio",
+                        title = stringResource(R.string.settings_mic_muted),
+                        subtitle = stringResource(R.string.settings_mic_muted_summary),
                         checked = isMicMuted,
                         onToggle = { viewModel.toggleMic() }
                     )
@@ -209,11 +215,11 @@ fun SettingsScreen(
 
                 // ── Privacidade ──────────────────────────────────────────
                 item { Spacer(Modifier.height(8.dp)) }
-                item { SectionHeader("Privacidade") }
+                item { SectionHeader(stringResource(R.string.settings_section_privacy)) }
                 item {
                     SettingsToggleRow(
-                        title = "Salvar localização",
-                        subtitle = "Lembrar localização para fotos e vídeos",
+                        title = stringResource(R.string.settings_location),
+                        subtitle = stringResource(R.string.settings_location_summary),
                         checked = isSaveLocationEnabled,
                         onToggle = { viewModel.toggleSaveLocation() }
                     )
@@ -221,17 +227,17 @@ fun SettingsScreen(
 
                 // ── App ──────────────────────────────────────────────────
                 item { Spacer(Modifier.height(8.dp)) }
-                item { SectionHeader("App") }
+                item { SectionHeader(stringResource(R.string.settings_section_app)) }
                 item {
                     SettingsToggleRow(
-                        title = "Manter configurações",
-                        subtitle = "Lembra as configurações entre sessões; quando desativado, usa os padrões ao abrir",
+                        title = stringResource(R.string.settings_keep),
+                        subtitle = stringResource(R.string.settings_keep_summary),
                         checked = isKeepSettingsEnabled,
                         onToggle = { viewModel.toggleKeepSettings() }
                     )
                     SettingsNavigationRow(
-                        title = "Sobre",
-                        subtitle = "Versão e informações do app",
+                        title = stringResource(R.string.settings_about),
+                        subtitle = stringResource(R.string.settings_about_summary),
                         onClick = { navController.navigate("about") }
                     )
                 }
@@ -244,7 +250,7 @@ fun SettingsScreen(
         if (showBitrateDialog) {
             AlertDialog(
                 onDismissRequest = { showBitrateDialog = false },
-                title = { Text("Qualidade do vídeo") },
+                title = { Text(stringResource(R.string.settings_video_quality)) },
                 text = {
                     Column {
                         bitrateOptions.forEach { preset ->
@@ -264,7 +270,7 @@ fun SettingsScreen(
                             ) {
                                 RadioButton(selected = preset == bitratePreset, onClick = null)
                                 Spacer(Modifier.width(12.dp))
-                                Text(preset.label, style = MaterialTheme.typography.bodyLarge)
+                                Text(stringResource(preset.labelRes), style = MaterialTheme.typography.bodyLarge)
                             }
                         }
                     }
@@ -277,7 +283,7 @@ fun SettingsScreen(
         if (showPhotoQualityDialog) {
             AlertDialog(
                 onDismissRequest = { showPhotoQualityDialog = false },
-                title = { Text("Qualidade da foto") },
+                title = { Text(stringResource(R.string.settings_photo_quality)) },
                 text = {
                     Column {
                         photoQualityOptions.forEach { preset ->
@@ -298,7 +304,7 @@ fun SettingsScreen(
                                 RadioButton(selected = preset == photoQualityPreset, onClick = null)
                                 Spacer(Modifier.width(12.dp))
                                 Column {
-                                    Text(preset.label, style = MaterialTheme.typography.bodyLarge)
+                                    Text(stringResource(preset.labelRes), style = MaterialTheme.typography.bodyLarge)
                                     Text(
                                         preset.displayLabel,
                                         style = MaterialTheme.typography.bodySmall,

@@ -1,5 +1,7 @@
 package com.spacecamera.camera.mode
 
+import com.spacecamera.R
+
 import com.spacecamera.presentation.components.ModeSurfaces
 
 /**
@@ -16,7 +18,7 @@ object ProMode : CameraModeDefinition() {
 
     override val id = CameraModeId("pro")
 
-    override val label = "Pro"
+    override val label = ModeLabel.Resource(R.string.mode_pro)
 
     /** Sem `VideoCapture`: o Pro é modo de foto (ADR-007, AC-2.1). */
     override val useCases = setOf(AppUseCase.PREVIEW, AppUseCase.IMAGE_CAPTURE)

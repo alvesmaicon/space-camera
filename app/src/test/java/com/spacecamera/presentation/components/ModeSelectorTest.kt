@@ -34,7 +34,7 @@ import kotlin.test.assertTrue
 @RunWith(RobolectricTestRunner::class)
 // Largura de celular real (o padrão do Robolectric, 320dp, é mais estreito que
 // qualquer aparelho-alvo). A janela estreita tem teste próprio abaixo.
-@Config(sdk = [34], qualifiers = "w393dp-h851dp")
+@Config(sdk = [34], qualifiers = "pt-rBR-w393dp-h851dp")
 class ModeSelectorTest {
 
     @get:Rule
@@ -117,7 +117,7 @@ class ModeSelectorTest {
     }
 
     @Test
-    @Config(qualifiers = "w320dp-h640dp")
+    @Config(qualifiers = "pt-rBR-w320dp-h640dp")
     fun `em tela estreita o Mais continua alcançável rolando o seletor`() {
         // Com o Vídeo no centro, o "Mais" fica 176dp à direita e sai da vista em
         // 320dp. O carrossel rola para que o atalho da personalização (FR-17) nunca
@@ -128,6 +128,17 @@ class ModeSelectorTest {
         compose.onNodeWithText("Mais").performScrollTo().performClick()
 
         assertEquals(1, abriu)
+    }
+
+    @Test
+    @Config(qualifiers = "en-w393dp-h851dp")
+    fun `sem português no aparelho a interface sai em inglês`() {
+        // values/ é inglês; values-pt/ é português (tradução da interface, 2026-10-07).
+        montar()
+
+        compose.onNodeWithText("Video").assertIsDisplayed()
+        compose.onNodeWithText("Photo").assertIsDisplayed()
+        compose.onNodeWithText("More").assertIsDisplayed()
     }
 
     @Test

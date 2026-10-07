@@ -1,5 +1,8 @@
 package com.spacecamera.presentation.components
 
+import com.spacecamera.camera.mode.CameraModeDefinition
+import com.spacecamera.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -83,17 +86,18 @@ private const val NOTICE_SCRIM_ALPHA = 0.6f
  */
 @Composable
 internal fun BoxScope.ModeRejectedNotice(viewModel: CameraViewModel) {
-    var aviso by remember { mutableStateOf<String?>(null) }
+    var recusado by remember { mutableStateOf<CameraModeDefinition?>(null) }
     LaunchedEffect(viewModel) {
-        viewModel.modeRejected.collect { recusado ->
-            aviso = "Modo ${recusado.label} indisponível neste aparelho"
+        viewModel.modeRejected.collect {
+            recusado = it
             delay(NOTICE_MS)
-            aviso = null
+            recusado = null
         }
     }
-    AnimatedVisibility(visible = aviso != null, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.Center)) {
+    val nome = recusado?.label?.text().orEmpty()
+    AnimatedVisibility(visible = recusado != null, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.Center)) {
         Text(
-            aviso.orEmpty(),
+            stringResource(R.string.mode_unavailable, nome),
             color = Color.White,
             fontSize = 14.sp,
             modifier = Modifier
@@ -107,13 +111,13 @@ internal fun BoxScope.ModeRejectedNotice(viewModel: CameraViewModel) {
 private fun EscalaDeIso(faixas: ManualSensorRanges, iso: Int?, enabled: Boolean, rotationDeg: Float, onIso: (Int?) -> Unit) {
     val faixa = faixas.iso
     ProScaleSlider(
-        valueLabel = iso?.toString() ?: "ISO",
+        valueLabel = iso?.toString() ?: stringResource(R.string.scale_iso_title),
         minLabel = faixa.first.toString(),
         position = iso?.let { ManualExposure.positionOf(it, faixa) },
         stops = generateSequence(faixa.first) { it * 2 }.takeWhile { it <= faixa.last }
             .map { ManualExposure.positionOf(it, faixa) }.toList(),
         digitalFrom = faixas.maxAnalogIso?.let { ManualExposure.positionOf(it, faixa) },
-        description = "Escala de ISO",
+        description = stringResource(R.string.scale_iso),
         enabled = enabled,
         rotationDeg = rotationDeg,
         onPosition = { onIso(ManualExposure.isoAt(it, faixa)) },
@@ -125,13 +129,13 @@ private fun EscalaDeIso(faixas: ManualSensorRanges, iso: Int?, enabled: Boolean,
 private fun EscalaDoObturador(faixas: ManualSensorRanges, ns: Long?, enabled: Boolean, rotationDeg: Float, onNs: (Long?) -> Unit) {
     val faixa = ManualExposure.userShutterRange(faixas.exposureTimeNs)
     ProScaleSlider(
-        valueLabel = ns?.let(ManualExposure::shutterLabel) ?: "OBT",
+        valueLabel = ns?.let { ManualExposure.shutterLabel(it) } ?: stringResource(R.string.scale_shutter_title),
         minLabel = ManualExposure.shutterLabel(faixa.first),
         position = ns?.let { ManualExposure.positionOfExposure(it, faixa) },
         stops = generateSequence(faixa.first) { it * 2 }.takeWhile { it <= faixa.last }
             .map { ManualExposure.positionOfExposure(it, faixa) }.toList(),
         digitalFrom = null,
-        description = "Escala do obturador",
+        description = stringResource(R.string.scale_shutter),
         enabled = enabled,
         rotationDeg = rotationDeg,
         onPosition = { onNs(ManualExposure.exposureAt(it, faixa)) },

@@ -1,5 +1,7 @@
 package com.spacecamera.presentation.screens
 
+import com.spacecamera.R
+import androidx.compose.ui.res.stringResource
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -46,10 +48,10 @@ fun AboutScreen(navController: NavController) {
             topBar = {
                 LargeTopAppBar(
                     modifier = Modifier.padding(horizontal = readingGutter),
-                    title = { Text("Sobre") },
+                    title = { Text(stringResource(R.string.about_title)) },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
                         }
                     },
                     scrollBehavior = scrollBehavior,
@@ -68,31 +70,30 @@ fun AboutScreen(navController: NavController) {
                     .padding(horizontal = readingGutter),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
-                item { AboutSectionHeader("App") }
+                item { AboutSectionHeader(stringResource(R.string.about_section_app)) }
                 item {
-                    AboutRow("Aplicativo", "Space Camera")
+                    AboutRow(stringResource(R.string.about_app), stringResource(R.string.app_name))
                     // Vem do BuildConfig (gradle/libs.versions.toml é a fonte única).
-                    AboutRow("Versão", "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+                    AboutRow(stringResource(R.string.about_version), "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
                     // Identifica exatamente qual commit gerou o APK instalado —
                     // essencial para reproduzir um problema relatado de um aparelho.
-                    AboutRow("Build", BuildConfig.GIT_SHA)
-                    AboutRow("Desenvolvedor", "Maicon Alves")
+                    AboutRow(stringResource(R.string.about_build), BuildConfig.GIT_SHA)
+                    AboutRow(stringResource(R.string.about_developer), "Maicon Alves")
                 }
 
                 item { Spacer(Modifier.height(8.dp)) }
-                item { AboutSectionHeader("Técnico") }
+                item { AboutSectionHeader(stringResource(R.string.about_section_technical)) }
                 item {
-                    AboutRow("Codec de vídeo", "H.264 (AVC)")
-                    AboutRow("Codec de áudio", "AAC")
-                    AboutRow("Formato de saída", "MP4")
-                    AboutRow("API mínima", "Android 7.0 (API 24)")
+                    AboutRow(stringResource(R.string.about_video_codec), "H.264 (AVC)")
+                    AboutRow(stringResource(R.string.about_audio_codec), "AAC")
+                    AboutRow(stringResource(R.string.about_output_format), "MP4")
+                    AboutRow(stringResource(R.string.about_min_api), "Android 7.0 (API 24)")
                 }
 
                 item { Spacer(Modifier.height(20.dp)) }
                 item {
                     Text(
-                        text = "Space Camera é uma câmera de vídeo focada em controle manual de qualidade. " +
-                               "Permite ajustar estabilização EIS, redução de ruído e resolução diretamente na interface.",
+                        text = stringResource(R.string.about_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 16.dp)

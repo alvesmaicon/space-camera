@@ -1,5 +1,7 @@
 package com.spacecamera.presentation.components
 
+import com.spacecamera.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -54,30 +56,38 @@ internal fun ModeSettingsSection(
         modes.forEachIndexed { i, modo ->
             val noPlano = modo in pinned
             val removivel = isRemovable(modo)
+            val nome = modo.label.text()
+            val descricaoInterruptor = stringResource(R.string.settings_modes_pin, nome)
             ListItem(
-                headlineContent = { Text(modo.label) },
+                headlineContent = { Text(nome) },
                 supportingContent = {
                     Text(
                         when {
-                            !removivel -> "Sempre no seletor"
-                            noPlano -> "No seletor"
-                            else -> "Em Mais modos"
+                            !removivel -> stringResource(R.string.settings_modes_always)
+                            noPlano -> stringResource(R.string.settings_modes_pinned)
+                            else -> stringResource(R.string.settings_modes_in_more)
                         }
                     )
                 },
                 trailingContent = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = { onMove(modo, -1) }, enabled = i > 0) {
-                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Subir ${modo.label}")
+                            Icon(
+                                Icons.Default.KeyboardArrowUp,
+                                contentDescription = stringResource(R.string.settings_modes_move_up, nome)
+                            )
                         }
                         IconButton(onClick = { onMove(modo, +1) }, enabled = i < modes.lastIndex) {
-                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descer ${modo.label}")
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = stringResource(R.string.settings_modes_move_down, nome)
+                            )
                         }
                         if (removivel) {
                             Switch(
                                 checked = noPlano,
                                 onCheckedChange = { onPinnedChange(modo, it) },
-                                modifier = Modifier.semantics { contentDescription = "${modo.label} no seletor" }
+                                modifier = Modifier.semantics { contentDescription = descricaoInterruptor }
                             )
                         } else {
                             // O lugar do interruptor fica reservado, para as setas de todas
@@ -90,7 +100,7 @@ internal fun ModeSettingsSection(
             )
         }
         TextButton(onClick = onRestoreDefault, modifier = Modifier.padding(start = 8.dp)) {
-            Text("Restaurar padrão")
+            Text(stringResource(R.string.settings_modes_restore))
         }
     }
 }

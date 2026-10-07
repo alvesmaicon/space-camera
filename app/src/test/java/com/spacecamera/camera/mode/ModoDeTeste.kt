@@ -12,7 +12,7 @@ fun modoDeTeste(
     capability: Capability? = null
 ): CameraModeDefinition = object : CameraModeDefinition() {
     override val id = CameraModeId(id)
-    override val label = label
+    override val label = ModeLabel.Literal(label)
     override val useCases = setOf(AppUseCase.PREVIEW, AppUseCase.IMAGE_CAPTURE)
     override val requiredCapability = capability
     override val controls = emptyList<ControlId>()

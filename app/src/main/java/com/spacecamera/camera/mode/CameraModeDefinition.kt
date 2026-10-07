@@ -67,8 +67,8 @@ abstract class CameraModeDefinition {
     /** Identificador estável. É o que a preferência do usuário grava (FR-8). */
     abstract val id: CameraModeId
 
-    /** Rótulo de exibição no seletor. */
-    abstract val label: String
+    /** Nome de exibição no seletor — traduzido, por recurso de texto. */
+    abstract val label: ModeLabel
 
     /** O conjunto que o bind deve ligar — exatamente este, e nenhum outro (FR-2). */
     abstract val useCases: Set<AppUseCase>

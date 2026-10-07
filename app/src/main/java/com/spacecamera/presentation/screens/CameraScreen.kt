@@ -1,5 +1,7 @@
 package com.spacecamera.presentation.screens
 
+import com.spacecamera.R
+import androidx.compose.ui.res.stringResource
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -1097,7 +1099,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
             ) {
                 Icon(
                     Icons.Default.FlipCameraAndroid,
-                    contentDescription = "Trocar câmera",
+                    contentDescription = stringResource(R.string.camera_switch),
                     tint = if (isRecording) Color.White.copy(alpha = 0.28f) else Color.White,
                     modifier = Modifier.size(26.dp).rotate(iconRotation)
                 )
@@ -1309,7 +1311,7 @@ private fun PauseOrThumbnailControl(
         ) {
             Icon(
                 if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
-                contentDescription = "Pausar/Retomar",
+                contentDescription = stringResource(R.string.camera_pause_resume),
                 tint = Color.White,
                 modifier = Modifier.size(26.dp).rotate(rotationDeg)
             )
@@ -1675,7 +1677,7 @@ private fun LastVideoThumbnail(uri: Uri, onClick: () -> Unit) {
         if (bitmap != null) {
             Image(
                 bitmap = bitmap!!.asImageBitmap(),
-                contentDescription = "Último vídeo",
+                contentDescription = stringResource(R.string.camera_last_video),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
@@ -1689,7 +1691,7 @@ private fun LastVideoThumbnail(uri: Uri, onClick: () -> Unit) {
         } else {
             Icon(
                 Icons.Default.VideoFile,
-                contentDescription = "Último vídeo",
+                contentDescription = stringResource(R.string.camera_last_video),
                 tint = Color.White.copy(alpha = 0.7f),
                 modifier = Modifier.size(26.dp)
             )
@@ -1728,14 +1730,14 @@ private fun LastPhotoThumbnail(uri: Uri, onClick: () -> Unit) {
         if (bitmap != null) {
             Image(
                 bitmap = bitmap!!.asImageBitmap(),
-                contentDescription = "Última foto",
+                contentDescription = stringResource(R.string.camera_last_photo),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
         } else {
             Icon(
                 Icons.Default.PhotoCamera,
-                contentDescription = "Última foto",
+                contentDescription = stringResource(R.string.camera_last_photo),
                 tint = Color.White.copy(alpha = 0.7f),
                 modifier = Modifier.size(26.dp)
             )
@@ -1820,7 +1822,7 @@ private fun ExposureSlider(
         }
         Icon(
             imageVector = Icons.Default.WbSunny,
-            contentDescription = "Exposição",
+            contentDescription = stringResource(R.string.camera_exposure),
             tint = if (index == 0) Color.White.copy(alpha = 0.75f * alpha) else MaterialTheme.colorScheme.primary.copy(alpha = alpha),
             modifier = Modifier
                 .size(18.dp)

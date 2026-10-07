@@ -1,5 +1,7 @@
 package com.spacecamera.camera.mode
 
+import com.spacecamera.R
+
 /**
  * Requirements: FR-3
  * Decisions: ADR-001, ADR-002
@@ -15,7 +17,7 @@ object VideoMode : CameraModeDefinition() {
 
     override val id = CameraModeId("video")
 
-    override val label = "Vídeo"
+    override val label = ModeLabel.Resource(R.string.mode_video)
 
     /**
      * Os três, como hoje. `bindCameraUseCases()` liga `Preview`, `VideoCapture` e

@@ -243,6 +243,6 @@ atenção, já que afetam distribuição ou correção:
 - **`themes.xml`** herda de `android:Theme.Material.Light.NoActionBar` enquanto o
   app inteiro é Compose Material 3 com cor dinâmica; o tema XML só vale para a
   splash.
-- **`strings.xml`** tem entradas que ninguém usa (`start_recording`,
-  `resolution_4k`, ...) enquanto a UI hardcoda texto em português direto no
-  Compose. Decidir por um dos dois caminhos.
+- ~~**`strings.xml`** com entradas mortas e a UI com texto fixo no Compose~~ —
+  **resolvido** em 2026-10-07: todo texto de interface em `strings.xml`, inglês como
+  padrão e português em `values-pt/`; entradas mortas removidas.

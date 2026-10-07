@@ -1,6 +1,7 @@
 package com.spacecamera.camera
 
 import org.junit.Test
+import java.util.Locale
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -148,13 +149,19 @@ class ManualExposureTest {
 
     @Test
     fun `rótulo do obturador como nas câmeras`() {
-        assertEquals("1/8000", ManualExposure.shutterLabel(125_000L))
-        assertEquals("1/250", ManualExposure.shutterLabel(4_000_000L))
-        assertEquals("1/30", ManualExposure.shutterLabel(33_333_333L))
-        assertEquals("1/4", ManualExposure.shutterLabel(250_000_000L))
-        assertEquals("0,5\"", ManualExposure.shutterLabel(500_000_000L))
-        assertEquals("2\"", ManualExposure.shutterLabel(2_000_000_000L))
-        assertEquals("30\"", ManualExposure.shutterLabel(30_071_705_440L))
+        val pt = Locale("pt", "BR")
+        assertEquals("1/8000", ManualExposure.shutterLabel(125_000L, pt))
+        assertEquals("1/250", ManualExposure.shutterLabel(4_000_000L, pt))
+        assertEquals("1/30", ManualExposure.shutterLabel(33_333_333L, pt))
+        assertEquals("1/4", ManualExposure.shutterLabel(250_000_000L, pt))
+        assertEquals("0,5\"", ManualExposure.shutterLabel(500_000_000L, pt))
+        assertEquals("2\"", ManualExposure.shutterLabel(2_000_000_000L, pt))
+        assertEquals("30\"", ManualExposure.shutterLabel(30_071_705_440L, pt))
+    }
+
+    @Test
+    fun `separador decimal do obturador segue o idioma`() {
+        assertEquals("0.5\"", ManualExposure.shutterLabel(500_000_000L, Locale.ENGLISH))
     }
 
     @Test

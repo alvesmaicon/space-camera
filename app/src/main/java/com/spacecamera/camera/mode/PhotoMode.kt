@@ -1,5 +1,7 @@
 package com.spacecamera.camera.mode
 
+import com.spacecamera.R
+
 /**
  * Requirements: FR-4
  * Decisions: ADR-001, ADR-002
@@ -13,7 +15,7 @@ object PhotoMode : CameraModeDefinition() {
 
     override val id = CameraModeId("photo")
 
-    override val label = "Foto"
+    override val label = ModeLabel.Resource(R.string.mode_photo)
 
     /**
      * Os três, e isto merece explicação porque parece errado.
