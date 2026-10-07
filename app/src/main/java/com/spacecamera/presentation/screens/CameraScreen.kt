@@ -75,7 +75,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.spacecamera.camera.CameraMode
+import com.spacecamera.camera.mode.CameraModeDefinition
+import com.spacecamera.camera.mode.CaptureOutput
+import com.spacecamera.camera.mode.ControlId
+import com.spacecamera.camera.mode.FlashBehavior
 import com.spacecamera.camera.mode.ShutterAction
+import com.spacecamera.presentation.layout.previewAspect
 import com.spacecamera.camera.RecordingState
 import com.spacecamera.camera.VideoOption
 import com.spacecamera.presentation.layout.AxisContainer
@@ -530,14 +535,10 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
 
     // Em janela larga a proporção retrato vira paisagem (FR-3). O 3:4 do modo foto
     // acompanha pelo mesmo motivo: uma caixa alta numa janela larga desperdiça a tela.
-    val previewAspectLabel = when {
-        cameraMode == CameraMode.PHOTO && selectedAspectRatio == "Full" -> "Full"
-        cameraMode == CameraMode.VIDEO || selectedAspectRatio == "9:16" ->
-            if (isWide) "16:9" else "9:16"
-        else -> if (isWide) "4:3" else "3:4"
-    }
+    val previewAspect = previewAspect(cameraMode.definition.aspectRatio, selectedAspectRatio, isWide)
+    val previewAspectLabel = previewAspect.label
     val previewSizeModifier: Modifier = when {
-        cameraMode == CameraMode.PHOTO && selectedAspectRatio == "Full" -> Modifier.fillMaxSize()
+        previewAspect.fillsScreen -> Modifier.fillMaxSize()
         else -> {
             val (rW, rH) = when (previewAspectLabel) {
                 "16:9" -> 16f to 9f
@@ -609,7 +610,158 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             // ── Linha principal (sempre visível) ─────────────────────
-            val barDisabled = (cameraMode == CameraMode.VIDEO && isRecording) || countdownSeconds > 0
+            // Só um modo que grava pode estar gravando, e o modo não muda durante a
+            // gravação (FR-15) — então `isRecording` já implica o modo certo.
+            val barDisabled = isRecording || countdownSeconds > 0
+            // Um controle da barra, pelo identificador que o modo declara (ADR-001,
+            // Q-09). O `when` é exaustivo: controle novo sem desenho não compila.
+            // `modo` é o do conteúdo animado, não o atual — na troca as duas barras
+            // aparecem juntas, e a que sai não pode mudar de estilo no caminho.
+            val controleDaBarra: @Composable (ControlId, CameraModeDefinition) -> Unit = { id, modo ->
+                when (id) {
+                    ControlId.RESOLUTION -> ResolutionTopBarButton(
+                        option = selectedVideoOption,
+                        isActive = showResolutionMenu,
+                        enabled = !barDisabled,
+                        rotationDeg = iconRotation,
+                        onClick = { showResolutionMenu = !showResolutionMenu }
+                    )
+                    ControlId.STABILIZATION -> TopBarTextToggle(
+                        label = "EIS",
+                        isOn = isStabilizationEnabled,
+                        enabled = !barDisabled && isEisSupported,
+                        rotationDeg = iconRotation,
+                        onClick = { viewModel.toggleStabilization() }
+                    )
+                    ControlId.PHOTO_QUALITY -> ResolutionTopBarButton(
+                        displayLabel = photoQualityPreset.displayLabel,
+                        isActive = false,
+                        enabled = countdownSeconds == 0,
+                        rotationDeg = iconRotation,
+                        onClick = { viewModel.setPhotoQualityPreset(photoQualityPreset.next()) }
+                    )
+                    ControlId.ASPECT_RATIO -> TopBarTextToggle(
+                        label = selectedAspectRatio,
+                        isOn = true,
+                        enabled = countdownSeconds == 0,
+                        rotationDeg = iconRotation,
+                        onClick = {
+                            val photoRatios = listOf("Full", "9:16", "3:4")
+                            val idx = photoRatios.indexOf(selectedAspectRatio).let { if (it < 0) 0 else it }
+                            val next = photoRatios[(idx + 1) % photoRatios.size]
+                            viewModel.setAspectRatio(next)
+                        }
+                    )
+                    ControlId.FLASH -> when (modo.flashBehavior()) {
+                        FlashBehavior.Torch -> TopBarIconToggle(
+                            isOn = isFlashOn,
+                            iconOn = Icons.Default.FlashOn,
+                            iconOff = Icons.Default.FlashOff,
+                            desc = "Flash",
+                            enabled = !isFrontCamera && countdownSeconds == 0,
+                            rotationDeg = iconRotation,
+                            onClick = { viewModel.toggleFlash() },
+                            iconSize = 26.dp
+                        )
+                        FlashBehavior.PhotoCycle -> IconButton(
+                            onClick = { viewModel.toggleFlash() },
+                            enabled = !isFrontCamera && countdownSeconds == 0,
+                            modifier = Modifier.size(46.dp)
+                        ) {
+                            Icon(
+                                imageVector = when (photoFlashMode) {
+                                    PhotoFlashMode.AUTO -> Icons.Default.FlashAuto
+                                    PhotoFlashMode.ON -> Icons.Default.FlashOn
+                                    else -> Icons.Default.FlashOff
+                                },
+                                contentDescription = "Flash",
+                                tint = when {
+                                    isFrontCamera || countdownSeconds > 0 -> Color.White.copy(alpha = 0.2f)
+                                    photoFlashMode != PhotoFlashMode.OFF -> Color.White
+                                    else -> Color.White.copy(alpha = OFF_CONTROL_ALPHA)
+                                },
+                                modifier = Modifier.size(26.dp).rotate(iconRotation)
+                            )
+                        }
+                        FlashBehavior.Unavailable -> Unit
+                    }
+                    ControlId.TIMER -> TopBarTimerButton(
+                        delay = recordingDelay,
+                        enabled = !barDisabled,
+                        rotationDeg = iconRotation,
+                        onClick = { viewModel.cycleRecordingDelay() }
+                    )
+                    ControlId.MORE_OPTIONS -> IconButton(
+                        onClick = { isTopBarExpanded = !isTopBarExpanded },
+                        modifier = Modifier.size(46.dp)
+                    ) {
+                        Icon(
+                            if (isTopBarExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (isTopBarExpanded) "Recolher" else "Mais opções",
+                            tint = if (isTopBarExpanded) Color.White else Color.White.copy(alpha = 0.6f),
+                            modifier = Modifier.size(24.dp).rotate(iconRotation)
+                        )
+                    }
+                    ControlId.NOISE_REDUCTION -> TopBarTextToggle(
+                        label = "NR",
+                        isOn = isNoiseReductionEnabled,
+                        enabled = !barDisabled,
+                        rotationDeg = iconRotation,
+                        onClick = { viewModel.toggleNoiseReduction() }
+                    )
+                    ControlId.IMAGE_ENHANCEMENT -> TopBarIconToggle(
+                        isOn = isImageEnhancementEnabled,
+                        iconOn = Icons.Default.AutoAwesome,
+                        iconOff = Icons.Default.AutoAwesome,
+                        desc = "Melhoria",
+                        enabled = countdownSeconds == 0,
+                        rotationDeg = iconRotation,
+                        onClick = { viewModel.toggleImageEnhancement() },
+                        iconSize = 24.dp
+                    )
+                    ControlId.HDR -> TopBarIconToggle(
+                        isOn = isHdrEnabled,
+                        iconOn = Icons.Default.HdrOn,
+                        iconOff = Icons.Default.HdrOff,
+                        desc = "HDR",
+                        enabled = !barDisabled && isHdrSupported,
+                        rotationDeg = iconRotation,
+                        onClick = { viewModel.toggleHdr() },
+                        iconSize = 26.dp
+                    )
+                    ControlId.MICROPHONE -> TopBarIconToggle(
+                        isOn = !isMicMuted,
+                        iconOn = Icons.Default.Mic,
+                        iconOff = Icons.Default.MicOff,
+                        desc = "Microfone",
+                        enabled = !barDisabled,
+                        rotationDeg = iconRotation,
+                        onClick = { viewModel.toggleMic() },
+                        iconSize = 26.dp
+                    )
+                    ControlId.GRID -> TopBarIconToggle(
+                        isOn = isGridEnabled,
+                        iconOn = Icons.Default.GridOn,
+                        iconOff = Icons.Default.GridOff,
+                        desc = "Grade",
+                        enabled = !barDisabled,
+                        rotationDeg = iconRotation,
+                        onClick = { viewModel.toggleGrid() },
+                        iconSize = 26.dp
+                    )
+                    ControlId.SETTINGS -> IconButton(
+                        onClick = { onOpenSettings() },
+                        modifier = Modifier.size(46.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.VideoSettings,
+                            contentDescription = "Configurações",
+                            tint = Color.White,
+                            modifier = Modifier.size(26.dp).rotate(iconRotation)
+                        )
+                    }
+                }
+            }
             AnimatedContent(
                 targetState = cameraMode,
                 transitionSpec = {
@@ -624,149 +776,18 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 },
                 label = "topBarMainRow"
             ) { mode ->
-                if (mode == CameraMode.VIDEO) {
-                    AxisContainer(
-                        vertical = isWide,
-                        arrangement = if (isWide) Arrangement.spacedBy(2.dp) else null,
-                        // AC-4.3: em janela larga e baixa a coluna rola em vez de
-                        // transbordar. Em retrato é `Row` e o parâmetro não age.
-                        scrollable = isWide,
-                        modifier = Modifier
-                            .then(if (isWide) Modifier else Modifier.fillMaxWidth())
-                            .background(controlScrimColor, RoundedCornerShape(28.dp))
-                            .padding(if (isWide) PaddingValues(vertical = 6.dp) else PaddingValues())
-                    ) {
-                        TopBarSlot {
-                            ResolutionTopBarButton(
-                                option = selectedVideoOption,
-                                isActive = showResolutionMenu,
-                                enabled = !barDisabled,
-                                rotationDeg = iconRotation,
-                                onClick = { showResolutionMenu = !showResolutionMenu }
-                            )
-                        }
-                        TopBarSlot {
-                            TopBarTextToggle(
-                                label = "EIS",
-                                isOn = isStabilizationEnabled,
-                                enabled = !barDisabled && isEisSupported,
-                                rotationDeg = iconRotation,
-                                onClick = { viewModel.toggleStabilization() }
-                            )
-                        }
-                        TopBarSlot {
-                            TopBarIconToggle(
-                                isOn = isFlashOn,
-                                iconOn = Icons.Default.FlashOn,
-                                iconOff = Icons.Default.FlashOff,
-                                desc = "Flash",
-                                enabled = !isFrontCamera && countdownSeconds == 0,
-                                rotationDeg = iconRotation,
-                                onClick = { viewModel.toggleFlash() },
-                                iconSize = 26.dp
-                            )
-                        }
-                        TopBarSlot {
-                            TopBarTimerButton(
-                                delay = recordingDelay,
-                                enabled = !barDisabled,
-                                rotationDeg = iconRotation,
-                                onClick = { viewModel.cycleRecordingDelay() }
-                            )
-                        }
-                        TopBarSlot {
-                            IconButton(
-                                onClick = { isTopBarExpanded = !isTopBarExpanded },
-                                modifier = Modifier.size(46.dp)
-                            ) {
-                                Icon(
-                                    if (isTopBarExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                    contentDescription = if (isTopBarExpanded) "Recolher" else "Mais opções",
-                                    tint = if (isTopBarExpanded) Color.White else Color.White.copy(alpha = 0.6f),
-                                    modifier = Modifier.size(24.dp).rotate(iconRotation)
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    AxisContainer(
-                        vertical = isWide,
-                        arrangement = if (isWide) Arrangement.spacedBy(2.dp) else null,
-                        // AC-4.3: em janela larga e baixa a coluna rola em vez de
-                        // transbordar. Em retrato é `Row` e o parâmetro não age.
-                        scrollable = isWide,
-                        modifier = Modifier
-                            .then(if (isWide) Modifier else Modifier.fillMaxWidth())
-                            .background(controlScrimColor, RoundedCornerShape(28.dp))
-                            .padding(if (isWide) PaddingValues(vertical = 6.dp) else PaddingValues())
-                    ) {
-                        TopBarSlot {
-                            ResolutionTopBarButton(
-                                displayLabel = photoQualityPreset.displayLabel,
-                                isActive = false,
-                                enabled = countdownSeconds == 0,
-                                rotationDeg = iconRotation,
-                                onClick = { viewModel.setPhotoQualityPreset(photoQualityPreset.next()) }
-                            )
-                        }
-                        TopBarSlot {
-                            TopBarTextToggle(
-                                label = selectedAspectRatio,
-                                isOn = true,
-                                enabled = countdownSeconds == 0,
-                                rotationDeg = iconRotation,
-                                onClick = {
-                                    val photoRatios = listOf("Full", "9:16", "3:4")
-                                    val idx = photoRatios.indexOf(selectedAspectRatio).let { if (it < 0) 0 else it }
-                                    val next = photoRatios[(idx + 1) % photoRatios.size]
-                                    viewModel.setAspectRatio(next)
-                                }
-                            )
-                        }
-                        TopBarSlot {
-                            IconButton(
-                                onClick = { viewModel.toggleFlash() },
-                                enabled = !isFrontCamera && countdownSeconds == 0,
-                                modifier = Modifier.size(46.dp)
-                            ) {
-                                Icon(
-                                    imageVector = when (photoFlashMode) {
-                                        PhotoFlashMode.AUTO -> Icons.Default.FlashAuto
-                                        PhotoFlashMode.ON -> Icons.Default.FlashOn
-                                        else -> Icons.Default.FlashOff
-                                    },
-                                    contentDescription = "Flash",
-                                    tint = when {
-                                        isFrontCamera || countdownSeconds > 0 -> Color.White.copy(alpha = 0.2f)
-                                        photoFlashMode != PhotoFlashMode.OFF -> Color.White
-                                        else -> Color.White.copy(alpha = OFF_CONTROL_ALPHA)
-                                    },
-                                    modifier = Modifier.size(26.dp).rotate(iconRotation)
-                                )
-                            }
-                        }
-                        TopBarSlot {
-                            TopBarTimerButton(
-                                delay = recordingDelay,
-                                enabled = !barDisabled,
-                                rotationDeg = iconRotation,
-                                onClick = { viewModel.cycleRecordingDelay() }
-                            )
-                        }
-                        TopBarSlot {
-                            IconButton(
-                                onClick = { isTopBarExpanded = !isTopBarExpanded },
-                                modifier = Modifier.size(46.dp)
-                            ) {
-                                Icon(
-                                    if (isTopBarExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                    contentDescription = if (isTopBarExpanded) "Recolher" else "Mais opções",
-                                    tint = if (isTopBarExpanded) Color.White else Color.White.copy(alpha = 0.6f),
-                                    modifier = Modifier.size(24.dp).rotate(iconRotation)
-                                )
-                            }
-                        }
-                    }
+                AxisContainer(
+                    vertical = isWide,
+                    arrangement = if (isWide) Arrangement.spacedBy(2.dp) else null,
+                    // AC-4.3: em janela larga e baixa a coluna rola em vez de
+                    // transbordar. Em retrato é `Row` e o parâmetro não age.
+                    scrollable = isWide,
+                    modifier = Modifier
+                        .then(if (isWide) Modifier else Modifier.fillMaxWidth())
+                        .background(controlScrimColor, RoundedCornerShape(28.dp))
+                        .padding(if (isWide) PaddingValues(vertical = 6.dp) else PaddingValues())
+                ) {
+                    mode.definition.controls.forEach { id -> TopBarSlot { controleDaBarra(id, mode.definition) } }
                 }
             }
 
@@ -787,76 +808,13 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                         .background(Color(0xFF1C1C1E).copy(alpha = 0.97f), RoundedCornerShape(12.dp))
                         .padding(horizontal = 8.dp, vertical = 6.dp)
                 ) {
-                    if (cameraMode == CameraMode.VIDEO) {
-                        TopBarTextToggle(
-                            label = "NR",
-                            isOn = isNoiseReductionEnabled,
-                            enabled = !barDisabled,
-                            rotationDeg = iconRotation,
-                            onClick = { viewModel.toggleNoiseReduction() }
-                        )
-                    }
-                    if (cameraMode == CameraMode.PHOTO) {
-                        TopBarIconToggle(
-                            isOn = isImageEnhancementEnabled,
-                            iconOn = Icons.Default.AutoAwesome,
-                            iconOff = Icons.Default.AutoAwesome,
-                            desc = "Melhoria",
-                            enabled = countdownSeconds == 0,
-                            rotationDeg = iconRotation,
-                            onClick = { viewModel.toggleImageEnhancement() },
-                            iconSize = 24.dp
-                        )
-                    }
-                    TopBarIconToggle(
-                        isOn = isHdrEnabled,
-                        iconOn = Icons.Default.HdrOn,
-                        iconOff = Icons.Default.HdrOff,
-                        desc = "HDR",
-                        enabled = !barDisabled && isHdrSupported,
-                        rotationDeg = iconRotation,
-                        onClick = { viewModel.toggleHdr() },
-                        iconSize = 26.dp
-                    )
-                    if (cameraMode == CameraMode.VIDEO) {
-                        TopBarIconToggle(
-                            isOn = !isMicMuted,
-                            iconOn = Icons.Default.Mic,
-                            iconOff = Icons.Default.MicOff,
-                            desc = "Microfone",
-                            enabled = !barDisabled,
-                            rotationDeg = iconRotation,
-                            onClick = { viewModel.toggleMic() },
-                            iconSize = 26.dp
-                        )
-                    }
-                    TopBarIconToggle(
-                        isOn = isGridEnabled,
-                        iconOn = Icons.Default.GridOn,
-                        iconOff = Icons.Default.GridOff,
-                        desc = "Grade",
-                        enabled = !barDisabled,
-                        rotationDeg = iconRotation,
-                        onClick = { viewModel.toggleGrid() },
-                        iconSize = 26.dp
-                    )
-                    IconButton(
-                        onClick = { onOpenSettings() },
-                        modifier = Modifier.size(46.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.VideoSettings,
-                            contentDescription = "Configurações",
-                            tint = Color.White,
-                            modifier = Modifier.size(26.dp).rotate(iconRotation)
-                        )
-                    }
+                    cameraMode.definition.moreControls.forEach { controleDaBarra(it, cameraMode.definition) }
                 }
             }
 
             // Barra horizontal: Resolução
             AnimatedVisibility(
-                visible = showResolutionMenu && cameraMode == CameraMode.VIDEO,
+                visible = showResolutionMenu && ControlId.RESOLUTION in cameraMode.definition.controls,
                 enter = fadeIn() + slideInVertically(),
                 exit = fadeOut() + slideOutVertically()
             ) {
@@ -969,7 +927,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
             CameraPreviewSurface(
                 isFrontCamera = isFrontCamera,
                 mirrorFrontCamera = isFrontCameraMirrorEnabled,
-                fillCenter = cameraMode == CameraMode.PHOTO && selectedAspectRatio == "Full",
+                fillCenter = previewAspect.fillsScreen,
                 onPreviewView = { if (previewView != it) previewView = it },
                 modifier = Modifier.fillMaxSize()
             )
@@ -1249,7 +1207,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
                 contentAlignment = Alignment.Center
             ) {
                 when {
-                    cameraMode == CameraMode.PHOTO -> {
+                    cameraMode.definition.output == CaptureOutput.PHOTO -> {
                         Box(
                             modifier = Modifier
                                 .size(64.dp)
@@ -1279,7 +1237,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel(), onOpenSettings: () ->
             // Pausa/thumb (vídeo) ou thumb da foto
             val controleFinal: @Composable () -> Unit = {
             Box {
-                if (cameraMode == CameraMode.VIDEO) {
+                if (cameraMode.definition.output == CaptureOutput.VIDEO) {
                     PauseOrThumbnailControl(
                         isRecording = isRecording,
                         isPaused = recordingState == RecordingState.Paused,

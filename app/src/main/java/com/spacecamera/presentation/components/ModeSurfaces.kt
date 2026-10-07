@@ -43,6 +43,12 @@ object ModeSurfaces {
         ControlId.ASPECT_RATIO,
         ControlId.FLASH,
         ControlId.TIMER,
-        ControlId.MORE_OPTIONS
+        ControlId.MORE_OPTIONS,
+        ControlId.NOISE_REDUCTION,
+        ControlId.IMAGE_ENHANCEMENT,
+        ControlId.HDR,
+        ControlId.MICROPHONE,
+        ControlId.GRID,
+        ControlId.SETTINGS
     )
 }

@@ -47,6 +47,22 @@ object PhotoMode : CameraModeDefinition() {
         ControlId.MORE_OPTIONS
     )
 
+    /** Linha expandida: a melhoria de imagem é só da foto. */
+    override val moreControls = listOf(
+        ControlId.IMAGE_ENHANCEMENT,
+        ControlId.HDR,
+        ControlId.GRID,
+        ControlId.SETTINGS
+    )
+
+    /** 9:16, 3:4 ou Full, conforme o seletor de proporção. */
+    override val aspectRatio = AspectRatioRule.USER_SELECTED
+
+    /** EIS não se aplica a captura de imagem — desliga sem tocar na preferência (AC-4.1). */
+    override val stabilization = StabilizationRule.OFF
+
+    override val output = CaptureOutput.PHOTO
+
     /** Sem camada própria sobre a pré-visualização. */
     override val overlay: OverlayId? = null
 

@@ -2,9 +2,9 @@
 
 ## Estado atual
 
-- **Fase:** Implementação — Onda 4
-- **Gate atual:** **Checkpoint da Onda 3 passou** — pronto para a Onda 4
-- **Status:** em andamento — próxima é a Tarefa 7 (Foto remigrado)
+- **Fase:** Implementação — Onda 5
+- **Gate atual:** **Checkpoint da Onda 4 passou** — pronto para a Onda 5
+- **Status:** em andamento — próxima é a Tarefa 8 (seletor + gaveta, primeira mudança visível)
 - **Confiança:** 92%
 - **Última atualização:** 2026-10-07
 
@@ -240,6 +240,33 @@ código. Lição registrada: latência se compara na mesma sessão.
 reescrita e por quê) e Q-08 (modo não reaplicado quando o controller é recriado —
 defeito antigo, achado lendo o código, não verificado em aparelho).
 
+### Sessão: 2026-10-07 — Tarefa 7 (Foto remigrado)
+
+- **Agente:** skill `dev`
+- **Gate:** D concluído · Tarefa 7 **concluída** · Checkpoint da Onda 4 **passou**
+- **Testes:** 149 passando (10 novos)
+- **Verificação em aparelho:** [`verificacao/tarefa-7/`](verificacao/tarefa-7/README.md); roteiros em
+  [`verificacao/roteiros/`](verificacao/roteiros/README.md)
+
+**O que mudou.** A definição de modo ganhou `aspectRatio`, `stabilization`, `output` e
+`moreControls` (Q-09). Com eles saíram as últimas ramificações `CameraMode.VIDEO/PHOTO`:
+a regra de 16:9 do `CameraManager`, o EIS por modo do ViewModel e os 9 pontos da tela. A
+barra superior deixou de ser dois ramos escritos à mão e passou a ser montada da lista que
+o modo declara, com `when` exaustivo sobre `ControlId`. A proporção da pré-visualização
+virou função pura (`previewAspect`) com tabela de casos.
+
+**Método de verificação melhorado.** Antes e depois na **mesma sessão**, mesmo roteiro, o
+commit anterior construído num `git worktree`. Comparado: árvore de UI com bounds nos 4
+estados, mídia, `evt=bind`, ícone do flash pixel a pixel e latência — tudo idêntico. A
+árvore de UI com bounds é a prova da reescrita da barra: mesmos controles, mesma ordem,
+mesma posição.
+
+**NFR-3.** `CameraScreen.kt` caiu para 2.173 (−47 sobre o baseline; teto 2.100 — a Tarefa 8
+tira o seletor). `CameraManager.kt` 1.154. **O ViewModel não compensou:** 732, +38 sobre o
+baseline. A regra de EIS encolheu só uma linha; o crescimento é o despacho do disparador e o
+coletor de recusa da Tarefa 6. Não é teto do NFR-3 (que fixa só tela e controller), mas a
+meta "não crescer" do progresso fica registrada como não atingida até aqui.
+
 ## Situação das tarefas
 
 | Onda | Tarefa | Status | Observações |
@@ -250,7 +277,7 @@ defeito antigo, achado lendo o código, não verificado em aparelho).
 | 1 | 4. Infra de teste de Compose na JVM | **Concluída** | 4 testes de fumaça; suíte 7 s |
 | 2 | 5. Sondagem de capacidade + `evt=caps` | **Concluída** | 12 testes JVM; `evt=caps` = `dumpsys` nas 2 câmeras do Redmi Note 10 |
 | 3 | 6. Vídeo remigrado | **Concluída** | iso-comportamento conferido no Redmi; `CameraManager` 1.153 |
-| 4 | 7. Foto remigrado | Pendente | |
+| 4 | 7. Foto remigrado | **Concluída** | UI, mídia, binds e flash idênticos ao commit anterior na mesma sessão |
 | 5 | 8. Seletor + gaveta | Pendente | **primeira mudança visível ao usuário** |
 | 6 | 9. Janela larga com N modos | Pendente | folga 4 |
 | 6 | 10. Personalização em Configurações | Pendente | folga 4 |
@@ -264,9 +291,9 @@ Preencher conforme as tarefas forem feitas — são a evidência dos NFRs:
 
 | Medida | Baseline (Tarefa 1) | Final (Tarefa 13) | Limite |
 |---|---|---|---|
-| `CameraScreen.kt` (linhas) | **2.220** ✓ | 2.215 após T6 | ≤ 2.100 |
-| `CameraManager.kt` (linhas) | **1.158** ✓ | 1.163 após T5 · **1.153** após T6 | ≤ 1.158 |
-| `CameraViewModel.kt` (linhas) | **694** ✓ | **733** após T6 (+39) — T7 precisa compensar | não crescer |
+| `CameraScreen.kt` (linhas) | **2.220** ✓ | 2.215 após T6 · **2.173** após T7 | ≤ 2.100 |
+| `CameraManager.kt` (linhas) | **1.158** ✓ | 1.163 após T5 · 1.153 após T6 · **1.154** após T7 | ≤ 1.158 |
+| `CameraViewModel.kt` (linhas) | **694** ✓ | 733 após T6 · **732** após T7 (+38) | não crescer |
 | Maior arquivo novo (linhas) | — | | ≤ 400 |
 | p95 de `elapsed_ms` na troca de modo | ~~38 ms~~ edge 60 neo · **57 ms** Redmi Note 10 (20 amostras) | | **≤ 68,4 ms** (Redmi) |
 | Tempo da suíte `testDebugUnitTest` | **5,9 s** | 7 s (Onda 1) · 10 s (Tarefa 5, 114 testes) | ≤ 90 s |
@@ -302,6 +329,7 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] Checkpoint da Onda 2 — conferido em aparelho real (Redmi Note 10)
 - [x] **Antes da Tarefa 6:** baseline novo no Redmi Note 10 — decisão do usuário; ver [`baseline/redmi-note-10/`](baseline/redmi-note-10/README.md)
 - [x] Tarefa 6 — Vídeo remigrado; Checkpoint da Onda 3
+- [x] Tarefa 7 — Foto remigrado; Checkpoint da Onda 4
 - [ ] Q-06 (`aspect` defasado em `evt=bind`): corrigir em commit próprio depois da Tarefa 7, ou levar ao ROADMAP
 - [ ] Q-08 (modo não reaplicado ao recriar o controller): verificar em aparelho e corrigir depois da Tarefa 7
 - [ ] Aviso visual da recusa de modo — na Tarefa 11 (Q-07)

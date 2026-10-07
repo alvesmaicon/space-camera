@@ -54,6 +54,7 @@ import com.spacecamera.camera.mode.DeviceCapabilities
 import com.spacecamera.camera.mode.AppUseCase.IMAGE_CAPTURE
 import com.spacecamera.camera.mode.AppUseCase.PREVIEW
 import com.spacecamera.camera.mode.AppUseCase.VIDEO_CAPTURE
+import com.spacecamera.camera.mode.AspectRatioRule
 import com.spacecamera.camera.mode.CameraModeDefinition
 import com.spacecamera.camera.mode.ModeBinder
 import com.spacecamera.camera.mode.VideoMode
@@ -229,9 +230,8 @@ class CameraManager(
 
     /** Converts our aspect ratio string to a CameraX AspectRatio constant. */
     private fun cameraXAspectRatio(): Int {
-        // Vídeo é sempre 9:16 independente do que estiver selecionado em foto.
-        // A Tarefa 7 leva esta regra para a definição do modo.
-        if (modes.current === VideoMode) return AspectRatio.RATIO_16_9
+        // O modo diz se segue a proporção escolhida para foto (AC-3.1).
+        if (modes.current.aspectRatio == AspectRatioRule.FIXED_16_9) return AspectRatio.RATIO_16_9
         return when (selectedAspectRatio) {
             "3:4", "1:1" -> AspectRatio.RATIO_4_3
             // "Full" usa sensor 16:9 + FILL_CENTER no PreviewView = crop para tela cheia

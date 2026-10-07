@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 6 · **Em andamento:** 0 · **Pendentes:** 7
+- **Concluídas:** 7 · **Em andamento:** 0 · **Pendentes:** 6
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -196,7 +196,7 @@
 
 ### Onda 4 — Foto remigrado
 
-#### [ ] 7. Foto remigrado para o registro
+#### [x] 7. Foto remigrado para o registro
 - **Size:** M
 - **Complexity:** medium
 - **Risk:** medium
@@ -213,21 +213,22 @@
   - **DADO** o ciclo de flash em Foto **QUANDO** o botão é tocado três vezes **ENTÃO** passa por OFF→AUTO→ON→OFF
   - **DADO** os três arquivos grandes **QUANDO** inspecionados **ENTÃO** não sobrou ramificação por modo para Vídeo/Foto
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest`
-  - [ ] Ramificações órfãs: `grep -rn "CameraMode.VIDEO\|CameraMode.PHOTO" app/src/main` → só o registro e as definições
-  - [ ] Conferência manual em aparelho: capturar foto nas **três** proporções (9:16, 3:4, Full) e conferir a mídia salva contra o baseline — 4096×2304, 4096×3072 e 1840×4096. Localizar o disparador **por rótulo** a cada proporção: ele muda de posição (y=1921 em 3:4, y=2188 em 9:16, y=2455 em Full)
+  - [x] Testes passam: `./gradlew testDebugUnitTest` — 149, 0 falhas
+  - [x] Ramificações órfãs: `grep -rn "CameraMode.VIDEO\|CameraMode.PHOTO" app/src/main` → só um comentário em `VideoMode.kt`
+  - [x] Mutação: 5 mutações nas regras novas, todas mortas
+  - [x] Conferência manual em aparelho (Redmi, antes e depois na mesma sessão): mídia, árvore de UI com bounds nos 4 estados, `evt=bind`, ícone do flash pixel a pixel e latência — tudo idêntico. Ver [`verificacao/tarefa-7/`](verificacao/tarefa-7/README.md)
 - **_Requirements: FR-2, FR-4, NFR-1_**
 - **_Decisions: ADR-001, ADR-002_**
 
-### Checkpoint da Onda 4
-- [ ] Critérios de aceite da Tarefa 7 atendidos
-- [ ] `evt=bind` preexistente idêntico ao baseline **nos dois** modos
-- [ ] Quatro proporções de foto conferidas em aparelho real, com a mídia salva verificada
-- [ ] Nenhuma ramificação por modo remanescente para Vídeo e Foto
-- [ ] p95 da latência de troca dentro de baseline + 20% (NFR-4)
-- [ ] Alternar Vídeo↔Foto 10 vezes sem regressão
-- [ ] **Aviso antecipado de NFR-3:** `wc -l` dos três arquivos grandes conferido — com as duas remigrações prontas, aqui já deve haver redução líquida
-- [ ] Pronto para a Onda 5
+### Checkpoint da Onda 4 — **PASSOU** (2026-10-07)
+- [x] Critérios de aceite da Tarefa 7 atendidos
+- [x] `evt=bind` preexistente idêntico **nos dois** modos — comparado contra o commit anterior na mesma sessão
+- [x] **Três** proporções de foto (Q-01) conferidas em aparelho real, com a mídia salva verificada
+- [x] Nenhuma ramificação por modo remanescente para Vídeo e Foto
+- [x] p95 da latência de troca dentro de baseline + 20% (NFR-4) — 43 ms, igual ao "antes" da mesma sessão
+- [x] Alternar Vídeo↔Foto 20 vezes sem regressão
+- [x] **NFR-3:** `CameraScreen.kt` 2.173 (−47 sobre o baseline), `CameraManager.kt` 1.154 (−4). `CameraViewModel.kt` 732 (+38) — **não** compensou como esperado; ver progresso
+- [x] Pronto para a Onda 5
 
 ### Onda 5 — Seletor orientado ao registro
 

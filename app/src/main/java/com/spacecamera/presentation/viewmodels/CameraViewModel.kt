@@ -20,6 +20,7 @@ import com.spacecamera.camera.VideoOption
 import com.spacecamera.camera.mode.CaptureState
 import com.spacecamera.camera.mode.FlashBehavior
 import com.spacecamera.camera.mode.ShutterAction
+import com.spacecamera.camera.mode.StabilizationRule
 import com.spacecamera.data.repository.VideoRepositoryImpl
 import com.spacecamera.data.storage.SettingsStorage
 import kotlinx.coroutines.Job
@@ -140,7 +141,7 @@ class CameraViewModel(
     private val _lastPhotoUri = MutableStateFlow<Uri?>(null)
     val lastPhotoUri: StateFlow<Uri?> = _lastPhotoUri.asStateFlow()
 
-    private val _cameraMode = MutableStateFlow(CameraMode.VIDEO)
+    private val _cameraMode = MutableStateFlow(CameraMode.entries.first())  // o primeiro do registro
     val cameraMode: StateFlow<CameraMode> = _cameraMode.asStateFlow()
 
     private val _availableZoomLevels = MutableStateFlow<List<Float>>(listOf(1f))
@@ -505,20 +506,18 @@ class CameraViewModel(
         cameraManager?.applyMode(mode.definition)
     }
 
+    /**
+     * O modo diz se o EIS vale (AC-4.1). Desligar não grava: a preferência é do
+     * usuário, e voltar a um modo que a segue restaura o valor salvo.
+     */
     private fun syncStabilizationWithMode(mode: CameraMode) {
-        // Desativa EIS no modo Foto (não se aplica a captura de imagem)
-        // Ao voltar para Vídeo, restaura o valor persistido no storage
-        if (mode == CameraMode.PHOTO) {
-            if (_isStabilizationEnabled.value) {
-                _isStabilizationEnabled.value = false
-                cameraManager?.setStabilization(false)
-            }
-        } else if (mode == CameraMode.VIDEO) {
-            val stored = settingsStorage?.isStabilizationEnabled ?: false
-            if (stored != _isStabilizationEnabled.value) {
-                _isStabilizationEnabled.value = stored
-                cameraManager?.setStabilization(stored)
-            }
+        val desejado = when (mode.definition.stabilization) {
+            StabilizationRule.OFF -> false
+            StabilizationRule.FOLLOWS_PREFERENCE -> settingsStorage?.isStabilizationEnabled ?: false
+        }
+        if (desejado != _isStabilizationEnabled.value) {
+            _isStabilizationEnabled.value = desejado
+            cameraManager?.setStabilization(desejado)
         }
     }
 

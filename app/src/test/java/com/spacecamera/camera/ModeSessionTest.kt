@@ -5,6 +5,9 @@ import com.spacecamera.camera.mode.CameraModeDefinition
 import com.spacecamera.camera.mode.CameraModeId
 import com.spacecamera.camera.mode.Capability
 import com.spacecamera.camera.mode.CaptureState
+import com.spacecamera.camera.mode.AspectRatioRule
+import com.spacecamera.camera.mode.CaptureOutput
+import com.spacecamera.camera.mode.StabilizationRule
 import com.spacecamera.camera.mode.ControlId
 import com.spacecamera.camera.mode.FlashBehavior
 import com.spacecamera.camera.mode.OverlayId
@@ -38,6 +41,10 @@ class ModeSessionTest {
         override val useCases = setOf(AppUseCase.PREVIEW, AppUseCase.IMAGE_CAPTURE)
         override val requiredCapability: Capability? = null
         override val controls = emptyList<ControlId>()
+        override val moreControls = emptyList<ControlId>()
+        override val aspectRatio = AspectRatioRule.USER_SELECTED
+        override val stabilization = StabilizationRule.OFF
+        override val output = CaptureOutput.PHOTO
         override val overlay: OverlayId? = null
         override val pinnedByDefault = false
         override fun shutterAction(state: CaptureState) = ShutterAction.CapturePhoto

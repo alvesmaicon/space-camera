@@ -51,8 +51,40 @@ enum class ControlId {
     ASPECT_RATIO,
     FLASH,
     TIMER,
-    MORE_OPTIONS
+    MORE_OPTIONS,
+
+    // Linha expandida ("mais opções")
+    NOISE_REDUCTION,
+    IMAGE_ENHANCEMENT,
+    HDR,
+    MICROPHONE,
+    GRID,
+    SETTINGS
 }
+
+/** Requirements: FR-3, FR-4 · Como a proporção de captura é escolhida. */
+enum class AspectRatioRule {
+    /** Sempre 16:9, qualquer que seja a proporção escolhida para foto (AC-3.1). */
+    FIXED_16_9,
+
+    /** A proporção que o usuário escolheu no seletor de foto (9:16, 3:4, Full). */
+    USER_SELECTED
+}
+
+/** Requirements: FR-3, FR-4 · Se a estabilização eletrônica vale neste modo. */
+enum class StabilizationRule {
+    /** Liga ou desliga conforme a preferência salva do usuário. */
+    FOLLOWS_PREFERENCE,
+
+    /** Desligada enquanto o modo estiver ativo, sem mexer na preferência (AC-4.1). */
+    OFF
+}
+
+/**
+ * O que o modo produz. Decide a miniatura do canto (último vídeo com pausa, ou
+ * última foto) e o desenho do disparador — não o que ele faz, que é [ShutterAction].
+ */
+enum class CaptureOutput { VIDEO, PHOTO }
 
 /**
  * Overlay próprio de um modo — a camada que só aquele modo desenha sobre a

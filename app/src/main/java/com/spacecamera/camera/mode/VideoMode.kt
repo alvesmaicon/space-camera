@@ -40,6 +40,23 @@ object VideoMode : CameraModeDefinition() {
         ControlId.MORE_OPTIONS
     )
 
+    /** Linha expandida: ruído e microfone são só do vídeo. */
+    override val moreControls = listOf(
+        ControlId.NOISE_REDUCTION,
+        ControlId.HDR,
+        ControlId.MICROPHONE,
+        ControlId.GRID,
+        ControlId.SETTINGS
+    )
+
+    /** 16:9 sempre — a proporção escolhida no seletor é só da foto (AC-3.1). */
+    override val aspectRatio = AspectRatioRule.FIXED_16_9
+
+    /** O EIS segue a preferência salva; voltar da Foto restaura o que estava (AC-4.1). */
+    override val stabilization = StabilizationRule.FOLLOWS_PREFERENCE
+
+    override val output = CaptureOutput.VIDEO
+
     /** Sem camada própria sobre a pré-visualização. */
     override val overlay: OverlayId? = null
 

@@ -163,4 +163,73 @@ class CameraModeDefinitionTest {
         val sobrando = ModeSurfaces.overlays - ModeRegistry.all.mapNotNull { it.overlay }.toSet()
         assertTrue(sobrando.isEmpty(), "overlays registrados que nenhum modo usa: $sobrando")
     }
+
+    // ── Tarefa 7: regras que saíram das ramificações por modo ───────────────
+    //
+    // Requirements: FR-3, FR-4 · Decisions: ADR-001, Q-09
+    //
+    // Cada membro abaixo substitui um `if (cameraMode == ...)` que existia na tela,
+    // no ViewModel ou no controller. Os valores reproduzem o comportamento de antes.
+
+    @Test
+    fun `vídeo captura sempre em 16 por 9 e foto segue a escolha do usuário`() {
+        // AC-3.1: o vídeo ignora a proporção escolhida para foto.
+        assertEquals(AspectRatioRule.FIXED_16_9, VideoMode.aspectRatio)
+        assertEquals(AspectRatioRule.USER_SELECTED, PhotoMode.aspectRatio)
+    }
+
+    @Test
+    fun `foto desliga o EIS e vídeo segue a preferência salva`() {
+        // AC-4.1: EIS não se aplica a captura de imagem.
+        assertEquals(StabilizationRule.FOLLOWS_PREFERENCE, VideoMode.stabilization)
+        assertEquals(StabilizationRule.OFF, PhotoMode.stabilization)
+    }
+
+    @Test
+    fun `cada modo diz o que produz`() {
+        // Decide a miniatura (último vídeo, com pausa, ou última foto) e o desenho
+        // do disparador.
+        assertEquals(CaptureOutput.VIDEO, VideoMode.output)
+        assertEquals(CaptureOutput.PHOTO, PhotoMode.output)
+    }
+
+    @Test
+    fun `barra principal na ordem de hoje`() {
+        assertEquals(
+            listOf(ControlId.RESOLUTION, ControlId.STABILIZATION, ControlId.FLASH, ControlId.TIMER, ControlId.MORE_OPTIONS),
+            VideoMode.controls
+        )
+        assertEquals(
+            listOf(ControlId.PHOTO_QUALITY, ControlId.ASPECT_RATIO, ControlId.FLASH, ControlId.TIMER, ControlId.MORE_OPTIONS),
+            PhotoMode.controls
+        )
+    }
+
+    @Test
+    fun `linha expandida na ordem de hoje`() {
+        // Ruído e microfone só no vídeo; melhoria de imagem só na foto.
+        assertEquals(
+            listOf(ControlId.NOISE_REDUCTION, ControlId.HDR, ControlId.MICROPHONE, ControlId.GRID, ControlId.SETTINGS),
+            VideoMode.moreControls
+        )
+        assertEquals(
+            listOf(ControlId.IMAGE_ENHANCEMENT, ControlId.HDR, ControlId.GRID, ControlId.SETTINGS),
+            PhotoMode.moreControls
+        )
+    }
+
+    @Test
+    fun `controles da linha expandida também resolvem na tabela da UI`() {
+        val declarados = ModeRegistry.all.flatMap { it.moreControls }.toSet()
+        val orfaos = declarados - ModeSurfaces.controls
+        assertTrue(orfaos.isEmpty(), "controles sem composable: $orfaos")
+    }
+
+    @Test
+    fun `nenhum controle aparece nas duas linhas do mesmo modo`() {
+        ModeRegistry.all.forEach { modo ->
+            val repetidos = modo.controls.toSet() intersect modo.moreControls.toSet()
+            assertTrue(repetidos.isEmpty(), "${modo.id.value} repete $repetidos")
+        }
+    }
 }

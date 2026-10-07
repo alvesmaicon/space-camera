@@ -79,6 +79,18 @@ abstract class CameraModeDefinition {
     /** Controles da barra superior, na ordem em que aparecem. */
     abstract val controls: List<ControlId>
 
+    /** Controles da linha expandida ("mais opções"), na ordem em que aparecem. */
+    abstract val moreControls: List<ControlId>
+
+    /** Como a proporção de captura é escolhida (FR-3, FR-4). */
+    abstract val aspectRatio: AspectRatioRule
+
+    /** Se o EIS vale neste modo (AC-4.1). */
+    abstract val stabilization: StabilizationRule
+
+    /** O que o modo produz: vídeo ou foto. */
+    abstract val output: CaptureOutput
+
     /** Overlay próprio, ou `null` se o modo não desenha nada sobre a pré-visualização. */
     abstract val overlay: OverlayId?
 

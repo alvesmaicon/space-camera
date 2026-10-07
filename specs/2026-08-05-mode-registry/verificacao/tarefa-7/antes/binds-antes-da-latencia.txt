@@ -1,0 +1,11 @@
+evt=bind mode=VIDEO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=true nr=true hdr=false front=false
+evt=bind mode=VIDEO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=true nr=true hdr=false front=false
+evt=bind mode=PHOTO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=false nr=true hdr=false front=false
+evt=bind mode=PHOTO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=false nr=true hdr=false front=false
+evt=bind mode=PHOTO quality=FHD fps=30 aspect=3:4 bitrate=7464960 eis=false nr=true hdr=false front=false
+evt=bind mode=PHOTO quality=FHD fps=30 aspect=Full bitrate=7464960 eis=false nr=true hdr=false front=false
+evt=bind mode=VIDEO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=true nr=true hdr=false front=false
+evt=bind mode=PHOTO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=false nr=true hdr=false front=false
+evt=bind mode=VIDEO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=true nr=true hdr=false front=false
+evt=bind mode=PHOTO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=false nr=true hdr=false front=false
+evt=bind mode=VIDEO quality=FHD fps=30 aspect=9:16 bitrate=7464960 eis=true nr=true hdr=false front=false

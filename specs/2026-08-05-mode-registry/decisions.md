@@ -1232,6 +1232,41 @@ Não corrigido aqui de propósito: mudaria comportamento observável numa tarefa
 critério é iso-comportamento. Para verificar: em janela larga, Foto 3:4, girar, fotografar
 e ler a dimensão no MediaStore.
 
+### Q-09: o que a definição de modo passou a declarar na Tarefa 7
+
+**Status:** decidida na implementação — contrato estendido, nenhuma decisão do usuário
+pendente.
+**Afeta:** ADR-001 (forma do contrato), design §3, Tarefas 7, 8, 11
+
+Para zerar as ramificações por modo (AC da Tarefa 7), a definição ganhou quatro membros
+abstratos, todos **dados de escolha fechada**, como o ADR-001 prevê:
+
+| Membro | Vídeo | Foto | Substitui |
+|---|---|---|---|
+| `aspectRatio: AspectRatioRule` | `FIXED_16_9` | `USER_SELECTED` | proporção na tela e em `cameraXAspectRatio()` |
+| `stabilization: StabilizationRule` | `FOLLOWS_PREFERENCE` | `OFF` | `if PHOTO / else VIDEO` do EIS no ViewModel |
+| `output: CaptureOutput` | `VIDEO` | `PHOTO` | miniatura/pausa e desenho do disparador |
+| `moreControls: List<ControlId>` | NR, HDR, Mic, Grade, Config. | Melhoria, HDR, Grade, Config. | os `if` da linha expandida |
+
+`ControlId` ganhou os seis controles da linha expandida.
+
+**Por que regras separadas e não só `output`.** Bastaria `output` para decidir tudo, mas
+amarraria "foto" a "EIS desligado" e "proporção do usuário" para sempre. O Pro herda as
+duas regras por escolha, não por ser foto; um modo de vídeo futuro sem EIS (time-lapse,
+por exemplo) declara `OFF` sem precisar de um terceiro tipo de saída.
+
+**A barra deixou de ser escrita à mão.** É montada a partir de `controls` e
+`moreControls`, desenhada por um `when` exaustivo sobre `ControlId` — controle declarado
+sem desenho **não compila**, o que é mais forte que o teste de completude da tabela
+`ModeSurfaces` (que continua valendo para overlays).
+
+**O ADR-001 se pagou aqui.** Os quatro membros novos quebraram o build em todos os
+modos, inclusive nos modos de mentira dos testes — e cada um precisou responder, como o
+ADR prometeu ("migração que quebra o build em vez de compilar calada").
+
+*Para quem reabrir a spec:* o design §3 lista o contrato da Tarefa 2; estes quatro membros
+são extensão dele e valem ser acrescentados à tabela.
+
 ---
 
 ## Bloqueios

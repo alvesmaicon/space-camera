@@ -63,6 +63,10 @@ class ModeRegistryTest {
             override val useCases = setOf(AppUseCase.PREVIEW)
             override val requiredCapability = Capability.MANUAL_SENSOR
             override val controls = emptyList<ControlId>()
+            override val moreControls = emptyList<ControlId>()
+            override val aspectRatio = AspectRatioRule.USER_SELECTED
+            override val stabilization = StabilizationRule.OFF
+            override val output = CaptureOutput.PHOTO
             override val overlay: OverlayId? = null
             override val pinnedByDefault = false
             override fun shutterAction(state: CaptureState) = ShutterAction.CapturePhoto
@@ -137,6 +141,10 @@ class ModeRegistryTest {
             override val useCases = setOf(AppUseCase.PREVIEW)
             override val requiredCapability = Capability.MANUAL_SENSOR
             override val controls = emptyList<ControlId>()
+            override val moreControls = emptyList<ControlId>()
+            override val aspectRatio = AspectRatioRule.USER_SELECTED
+            override val stabilization = StabilizationRule.OFF
+            override val output = CaptureOutput.PHOTO
             override val overlay: OverlayId? = null
             override val pinnedByDefault = false
             override fun shutterAction(state: CaptureState) = ShutterAction.CapturePhoto
