@@ -3,7 +3,7 @@
 ## Visão geral
 
 - **Total de tarefas:** 13
-- **Concluídas:** 11 · **Em andamento:** 0 · **Pendentes:** 2
+- **Concluídas:** 12 · **Em andamento:** 0 · **Pendentes:** 1
 - **Estratégia de decomposição:** fatia vertical **por modo**, não por camada. Cada fatia
   atravessa registro → controller → ViewModel → UI → teste e é verificável sozinha em
   aparelho. Vídeo e Foto entram como fatias de **remigração iso-comportamento** (a rede de
@@ -268,7 +268,7 @@
 
 > As três tarefas desta onda são independentes entre si e podem ser feitas em paralelo.
 
-#### [ ] 9. Seletor em janela larga sem quantidade fixa de modos
+#### [x] 9. Seletor em janela larga sem quantidade fixa de modos
 - **Size:** S
 - **Complexity:** medium
 - **Risk:** low
@@ -281,8 +281,8 @@
   - **DADO** janela larga e cinco modos disponíveis **QUANDO** o seletor é exibido **ENTÃO** o modo ativo está visível e os demais alcançáveis
   - **DADO** janela larga e dois modos **QUANDO** o seletor é exibido **ENTÃO** o resultado visual é o mesmo de antes desta tarefa
 - **Verification:**
-  - [ ] Testes passam: `./gradlew testDebugUnitTest --tests '*WideWindow*'`
-  - [ ] Conferência manual: em tablet ou emulador de tela grande, girar e conferir os dois eixos
+  - [x] Testes passam: `./gradlew testDebugUnitTest --tests '*WideWindow*'` — 4 testes; 3 mutações mortas
+  - [x] Conferência manual no emulador `Tablet_API36`: coluna encostada à direita com 3 e 4 itens, gaveta ao lado, Pro com as escalas fora da coluna. Retrato conferido no Redmi nas Tarefas 8–12. Ver [`verificacao/tarefa-9/`](verificacao/tarefa-9/README.md)
 - **_Requirements: FR-14, NFR-3_**
 - **_Decisions: ADR-001_**
 
@@ -337,17 +337,17 @@
 - **_Requirements: FR-2, FR-5, FR-9, FR-12_**
 - **_Decisions: ADR-001, ADR-005, ADR-007_**
 
-### Checkpoint da Onda 6
-- [ ] Critérios de aceite das Tarefas 9, 10 e 11 atendidos
-- [ ] Verificação de cada uma passou (testes + build + conferência)
-- [ ] **Integração entre as três:** reordenar em Configurações reflete no seletor, inclusive em janela larga, inclusive com o Pro presente
-- [ ] Pro aparece só em aparelho com `MANUAL_SENSOR`, e some **sem erro** onde não há
-- [ ] Teste de completude do registro agora exercitado de fato (Pro tem overlay)
-- [ ] ISO com efeito visível confirmado em aparelho real
-- [ ] Foto do Pro salva pelo mesmo caminho de mídia e EXIF do modo Foto
-- [ ] Quatro casos de compatibilidade da preferência cobertos por teste
-- [ ] Cross-onda: Vídeo e Foto seguem iso-comportamento com o Pro no registro
-- [ ] Pronto para a Onda 7
+### Checkpoint da Onda 6 — **PASSOU** (2026-10-07)
+- [x] Critérios de aceite das Tarefas 9, 10 e 11 atendidos
+- [x] Verificação de cada uma passou (testes + build + conferência)
+- [x] **Integração entre as três:** fixar o Pro em Configurações reflete no seletor, em retrato (Redmi) e em janela larga (emulador), com o Pro presente
+- [x] Pro aparece só com `MANUAL_SENSOR` — sem ele, some sem erro (`ProModeTest`, AC-5.1); os dois aparelhos disponíveis reportam a capacidade
+- [x] Teste de completude do registro agora exercitado de fato (`PRO_SCALES`)
+- [x] ISO com efeito visível confirmado em aparelho real
+- [x] Foto do Pro salva pelo mesmo caminho de mídia e EXIF do modo Foto
+- [x] Quatro casos de compatibilidade da preferência cobertos por teste
+- [x] Cross-onda: Vídeo e Foto seguem iso-comportamento com o Pro no registro (rodada da Tarefa 10)
+- [x] Pronto para a Onda 7
 
 ### Onda 7 — Obturador manual
 

@@ -340,6 +340,18 @@ item de ROADMAP, com a hipótese registrada na Q-13.
 **Telemetria corrigida:** arrastar a escala gerava ~60 `evt=manual` por segundo; agora sai
 o valor final.
 
+### Sessão: 2026-10-07 — Tarefa 9 (janela larga) e Checkpoint da Onda 6
+
+- **Agente:** skill `dev`
+- **Gate:** D concluído · Tarefa 9 **concluída** · Checkpoints das Ondas 6 e 7 **passaram**
+- **Verificação:** [`verificacao/tarefa-9/`](verificacao/tarefa-9/README.md) — emulador `Tablet_API36`, porque o
+  Redmi (Android 12) respeita a trava de retrato e nunca fica em janela larga
+
+A coluna do seletor ganhou teto de altura (~4 itens) e rolagem própria, e o ativo é trazido à
+vista. Dois achados de método: o emulador de tablet **reporta `MANUAL_SENSOR`** (o Pro roda
+nele), e a imagem em retrato dentro da caixa 16:9 é da câmera virtual — o build de antes da
+spec mostra o mesmo.
+
 ## Situação das tarefas
 
 | Onda | Tarefa | Status | Observações |
@@ -352,7 +364,7 @@ o valor final.
 | 3 | 6. Vídeo remigrado | **Concluída** | iso-comportamento conferido no Redmi; `CameraManager` 1.153 |
 | 4 | 7. Foto remigrado | **Concluída** | UI, mídia, binds e flash idênticos ao commit anterior na mesma sessão |
 | 5 | 8. Seletor + gaveta | **Concluída** | item "Mais" + gaveta; `CameraMode` removido; carrossel rolável |
-| 6 | 9. Janela larga com N modos | Pendente | folga 4 |
+| 6 | 9. Janela larga com N modos | **Concluída** | coluna com teto e rolagem; conferida no emulador de tablet |
 | 6 | 10. Personalização em Configurações | **Concluída** | estado de modos agrupado em `CameraModes`; persistência conferida em aparelho |
 | 6 | 11. Pro com ISO manual | **Concluída** | ISO muda o brilho em aparelho; EXIF com o ISO manual |
 | 7 | 12. Obturador manual | **Concluída** | teto de 1/4 s após medir exposição longa (Q-13) |
@@ -407,6 +419,7 @@ Campos de `evt=bind`, mídia gerada e capacidades do HAL em
 - [x] Tarefa 11 — Pro com ISO manual (verificada em aparelho)
 - [x] Tarefa 10 — personalização; estado de modos agrupado (Q-10 resolvida)
 - [x] Tarefa 12 — obturador manual, com teto de 1/4 s
+- [x] Tarefa 9 — janela larga; Checkpoints das Ondas 6 e 7
 - [ ] Tarefa 13: levar ao ROADMAP a exposição longa (Q-13), o 1:1 (Q-01), a defasagem de `aspect` (Q-06) e o modo não reaplicado ao recriar o controller (Q-08)
 - [ ] Q-06 (`aspect` defasado em `evt=bind`): corrigir em commit próprio depois da Tarefa 7, ou levar ao ROADMAP
 - [ ] Q-08 (modo não reaplicado ao recriar o controller): verificar em aparelho e corrigir depois da Tarefa 7

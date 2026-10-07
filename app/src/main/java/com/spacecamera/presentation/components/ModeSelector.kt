@@ -3,11 +3,16 @@ package com.spacecamera.presentation.components
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,6 +43,9 @@ private const val INACTIVE_ALPHA = 0.48f
 /** Largura de cada item do carrossel; o deslocamento anima em múltiplos dela. */
 private const val ITEM_WIDTH_DP = 88f
 
+/** Altura máxima da coluna em janela larga: ~4 itens. Acima disso, rola (FR-14). */
+private val MAX_COLUMN_HEIGHT = 160.dp
+
 /**
  * Requirements: FR-6, FR-17, AC-1.1, AC-6.1
  * Decisions: ADR-001, ADR-004
@@ -50,6 +59,7 @@ private const val ITEM_WIDTH_DP = 88f
  * coluna.
  * Extraído da `CameraScreen` na Tarefa 8 (NFR-3).
  */
+@OptIn(ExperimentalFoundationApi::class) // BringIntoViewRequester, estável a partir do Compose 1.7
 @Composable
 internal fun ModeSelector(
     modes: ArrangedModes,
@@ -61,18 +71,31 @@ internal fun ModeSelector(
 ) {
     val carrossel = modes.carousel(active)
     val indiceAtivo = carrossel.indexOf(active).coerceAtLeast(0)
+    val ativoAVista = remember { BringIntoViewRequester() }
     val itens: @Composable AxisScope.() -> Unit = {
         carrossel.forEach { modo ->
-            ItemDoSeletor(texto = modo.label, selecionado = modo === active) { onModeSelect(modo) }
+            ItemDoSeletor(
+                texto = modo.label,
+                selecionado = modo === active,
+                modifier = if (modo === active) Modifier.bringIntoViewRequester(ativoAVista) else Modifier
+            ) { onModeSelect(modo) }
         }
         ItemDoSeletor(texto = "Mais", selecionado = false, onClick = onOpenDrawer)
     }
     if (vertical) {
-        // Em janela larga, uma coluna sem deslizamento. Quantos modos cabem no eixo
-        // é a Tarefa 9 (FR-14).
+        // Janela larga (FR-14): coluna com altura máxima e rolagem própria, para N modos
+        // não empurrarem o disparador para fora numa janela baixa. O ativo é trazido à
+        // vista a cada troca. Com poucos modos tudo cabe e nada rola — o caso de hoje.
+        LaunchedEffect(active) {
+            withFrameNanos { }  // depois do layout: antes dele não há o que trazer à vista
+            ativoAVista.bringIntoView()
+        }
         AxisContainer(
             vertical = true,
-            modifier = Modifier.background(scrimColor, RoundedCornerShape(12.dp)),
+            modifier = Modifier
+                .background(scrimColor, RoundedCornerShape(12.dp))
+                .heightIn(max = MAX_COLUMN_HEIGHT)
+                .verticalScroll(rememberScrollState()),
             content = itens
         )
     } else {
@@ -110,8 +133,8 @@ private fun CarrosselCentrado(indiceAtivo: Int, itens: @Composable AxisScope.() 
 }
 
 @Composable
-private fun ItemDoSeletor(texto: String, selecionado: Boolean, onClick: () -> Unit) {
-    Box(modifier = Modifier.width(ITEM_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
+private fun ItemDoSeletor(texto: String, selecionado: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(modifier = modifier.width(ITEM_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
         Text(
             text = texto,
             color = if (selecionado) Color.White else Color.White.copy(alpha = INACTIVE_ALPHA),
